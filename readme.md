@@ -23,12 +23,16 @@ To compile in the main directory:
 
    set $COQBIN to the path where coqc is, or have Coq 8.6 in your path.
 
+```
    # make
+```
 
 To compile in translation/:
 
-   # hoqc translation.v
-
+```
+  # hoqc translation.v
+```
+  
 ## directory ./
 
 This is the formalization discussed in Section 5. 
