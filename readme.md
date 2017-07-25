@@ -2,8 +2,8 @@
 Univalent Parametricity for Effective Transport
 
 The repository contains the companion code of the publication
-"Equivalences for Free!
-Univalent Parametricity for Effective Transport.
+[Equivalences for Free!
+Univalent Parametricity for Effective Transport](https://hal.inria.fr/hal-01559073)
 
 ## Structure
 
