@@ -17,7 +17,7 @@ Univalent Parametricity for Effective Transport.
 
 You need Coq 8.6 to compile the main directory 
 and the hoqc compiler from https://github.com/HoTT/ to compile
-files in the translation/ and proof-universe-with-hott-lib/ directories. 
+files in the translation/ directory. 
 
 To compile in the main directory:
 
@@ -28,11 +28,6 @@ To compile in the main directory:
 To compile in translation/:
 
    # hoqc translation.v
-
-To compile in proof-universe-with-hott-lib/:
-
-   # hoqc UR_Type.v
-
 
 ## directory ./
 
