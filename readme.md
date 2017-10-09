@@ -2,8 +2,8 @@
 Univalent Parametricity for Effective Transport
 
 The repository contains the companion code of the publication
-[Equivalences for Free!
-Univalent Parametricity for Effective Transport](https://hal.inria.fr/hal-01559073)
+"Equivalences for Free!
+Univalent Parametricity for Effective Transport" (submitted to CPP' 18).
 
 ## Structure
 
@@ -12,6 +12,10 @@ Univalent Parametricity for Effective Transport](https://hal.inria.fr/hal-015590
 
 - ./translation
    contains the univalent parametricity translation (Fig 3) and associated proofs 
+
+- ./proof-universe-with-hott-lib/
+  a proof of the fundamental property for the universe (requires hoqc)
+
 
 ## Compilation
 
@@ -23,16 +27,12 @@ To compile in the main directory:
 
    set $COQBIN to the path where coqc is, or have Coq 8.6 in your path.
 
-```
-   $ make
-```
+   # make
 
 To compile in translation/:
 
-```
-  $ hoqc translation.v
-```
-  
+   # hoqc translation.v
+
 ## directory ./
 
 This is the formalization discussed in Section 5. 
@@ -47,8 +47,6 @@ Note that HoTT.v contains one admit that corresponds to a standard result in the
 * UR.v contains the definition of the univalent logical relation using type classes.
 
 * FP.v contains the proof that constructors of Coq enjoy the fundamental property of the univalent logical relation.
-
-As mentioned above, keeping these two admits is a design choice to make the main distribution independent from hoqc.
 
 * Examples.v presents examples, most of them are also in the paper.
 
