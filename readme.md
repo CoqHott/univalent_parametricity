@@ -31,7 +31,7 @@ To compile in translation/:
 
 ## directory ./
 
-This is the formalization discussed in Section 5. 
+This is the formalization discussed in Section 4. 
 The structure of the files follows more or less the structure of the paper.
 
 * Vector.v and HoTT.v are auxiliary files. 
