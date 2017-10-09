@@ -13,10 +13,6 @@ Univalent Parametricity for Effective Transport" (submitted to CPP' 18).
 - ./translation
    contains the univalent parametricity translation (Fig 3) and associated proofs 
 
-- ./proof-universe-with-hott-lib/
-  a proof of the fundamental property for the universe (requires hoqc)
-
-
 ## Compilation
 
 You need Coq 8.6 to compile the main directory 
