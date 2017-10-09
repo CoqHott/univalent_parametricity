@@ -31,6 +31,17 @@ Record Lib (C : Type -> nat -> Type) :=
 Arguments map {_} _ {_ _} _ {_} _.
 Arguments head {_} _ {_ _} _.
 
+
+Definition FL_Lib_Noneff : Lib ≈ Lib. 
+  intros C C' e.
+  pose (eqCC' := e_inv (ur_coh (H := @URForall Type Type (fun _ : Type => forall _ : nat, Type)
+       (fun _ : Type => forall _ : nat, Type) UR_Type_def
+       (fun (x y : Type) (_ : @ur Type Type UR_Type_def x y) =>
+        @URForall nat nat (fun _ : nat => Type) (fun _ : nat => Type) UR_nat
+                  (fun (x0 y0 : nat) (_ : @ur nat nat UR_nat x0 y0) => UR_Type_def))) _ _) e).
+  destruct eqCC'. apply Canonical_UR. apply Equiv_id.
+Defined.
+
 Instance issig_lib_hd_map C :
   {hd : forall {A : Type} {n : nat}, C A (S n) -> A  &
                       {map : forall {A B} (f:A -> B) {n},
