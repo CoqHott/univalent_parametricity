@@ -19,7 +19,6 @@ Notation "x * y" := (prod x y) : type_scope.
 Notation "( x , y , .. , z )" := (pair .. (pair x y) .. z): type_scope.
 
 
-
 Section projections.
   Context {A : Type} {B : Type}.
 
@@ -31,11 +30,10 @@ Section projections.
                               end.
 End projections.
 
-
 Inductive eq@{i} (A:Type@{i}) (x:A) : A -> Type@{i} :=
-    eq_refl : x = x :>A
+    eq_refl : eq A x x.
 
-where "x = y :> A" := (@eq A x y) : type_scope.
+Notation "x = y :> A" := (@eq A x y) : type_scope.
 
 Notation "x = y" := (x = y :>_) : type_scope.
 

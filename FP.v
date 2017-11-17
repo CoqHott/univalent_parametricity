@@ -4,7 +4,7 @@
 
 Set Universe Polymorphism.
 
-Require Import HoTT Tactics String UR.
+Require Import HoTT URTactics String UR.
 
 (*! Establishing FP for Type !*)
 
@@ -68,7 +68,7 @@ Definition path_UR A B (X Y: UR A B) : (forall a b, @ur _ _ X a b = @ur _ _ Y a 
   destruct e0. reflexivity. 
 Defined.
 
-Definition UR_is_eq_equiv (A B:Type) (e:A ≈ B) (a:A) (b:B) : (a = e_inv (e_fun (equiv e)) b) ≃ (a ≈ b).
+Definition UR_is_eq_equiv (A B:Type) (e:A ⋈ B) (a:A) (b:B) : (a = e_inv (e_fun (equiv e)) b) ≃ (a ≈ b).
 Proof.
   eapply equiv_compose; try refine (ur_coh a _).
   refine (transport_eq (fun X =>  (a ≈ X) ≃ _) (e_retr _ b)^ (Equiv_id _)). 
@@ -115,7 +115,7 @@ Definition UR_Type_Equiv' (A B C:Type) `{C ≃ A} `{A ≈ B} : C ≈ B.
 Proof.
     unshelve econstructor.
   - apply (equiv_compose H (equiv H0)).
-  - eapply UR_Equiv'; typeclasses eauto.
+  - cbn in *. eapply UR_Equiv'; typeclasses eauto.
   - econstructor. intros. cbn.
     unfold univalent_transport.
     pose (X:= isequiv_ap C A a a'). 
@@ -124,13 +124,15 @@ Proof.
 Defined. 
 
 
-Definition UR_Type_Equiv_gen (X:Type) (eX : X ≈ X) (A B: X -> Type) (HAB: forall x, B x ≃ A x) (x y:X) (e : x ≈ y) `{A x ≈ A y}
+Definition UR_Type_Equiv_gen (X:Type) (eX : X ⋈ X) (A B: X -> Type) (HAB: forall x, B x ≃ A x) (x y:X) (e : x ≈ y) `{A x ≈ A y}
   : B x ≈ B y.
 Proof.
   unshelve refine (UR_Type_Equiv _ _ _).
   unshelve refine (UR_Type_Equiv' _ _ _).
   auto. 
 Defined.
+
+Ltac etransitivity := refine (_ @_).
 
 Definition univalence_V {A B : Type} (e : A ≃  B)
   : (e_inv (eq_to_equiv A B) e)^ = e_inv (eq_to_equiv _ _) (Equiv_inverse e).
@@ -139,7 +141,6 @@ Proof.
   cbn. etransitivity. apply equiv_path_V. apply ap.
   apply e_retr. 
 Defined.
-
 
 Instance funext_isequiv A P (f g : forall x : A, P x) : IsEquiv (@apD10 _ _ f g) := funext _ _ _ _.
 
@@ -575,11 +576,12 @@ Proof.
   eapply equiv_compose. apply ur_coh. cbn. 
   unfold univalent_transport. cbn. 
   cbn in e.
-  pose (T := fun (XX : {XX : _ & b = univalent_transport XX}) =>
+  set (T := fun (XX : {XX : _ & b = univalent_transport XX}) =>
                (f a' ≈ e_fun (equiv (H a' (e_fun (equiv eA) a') (ur_refl a'))) (g a'))
   ≃ (f a' ≈ e_fun (equiv (H XX.1 b (e_fun (transport_eq (fun X : A' => (XX.1 ≈ X) ≃ (XX.1 ≈ b))
     XX.2 (Equiv_id (XX.1 ≈ b))) (e_fun (ur_coh XX.1 XX.1) eq_refl)))) (g XX.1))).
-  change (T (_;(e_retr (e_fun (equiv eA)) b)^)).
+  pose (T (_;(e_retr (e_fun (equiv eA)) b)^)).
+  unfold T in T0. cbn in *. 
   unshelve refine (transport_eq T _ _).
   exact (_ ; (Move_equiv _ _ _ e)^).
   apply path_sigma_uncurried. unshelve eexists. exact e.

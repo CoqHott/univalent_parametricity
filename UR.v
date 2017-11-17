@@ -110,8 +110,10 @@ Instance UR_Type_def@{i j} : UR@{j j j} Type@{i} Type@{i} :=
 
 (*! Forall !*)
 
-Definition URForall A A' (B : A -> Type) (B' : A' -> Type) `{UR A A'}
-           `{forall x y (H: x ≈ y), UR (B x) (B' y)} : UR (forall x, B x) (forall y, B' y) :=
+Hint Extern 0 (?x ≈ ?y) => eassumption : typeclass_instances.
+
+Definition URForall A A' (B : A -> Type) (B' : A' -> Type) {HA : UR A A'}
+           {HB: forall x y (H: x ≈ y), UR (B x) (B' y)} : UR (forall x, B x) (forall y, B' y) :=
   {| ur := fun f g => forall x y (H: x ≈ y), f x ≈ g y |}.
 
 Hint Extern 0 (UR (forall x:?A, _) (forall x:?A', _)) =>
