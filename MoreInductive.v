@@ -1,4 +1,4 @@
-Require Import HoTT Tactics UR FP Record.
+Require Import HoTT Tactics UR URTactics FP Record.
 
 Set Universe Polymorphism.
 
