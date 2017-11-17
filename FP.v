@@ -577,11 +577,10 @@ Proof.
   unfold univalent_transport. cbn. 
   cbn in e.
   set (T := fun (XX : {XX : _ & b = univalent_transport XX}) =>
-               (f a' ≈ e_fun (equiv (H a' (e_fun (equiv eA) a') (ur_refl a'))) (g a'))
+               (f a' ≈ e_fun (equiv (H a' b X')) (g a'))
   ≃ (f a' ≈ e_fun (equiv (H XX.1 b (e_fun (transport_eq (fun X : A' => (XX.1 ≈ X) ≃ (XX.1 ≈ b))
     XX.2 (Equiv_id (XX.1 ≈ b))) (e_fun (ur_coh XX.1 XX.1) eq_refl)))) (g XX.1))).
-  pose (T (_;(e_retr (e_fun (equiv eA)) b)^)).
-  unfold T in T0. cbn in *. 
+  change (T (_;(e_retr (e_fun (equiv eA)) b)^)).
   unshelve refine (transport_eq T _ _).
   exact (_ ; (Move_equiv _ _ _ e)^).
   apply path_sigma_uncurried. unshelve eexists. exact e.
@@ -590,7 +589,7 @@ Proof.
   rewrite <- concat_inv. reflexivity. 
   unfold T; cbn. clear T. 
   pose (T := fun (XX : {XX : A' & a' ≈ XX}) => let foo := H _ _ XX.2 in 
-               (f a' ≈ e_fun (equiv (H a' XX.1 XX.2)) (g a'))
+               (f a' ≈ e_fun (equiv (H a' b X')) (g a'))
   ≃ (f a'  ≈ e_fun (equiv (H a' b
                (e_fun (transport_eq (fun X : A' => (a' ≈ X) ≃ (a' ≈ b)) (Move_equiv (equiv eA) a' b e)^
                (Equiv_id (a' ≈ b))) (e_fun (ur_coh a' a') eq_refl)))) (g a'))).
@@ -619,7 +618,7 @@ Proof.
   pose (e_retr' (ur_coh a' _) h). cbn in e2.
   rewrite transport_e_fun'. etransitivity ; try exact e2.
   set (e_inv (e_fun (ur_coh a' (e_inv (e_fun (equiv eA)) b))) h).
-  destruct y0. reflexivity. 
+  destruct e3. reflexivity. 
 
   unshelve refine (transport_eq T _ _).
   exact (_ ; X'). 
@@ -986,8 +985,8 @@ Proof.
   rewrite moveL_M1_eq.
   rewrite concat_p_pp. apply whiskerR.
   clear e X.
-  set (e_fun eq H0). set (e_fun eq H3).
-  destruct y3. cbn in *. reflexivity.
+  set (e_fun eq H0). 
+  destruct e. cbn in *. reflexivity.
   rewrite X. exact id. 
 Defined.
 
