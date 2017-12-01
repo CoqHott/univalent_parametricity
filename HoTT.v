@@ -418,6 +418,10 @@ Typeclasses Transparent e_fun e_inv.
 
 Coercion e_fun : Equiv >-> Funclass.
 
+Definition univalent_transport {A B : Type} {e: A ≃ B} : A -> B := e_fun e.  
+
+Notation "↑" := univalent_transport (at level 65, only parsing).
+
 (* Instance IsEquiv_Equiv A B (e:A ≃ B) : IsEquiv (e_fun e) := e_isequiv (Equiv:=e). *)
 
 Definition e_inv' {A B : Type} (e : A ≃ B) : B -> A := e_inv (e_fun e).
@@ -639,8 +643,6 @@ Definition isequiv_inverse : IsEquiv (e_inv f)
 End EquivInverse.
 
 Definition Equiv_inverse {A B : Type} (e: A ≃ B) : B ≃ A := BuildEquiv _ _ (e_inv (e_fun e)) (isequiv_inverse _).  
-
-Definition univalent_transport {A B : Type} {e: A ≃ B} : A -> B := e_fun e.  
 
 (* this is a lemma of the HoTT library *)
 (* in HoTT/theories/Types/Equiv.v *)

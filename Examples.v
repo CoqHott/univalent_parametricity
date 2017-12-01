@@ -3,6 +3,10 @@ Require Import BinInt BinNat Nnat Vector.
 
 Set Universe Polymorphism.
 
+Definition univalent_transport_eff {A B : Type} {e: A ≃ B} `{@Equiv_eff A B e} : A -> B := e_fun e.  
+
+Notation "↑eff" := univalent_transport_eff (at level 65, only parsing).
+
 Definition append_list {A:Type} {n p} {H : A ⋈ A} :
   {l : list A & length l = n} ->
   {l : list A & length l = p} ->
@@ -83,6 +87,51 @@ Definition libvec : Lib Vector.t :=
 
 Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑ libvec.
 
+(* Set Printing All. *)
+
+(* Goal  *)
+(*   Equiv_eff _ _ (@equiv _ _ *)
+(*      (FP_Lib t (fun (A : Type) (n : nat) => @sigT (list A) (fun l : list A => eq nat (@length A l) n)) *)
+(*         ((((fun (x y : Type) (H : UR_Type x y) (x0 y0 : nat) (H0 : eq nat x0 y0) => *)
+(*             Equiv_vector_list_ x y (H : @ur _ _ ((UR_Type_def : UR Type Type) : UR Type Type) x y) x0 y0 *)
+(*               (H0 : @ur _ _ ((UR_nat : UR nat nat) : UR nat nat) x0 y0)) *)
+(*            : *)
+(*            forall (x y : Type) (_ : UR_Type x y) (x0 y0 : nat) (_ : eq nat x0 y0), *)
+(*            UR_Type (t x x0) (@sigT (list y) (fun l : list y => eq nat (@length y l) y0))) *)
+(*           : *)
+(*           @ur _ _ *)
+(*             (@URForall Type Type (fun _ : Type => forall _ : nat, Type) (fun _ : Type => forall _ : nat, Type) UR_Type_def *)
+(*                (fun (x y : Type) (_ : @ur _ _ UR_Type_def x y) => *)
+(*                 @URForall nat nat (fun _ : nat => Type) (fun _ : nat => Type) UR_nat *)
+(*                   (fun (x0 y0 : nat) (_ : @ur _ _ UR_nat x0 y0) => UR_Type_def))) t *)
+(*             (fun (A : Type) (n : nat) => @sigT (list A) (fun l : list A => eq nat (@length A l) n))) *)
+(*          : *)
+(*          @ur _ _ *)
+(*            ((@URForall Type Type (fun _ : Type => forall _ : nat, Type) (fun _ : Type => forall _ : nat, Type) *)
+(*                ((UR_Type_def : UR Type Type) : UR Type Type) *)
+(*                (((fun (x y : Type) (_ : @ur _ _ UR_Type_def x y) => *)
+(*                   @URForall nat nat (fun _ : nat => Type) (fun _ : nat => Type) ((UR_nat : UR nat nat) : UR nat nat) *)
+(*                     (((fun (x0 y0 : nat) (_ : @ur _ _ UR_nat x0 y0) => UR_Type_def : UR Type Type) *)
+(*                       : *)
+(*                       forall (x0 y0 : nat) (_ : @ur _ _ (UR_nat : UR nat nat) x0 y0), UR Type Type) *)
+(*                      : *)
+(*                      forall (x0 y0 : nat) (_ : @ur _ _ ((UR_nat : UR nat nat) : UR nat nat) x0 y0), *)
+(*                      UR ((fun _ : nat => Type) x0) ((fun _ : nat => Type) y0)) *)
+(*                   : *)
+(*                   UR (forall _ : nat, Type) (forall _ : nat, Type)) *)
+(*                  : *)
+(*                  forall (x y : Type) (_ : @ur _ _ (UR_Type_def : UR Type Type) x y), UR (forall _ : nat, Type) (forall _ : nat, Type)) *)
+(*                 : *)
+(*                 forall (x y : Type) (_ : @ur _ _ ((UR_Type_def : UR Type Type) : UR Type Type) x y), *)
+(*                 UR ((fun _ : Type => forall _ : nat, Type) x) ((fun _ : Type => forall _ : nat, Type) y)) *)
+(*              : *)
+(*              UR (forall (_ : Type) (_ : nat), Type) (forall (_ : Type) (_ : nat), Type)) *)
+(*             : *)
+(*             UR (forall (_ : Type) (_ : nat), Type) (forall (_ : Type) (_ : nat), Type)) t *)
+(*            (fun (A : Type) (n : nat) => @sigT (list A) (fun l : list A => eq nat (@length A l) n))))). *)
+
+(* Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑eff libvec. *)
+
 Transparent vector_to_list list_to_vector.
 
 Notation "[[ ]]" := ([ ]; eq_refl).
@@ -118,7 +167,7 @@ Eval compute in (app_list [[1;2]] [[1;2]]).
 
 Eval compute in (app_list' [[1;2]] [[1;2]]).
 
-Eval compute in (lib_list.(map) S (app_list [[1;2]] [[1;2]])).
+Eval compute in (lib_list.(map) S (app_list [[1;2]] [[5;6]])).
 
 
 
@@ -201,21 +250,24 @@ Definition largeVectorN : Vector.t N 20 := ↑ largeVector.
 
 (* 3 secs *) 
 
-Instance Equiv_Vector A B (e:A ≃ B) n n' (en :n = n') : Vector.t A n ≃ Vector.t B n'.
-Proof.
-    equiv_adt2 (@Vector.t_rect _) (@Vector.nil _) (@Vector.cons _).
-Defined.
-
 Definition largeVectorN' : Vector.t N 20 := e_fun (Equiv_Vector _ _ _ _ _ eq_refl) largeVector.
 
-Time Eval vm_compute in largeVectorN'.
+(* Time Eval vm_compute in largeVectorN'. *)
 
 
 Definition foo : forall f: nat -> nat, f = f:= fun f  => eq_refl.
-                       
+
+(* Set Typeclasses Debug Verbosity 2. *)
+
 Definition bar := ↑ foo : forall f: N -> N, f = f.
 
-(* does not compute because of the index on a depndent product *)
+Definition bar_equiv : (forall f: nat -> nat, f = f) ≃ (forall f: N -> N, f = f) := _.
+
+Goal Equiv_eff _ _ bar_equiv.
+  Fail typeclasses eauto. 
+Abort. 
+
+(* does not compute because of the index on a dependent product *)
 (* Eval compute in (bar N.succ). *)
 
 Definition testType := { f : nat -> nat & vector nat (f 0)}.
@@ -228,7 +280,7 @@ Hint Extern 100 (_ = _) => solve [typeclasses eauto with typeclass_instances] : 
 
 Hint Extern 0 => progress (unfold testType, testType2) :  typeclass_instances.
 
-Definition bar' : testType := ↑ foo'.
+Definition bar' : testType := ↑eff foo'.
 
 Eval cbn in bar'.2.
 
@@ -240,24 +292,25 @@ Definition foo'' : testType2' := (S ; [[1]]).
 
 Hint Extern 0 => progress (unfold testType', testType2') :  typeclass_instances.
 
-Definition bar'' : testType' := ↑ foo''.
+Definition bar'' : testType' := ↑eff foo''.
 
 Eval compute in bar''.2.
 
 Definition foo''' : testType' := (N.succ ; cons nat 1 0 (nil nat)).
 
-Definition bar''' : testType2' := ↑ foo'''.
+Definition bar''' : testType2' := ↑eff foo'''.
 Eval compute in bar'''.2.1.
-
 
 (* does not compute when using explicitely inverse equivalence on sigmas  *)
 Definition testEquiv : testType2' ≃ testType' := _.
 
 Definition bar2''' : testType2' := e_inv' testEquiv foo'''.
 
+Goal Equiv_eff_inv _ _ testEquiv.
+  Fail typeclasses eauto.
+Abort. 
+
 (* Eval compute in bar2'''.2.1. *)
-
-
 
 
 Definition testTypeForall := forall f : {f : N -> N & f 0%N = 1%N}, N.
@@ -266,11 +319,23 @@ Definition testTypeForall' := forall f : {f : nat -> nat & f 0 = 1}, nat.
 
 Definition fooForall : testTypeForall' := fun f => f.1 0 + 1.
 
+Definition fooForall_uneff : testTypeForall' := fun f => match f.2 with eq_refl => f.1 0 + 1 end.
+
 Hint Extern 0 => progress (unfold testTypeForall, testTypeForall') :  typeclass_instances.
 
 Definition barForall : testTypeForall := ↑ fooForall.
 
+Definition barForall_equiv : testTypeForall' ≃ testTypeForall := _.
+
 Eval compute in barForall (N.succ; eq_refl).
+
+(* this one does not compute *)
+(* Eval compute in barForall_uneff (N.succ; eq_refl). *)
+
+Goal Equiv_eff _ _ barForall_equiv.
+  Fail typeclasses eauto.
+Abort. 
+
 
 Definition testTypeForall2 := forall f : {n : nat & N}, vector N f.1.
 
@@ -291,11 +356,45 @@ Ltac destruct_prod := repeat (match goal with | H : _ * _ |- _ => destruct H end
 
 Hint Extern 100 (_ = _) => progress destruct_prod : typeclass_instances.
 
-Definition barForall2 : testTypeForall2 := ↑ fooForall2.
+Definition barForall2 : testTypeForall2 := ↑eff fooForall2.
 
 Eval compute in fooForall2 (2;10).
 
 Eval compute in barForall2 (2;10%N).
+
+Definition barForall2_equiv : testTypeForall2' ≃ testTypeForall2 := _.
+
+Instance Equiv_eff_compose A B C (e: A ≃ B) (e': B ≃ C)
+         `{@Equiv_eff _ _ e} `{@Equiv_eff _ _ e'} : Equiv_eff _ _ (e' ∘∘ e).
+
+Goal Equiv_eff _ _ barForall2_equiv.
+  typeclasses eauto. 
+Defined. 
+
+(* Definition testTypeForall3 := forall f : ((N -> N) * (nat * N)), vector N (fst (snd f)). *)
+
+(* Definition testTypeForall3' := forall f : ((nat -> nat) * (nat * nat)), vector nat (fst (snd f)). *)
+
+(* Definition fooForall3 : testTypeForall3' := fun f => ConstantVector 10 (fst (snd f)). *)
+
+(* Hint Extern 0 => progress (unfold testTypeForall3, testTypeForall3') :  typeclass_instances. *)
+
+(* Definition barForall3 : testTypeForall3 := ↑ fooForall3. *)
+
+(* Eval compute in fooForall3 (S, (1,10)). *)
+
+(* (* Eval compute in barForall3 (N.succ, (1,10%N)). *) *)
+
+(* Definition barForall3_equiv : testTypeForall3' ≃ testTypeForall3 := _. *)
+
+
+(* (* Goal e_fun barForall3_equiv = e_fun barForall3_equiv. *) *)
+(* (*   unfold barForall3_equiv. cbn. unfold Equiv_forall. *) *)
+(* (*   cbn.  *) *)
+(* (*   apply Equiv_eff_forall.  *) *)
+(* (*   apply Equiv_eff_inv_Sigma. *) *)
+(* (*   apply Equiv_eff_forall.  *) *)
+
 
 Definition testTypeForall3 := forall f : {f : N -> N & { x : nat & N}}, vector N f.2.1.
 
@@ -309,7 +408,10 @@ Definition barForall3 : testTypeForall3 := ↑ fooForall3.
 
 Eval compute in fooForall3 (S; (1;10)).
 
-Eval compute in barForall3 (N.succ; (2;10%N)).
+(* Eval compute in barForall3 (N.succ; (1;10%N)). *)
+
+Definition barForall3_equiv : testTypeForall3' ≃ testTypeForall3 := _.
+
 
 (* with product, no rewriting so it computes *)
 
@@ -325,7 +427,7 @@ Definition barForall4 : testTypeForall4 := ↑ fooForall4.
 
 Eval compute in fooForall4 (S, (1;10)).
 
-Eval compute in barForall4 (N.succ, (2;10%N)).
+(* Eval compute in barForall4 (N.succ, (2;10%N)). *)
 
 
 Definition testTypeForall5 := forall X : {f : (N -> nat) & vector N (f 0%N)}, vector N (S (X.1 0%N)).

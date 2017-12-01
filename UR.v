@@ -1,3 +1,4 @@
+
 (************************************************************************)
 (* This file introduces the univalent logical relation   *)
 (************************************************************************)
@@ -8,8 +9,6 @@ Set Universe Polymorphism.
 Set Primitive Projections.
 
 Tactic Notation "erefine" uconstr(c) := unshelve notypeclasses refine c.
-
-Notation "↑" := univalent_transport (at level 65, only parsing).
 
 Definition eq_to_equiv A B : A = B -> A ≃ B :=
   fun e => e # (Equiv_id A).
@@ -56,7 +55,36 @@ Arguments equiv {_ _} _.
 Arguments Ur {_ _} _.
 Arguments Ur_Coh {_ _} _.
 
+Class Equiv_eff (A B:Type) (e:A ≃ B) := { }.
 
+Class Equiv_eff_inv (A B:Type) (e:A ≃ B) := { }.
+
+Class Equiv_eff_section (A B:Type) (e:A ≃ B) := { }.
+
+Class Equiv_eff_retraction (A B:Type) (e:A ≃ B) := { }.
+
+Class Equiv_eff_full (A B:Type) (e:A ≃ B) :=
+  {
+    equiv_eff :> Equiv_eff A B e;
+    equiv_eff_inv :> Equiv_eff_inv A B e;
+    equiv_eff_section :> Equiv_eff_section A B e;
+    equiv_eff_retraction :> Equiv_eff_retraction A B e
+  }.
+
+(* Instance Equiv_eff_retraction_section_Equiv_eff A B e (H:@Equiv_eff_section A B e) (H' :@Equiv_eff_retraction A B e) *)
+(*   : Equiv_eff A B e *)
+(*   := {}. *)
+
+Class Ur_Coh_eff (A B:Type) (UR:A ⋈ B):= { }.
+
+Class UR_eff (A B:Type) (UR : A ⋈ B) :=
+  {
+    equiv_eff_full :> Equiv_eff_full A B (equiv UR);
+    ur_Coh_eff :> Ur_Coh_eff A B UR
+}.
+
+(* Instance Equiv_eff_Ur_Coh_UR_eff A B (UR : A ⋈ B) `{@Equiv_eff A B (equiv UR)} `{@Ur_Coh_eff A B UR} : UR_eff A B UR *)
+(*   := {}. *)
 
 (* some facilities to create an instance of UR_Type *)
 
