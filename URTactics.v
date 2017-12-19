@@ -1,4 +1,4 @@
-Require Import HoTT.
+Require Import HoTT UR.
 
 Set Universe Polymorphism.
 Set Primitive Projections.
@@ -210,6 +210,10 @@ Ltac equiv_elim :=
   clear_eq;
   match goal with | [x: ?A |- _] => induction x; simpl; try typeclasses eauto with typeclass_instances end.
 
-Hint Extern 0  => progress (cbn in *): typeclass_instances. 
+Hint Extern 0 => progress (cbn in *): typeclass_instances. 
 
 Hint Extern 0 => eassumption : typeclass_instances. 
+
+Hint Extern 0 => match goal with | H : Transportable _ * _ |- _ => destruct H end.
+
+Hint Extern 0 => match goal with | H : Transportable _ * _ |- _ => destruct H end : typeclass_instances.

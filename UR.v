@@ -140,11 +140,42 @@ Instance UR_Type_def@{i j} : UR@{j j j} Type@{i} Type@{i} :=
 
 Hint Extern 0 (?x ≈ ?y) => eassumption : typeclass_instances.
 
-Definition URForall A A' (B : A -> Type) (B' : A' -> Type) {HA : UR A A'}
-           {HB: forall x y (H: x ≈ y), UR (B x) (B' y)} : UR (forall x, B x) (forall y, B' y) :=
-  {| ur := fun f g => forall x y (H: x ≈ y), f x ≈ g y |}.
+
+Instance URType_Refl : URRefl Type Type (Equiv_id _) _ :=
+  {| ur_refl_ := _ |}.
+Proof.
+  intro A. cbn. unshelve eexists.
+  - apply Equiv_id.
+  - apply UR_gen.
+  - constructor. intros;apply Equiv_id.
+Defined.
+
+Class Transportable {A} (P:A -> Type) :=
+  {
+    transportable :> forall x y, x = y -> P x ≈ P y;
+    transportable_refl : forall x, equiv (transportable x x eq_refl) = Equiv_id _
+  }.
+
+Definition Transportable_default {A} (P:A -> Type) : Transportable P.
+Proof.
+  unshelve econstructor. intros x y e; destruct e.
+  apply (@ur_refl_ _ _ _ _ URType_Refl). reflexivity.
+Defined. 
+
+Definition URForall_Type A A' {HA : UR A A'} :
+  UR (A -> Type) (A' -> Type)
+  :=
+    {| ur := fun P Q => (Transportable P * forall x y (H:x ≈ y), P x ≈ Q y ) %type|}.
+
+Definition URForall A A' (B : A -> Type) (B' : A' -> Type) {HA : UR A A'} (* {HAA : UR A A} *)
+           {HB: forall x y (H: x ≈ y), UR (B x) (B' y)} : UR (forall x, B x) (forall y, B' y)
+  :=
+  {| ur := fun f g => forall x y (H:x ≈ y) (* (Hx:x ≈ x) *), f x ≈ g y |}.
 
 Hint Extern 0 (UR (forall x:?A, _) (forall x:?A', _)) =>
+  erefine (@URForall_Type A A' _); cbn in *; intros : typeclass_instances.
+
+Hint Extern 1 (UR (forall x:?A, _) (forall x:?A', _)) =>
   erefine (@URForall A A' _ _ _ _); cbn in *; intros : typeclass_instances.
 
 (*! Sigma !*)

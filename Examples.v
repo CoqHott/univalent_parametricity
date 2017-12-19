@@ -36,15 +36,17 @@ Arguments map {_} _ {_ _} _ {_} _.
 Arguments head {_} _ {_ _} _.
 
 
-Definition FL_Lib_Noneff : Lib ≈ Lib. 
-  intros C C' e.
-  pose (eqCC' := e_inv (ur_coh (H := @URForall Type Type (fun _ : Type => forall _ : nat, Type)
-       (fun _ : Type => forall _ : nat, Type) UR_Type_def
-       (fun (x y : Type) (_ : @ur Type Type UR_Type_def x y) =>
-        @URForall nat nat (fun _ : nat => Type) (fun _ : nat => Type) UR_nat
-                  (fun (x0 y0 : nat) (_ : @ur nat nat UR_nat x0 y0) => UR_Type_def))) _ _) e).
-  destruct eqCC'. apply Canonical_UR. apply Equiv_id.
-Defined.
+(* Definition FL_Lib_Noneff : Lib ≈ Lib.  *)
+(*   split; [apply Transportable_default | ]. *)
+  
+(*   intros C C' e.  *)
+(*   pose (eqCC' := e_inv (ur_coh (H := @URForall Type Type (fun _ : Type => forall _ : nat, Type) *)
+(*        (fun _ : Type => forall _ : nat, Type) UR_Type_def *)
+(*        (fun (x y : Type) (_ : @ur Type Type UR_Type_def x y) => *)
+(*         @URForall nat nat (fun _ : nat => Type) (fun _ : nat => Type) UR_nat *)
+(*                   (fun (x0 y0 : nat) (_ : @ur nat nat UR_nat x0 y0) => UR_Type_def))) _ _) e). *)
+(*   destruct eqCC'. apply Canonical_UR. apply Equiv_id. *)
+(* Defined. *)
 
 Instance issig_lib_hd_map C :
   {hd : forall {A : Type} {n : nat}, C A (S n) -> A  &
@@ -66,10 +68,79 @@ Instance issig_lib_hd_map_inv C :
 
 Definition FP_Lib : Lib ≈ Lib.
 Proof.
-  univ_param_record.
+  cbn. split ; [apply Transportable_default | ]. intros.
+  unshelve refine (UR_Type_Equiv_gen _ _ _ _ _ _ _ _).
+  cbn; intros. apply H; typeclasses eauto.
+  unshelve refine (snd (FP_Sigma _ _ _) _ _ _).
+  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
+  typeclasses eauto with typeclass_instances.
+  apply Transportable_default.
+  cbn. intros.
+  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
+  typeclasses eauto with typeclass_instances. 
+  (* maybe better here *)
+  apply Transportable_default.
+  intros.
+  erefine (snd (FP_forall _ _ _) _ _ (Transportable_arrow _ _,_)).
+  apply H. cbn. 
+  typeclasses eauto with typeclass_instances.
+  typeclasses eauto with typeclass_instances.
+  typeclasses eauto with typeclass_instances.
+  split. apply Transportable_default.
+  intros.
+  unshelve refine (snd (FP_Sigma _ _ _) _ _ _).
+  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
+  typeclasses eauto with typeclass_instances.
+  apply Transportable_default.
+  cbn. intros.
+  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
+  typeclasses eauto with typeclass_instances. 
+  (* maybe better here *)
+  apply Transportable_default.
+  intros.
+  erefine (snd (FP_forall _ _ _) _ _ (Transportable_arrow _ _,_)).
+  erefine (snd (FP_forall _ _ _) _ _ (Transportable_arrow _ _,_)).
+  typeclasses eauto with typeclass_instances.
+  typeclasses eauto with typeclass_instances.
+  intros.
+  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
+  typeclasses eauto with typeclass_instances.
+  pose (fst (H x1 x1 (ur_refl x1))). destruct t. unshelve econstructor. intros. apply admit. apply admit. 
+  intros.
+  erefine (snd (FP_forall _ _ _) _ _ (Transportable_arrow _ _,_)).
+  apply H. 
+  typeclasses eauto with typeclass_instances.
+  typeclasses eauto with typeclass_instances.
+  intros; apply H. typeclasses eauto with typeclass_instances.
+  typeclasses eauto with typeclass_instances.
+  cbn. split. apply Transportable_default. 
+  intros.
+  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
+  typeclasses eauto with typeclass_instances.
+  apply Transportable_default.
+  intros. cbn.
+  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
+  typeclasses eauto with typeclass_instances.
+  apply Transportable_default.
+  cbn. intros. 
+  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
+  typeclasses eauto with typeclass_instances.
+  apply Transportable_default.
+  cbn. intros. 
+  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
+  typeclasses eauto with typeclass_instances.
+  apply Transportable_default.
+  cbn. intros. 
+  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
+  apply H; typeclasses eauto with typeclass_instances.
+  apply Transportable_default.
+  cbn. intros. 
+  typeclasses eauto with typeclass_instances.
+
+  (* univ_param_record. *)
 Defined.
 
-Hint Extern 0 (Lib _ ≃ Lib _) => erefine (@FP_Lib _ _ _).(equiv); simpl
+Hint Extern 0 (Lib _ ≃ Lib _) => erefine (snd FP_Lib _ _ _).(equiv); simpl
 :  typeclass_instances.
 
 Definition lib_vector_prop : forall (n : nat) (A B : Type) (f : A -> B) (v : t A (S n)),
@@ -86,49 +157,6 @@ Definition libvec : Lib Vector.t :=
      prop := lib_vector_prop |}.
 
 Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑ libvec.
-
-(* Set Printing All. *)
-
-(* Goal  *)
-(*   Equiv_eff _ _ (@equiv _ _ *)
-(*      (FP_Lib t (fun (A : Type) (n : nat) => @sigT (list A) (fun l : list A => eq nat (@length A l) n)) *)
-(*         ((((fun (x y : Type) (H : UR_Type x y) (x0 y0 : nat) (H0 : eq nat x0 y0) => *)
-(*             Equiv_vector_list_ x y (H : @ur _ _ ((UR_Type_def : UR Type Type) : UR Type Type) x y) x0 y0 *)
-(*               (H0 : @ur _ _ ((UR_nat : UR nat nat) : UR nat nat) x0 y0)) *)
-(*            : *)
-(*            forall (x y : Type) (_ : UR_Type x y) (x0 y0 : nat) (_ : eq nat x0 y0), *)
-(*            UR_Type (t x x0) (@sigT (list y) (fun l : list y => eq nat (@length y l) y0))) *)
-(*           : *)
-(*           @ur _ _ *)
-(*             (@URForall Type Type (fun _ : Type => forall _ : nat, Type) (fun _ : Type => forall _ : nat, Type) UR_Type_def *)
-(*                (fun (x y : Type) (_ : @ur _ _ UR_Type_def x y) => *)
-(*                 @URForall nat nat (fun _ : nat => Type) (fun _ : nat => Type) UR_nat *)
-(*                   (fun (x0 y0 : nat) (_ : @ur _ _ UR_nat x0 y0) => UR_Type_def))) t *)
-(*             (fun (A : Type) (n : nat) => @sigT (list A) (fun l : list A => eq nat (@length A l) n))) *)
-(*          : *)
-(*          @ur _ _ *)
-(*            ((@URForall Type Type (fun _ : Type => forall _ : nat, Type) (fun _ : Type => forall _ : nat, Type) *)
-(*                ((UR_Type_def : UR Type Type) : UR Type Type) *)
-(*                (((fun (x y : Type) (_ : @ur _ _ UR_Type_def x y) => *)
-(*                   @URForall nat nat (fun _ : nat => Type) (fun _ : nat => Type) ((UR_nat : UR nat nat) : UR nat nat) *)
-(*                     (((fun (x0 y0 : nat) (_ : @ur _ _ UR_nat x0 y0) => UR_Type_def : UR Type Type) *)
-(*                       : *)
-(*                       forall (x0 y0 : nat) (_ : @ur _ _ (UR_nat : UR nat nat) x0 y0), UR Type Type) *)
-(*                      : *)
-(*                      forall (x0 y0 : nat) (_ : @ur _ _ ((UR_nat : UR nat nat) : UR nat nat) x0 y0), *)
-(*                      UR ((fun _ : nat => Type) x0) ((fun _ : nat => Type) y0)) *)
-(*                   : *)
-(*                   UR (forall _ : nat, Type) (forall _ : nat, Type)) *)
-(*                  : *)
-(*                  forall (x y : Type) (_ : @ur _ _ (UR_Type_def : UR Type Type) x y), UR (forall _ : nat, Type) (forall _ : nat, Type)) *)
-(*                 : *)
-(*                 forall (x y : Type) (_ : @ur _ _ ((UR_Type_def : UR Type Type) : UR Type Type) x y), *)
-(*                 UR ((fun _ : Type => forall _ : nat, Type) x) ((fun _ : Type => forall _ : nat, Type) y)) *)
-(*              : *)
-(*              UR (forall (_ : Type) (_ : nat), Type) (forall (_ : Type) (_ : nat), Type)) *)
-(*             : *)
-(*             UR (forall (_ : Type) (_ : nat), Type) (forall (_ : Type) (_ : nat), Type)) t *)
-(*            (fun (A : Type) (n : nat) => @sigT (list A) (fun l : list A => eq nat (@length A l) n))))). *)
 
 (* Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑eff libvec. *)
 
@@ -194,6 +222,7 @@ Instance issig_monoid_inv {A : Type} :
                                                                                forall x y z, m x (m y z) = m (m x y) z}}}}
          := Equiv_inverse _.
 
+(*
 Definition FP_Monoid : Monoid ≈ Monoid.
 Proof.
   univ_param_record.
@@ -224,6 +253,7 @@ Fixpoint even (n:nat) := match n with
                            end. 
 
 Definition nat_pow : nat -> nat -> nat := ↑ N.pow.
+ *)
 
 (* Those tests are commented at compilation time *)
 
@@ -259,15 +289,20 @@ Definition foo : forall f: nat -> nat, f = f:= fun f  => eq_refl.
 
 (* Set Typeclasses Debug Verbosity 2. *)
 
+Instance Transportable_eq A B (f g : A -> B) : Transportable (fun a => f a = g a) := Transportable_default _.
+
 Definition bar := ↑ foo : forall f: N -> N, f = f.
 
-Definition bar_equiv : (forall f: nat -> nat, f = f) ≃ (forall f: N -> N, f = f) := _.
+(* Definition bar_equiv : (forall f: nat -> nat, f = f) ≃ (forall f: N -> N, f = f) := _. *)
 
-Goal Equiv_eff _ _ bar_equiv.
-  Fail typeclasses eauto. 
-Abort. 
+(* Goal Equiv_eff _ _ bar_equiv. *)
+(*   Fail typeclasses eauto.  *)
+(* Abort.  *)
 
 (* does not compute because of the index on a dependent product *)
+
+Eval compute in foo S.
+
 (* Eval compute in (bar N.succ). *)
 
 Definition testType := { f : nat -> nat & vector nat (f 0)}.
@@ -280,7 +315,21 @@ Hint Extern 100 (_ = _) => solve [typeclasses eauto with typeclass_instances] : 
 
 Hint Extern 0 => progress (unfold testType, testType2) :  typeclass_instances.
 
-Definition bar' : testType := ↑eff foo'.
+Instance Transportable_sigma (A:Type) `{A ≈ A} A' B (f : A -> B) (x:A') :
+  Transportable (fun g => {a: A & f a = g x}).
+Proof.
+  unshelve econstructor. intros. erefine (snd (@FP_Sigma _ _ _) _ _ _).
+  exact H. cbn. split.
+  typeclasses eauto. 
+  intros. apply admit. 
+  apply admit.
+Defined.
+
+Instance Transportable_eq2 (A B:Type) (a:A) (b:B):
+  Transportable (fun f => f a = b) := Transportable_default _ . 
+
+
+Definition bar' : testType := ↑ foo'.
 
 Eval cbn in bar'.2.
 
@@ -292,26 +341,36 @@ Definition foo'' : testType2' := (S ; [[1]]).
 
 Hint Extern 0 => progress (unfold testType', testType2') :  typeclass_instances.
 
-Definition bar'' : testType' := ↑eff foo''.
+Definition bar'' : testType' := ↑ foo''.
 
 Eval compute in bar''.2.
 
 Definition foo''' : testType' := (N.succ ; cons nat 1 0 (nil nat)).
 
-Definition bar''' : testType2' := ↑eff foo'''.
+Instance Transportable_lift A B C (g : B -> C) (P : C -> Type) `{Transportable C P} x:
+  Transportable (fun (f:A -> B) => P (g (f x))).
+Proof.
+  unshelve econstructor.
+  intros. assert (g (x0 x) = g (y x)). destruct X; reflexivity.
+  apply H. typeclasses eauto. cbn. intros. apply H. 
+Defined. 
+
+Instance Transportable_lift_cst B C (g : B -> C) (P : C -> Type) `{Transportable C P}:
+  Transportable (fun (f:B) => P (g f)).
+Proof.
+  unshelve econstructor.
+  intros. assert (g x = g y). destruct X; reflexivity.
+  apply H. typeclasses eauto. cbn. intros. apply H. 
+Defined. 
+
+Definition bar''' : testType2' := ↑ foo'''.
 Eval compute in bar'''.2.1.
 
-(* does not compute when using explicitely inverse equivalence on sigmas  *)
 Definition testEquiv : testType2' ≃ testType' := _.
 
 Definition bar2''' : testType2' := e_inv' testEquiv foo'''.
-
-Goal Equiv_eff_inv _ _ testEquiv.
-  Fail typeclasses eauto.
-Abort. 
-
-(* Eval compute in bar2'''.2.1. *)
-
+ 
+Eval compute in bar2'''.2.1.
 
 Definition testTypeForall := forall f : {f : N -> N & f 0%N = 1%N}, N.
 
@@ -319,22 +378,19 @@ Definition testTypeForall' := forall f : {f : nat -> nat & f 0 = 1}, nat.
 
 Definition fooForall : testTypeForall' := fun f => f.1 0 + 1.
 
-Definition fooForall_uneff : testTypeForall' := fun f => match f.2 with eq_refl => f.1 0 + 1 end.
-
 Hint Extern 0 => progress (unfold testTypeForall, testTypeForall') :  typeclass_instances.
 
 Definition barForall : testTypeForall := ↑ fooForall.
 
-Definition barForall_equiv : testTypeForall' ≃ testTypeForall := _.
+Eval compute in fooForall (S; eq_refl).
 
 Eval compute in barForall (N.succ; eq_refl).
 
-(* this one does not compute *)
-(* Eval compute in barForall_uneff (N.succ; eq_refl). *)
+Definition barForall_equiv : testTypeForall' ≃ testTypeForall := _.
 
-Goal Equiv_eff _ _ barForall_equiv.
-  Fail typeclasses eauto.
-Abort. 
+(* Goal Equiv_eff _ _ barForall_equiv. *)
+(*   Fail typeclasses eauto. *)
+(* Abort.  *)
 
 
 Definition testTypeForall2 := forall f : {n : nat & N}, vector N f.1.
@@ -356,7 +412,7 @@ Ltac destruct_prod := repeat (match goal with | H : _ * _ |- _ => destruct H end
 
 Hint Extern 100 (_ = _) => progress destruct_prod : typeclass_instances.
 
-Definition barForall2 : testTypeForall2 := ↑eff fooForall2.
+Definition barForall2 : testTypeForall2 := ↑ fooForall2.
 
 Eval compute in fooForall2 (2;10).
 
@@ -367,84 +423,69 @@ Definition barForall2_equiv : testTypeForall2' ≃ testTypeForall2 := _.
 Instance Equiv_eff_compose A B C (e: A ≃ B) (e': B ≃ C)
          `{@Equiv_eff _ _ e} `{@Equiv_eff _ _ e'} : Equiv_eff _ _ (e' ∘∘ e).
 
-Goal Equiv_eff _ _ barForall2_equiv.
-  typeclasses eauto. 
-Defined. 
+(* Goal Equiv_eff _ _ barForall2_equiv. *)
+(*   typeclasses eauto.  *)
+(* Defined.  *)
 
-(* Definition testTypeForall3 := forall f : ((N -> N) * (nat * N)), vector N (fst (snd f)). *)
+Definition testTypeForall3 := forall f : ((N -> N) * (nat * N)), vector N (fst (snd f)).
 
-(* Definition testTypeForall3' := forall f : ((nat -> nat) * (nat * nat)), vector nat (fst (snd f)). *)
+Definition testTypeForall3' := forall f : ((nat -> nat) * (nat * nat)), vector nat (fst (snd f)).
 
-(* Definition fooForall3 : testTypeForall3' := fun f => ConstantVector 10 (fst (snd f)). *)
-
-(* Hint Extern 0 => progress (unfold testTypeForall3, testTypeForall3') :  typeclass_instances. *)
-
-(* Definition barForall3 : testTypeForall3 := ↑ fooForall3. *)
-
-(* Eval compute in fooForall3 (S, (1,10)). *)
-
-(* (* Eval compute in barForall3 (N.succ, (1,10%N)). *) *)
-
-(* Definition barForall3_equiv : testTypeForall3' ≃ testTypeForall3 := _. *)
-
-
-(* (* Goal e_fun barForall3_equiv = e_fun barForall3_equiv. *) *)
-(* (*   unfold barForall3_equiv. cbn. unfold Equiv_forall. *) *)
-(* (*   cbn.  *) *)
-(* (*   apply Equiv_eff_forall.  *) *)
-(* (*   apply Equiv_eff_inv_Sigma. *) *)
-(* (*   apply Equiv_eff_forall.  *) *)
-
-
-Definition testTypeForall3 := forall f : {f : N -> N & { x : nat & N}}, vector N f.2.1.
-
-Definition testTypeForall3' := forall f : {f : nat -> nat & { x : nat & nat}}, vector nat f.2.1.
-
-Definition fooForall3 : testTypeForall3' := fun f => ConstantVector 10 (f.2.1).
+Definition fooForall3 : testTypeForall3' := fun f => ConstantVector 10 (fst (snd f)).
 
 Hint Extern 0 => progress (unfold testTypeForall3, testTypeForall3') :  typeclass_instances.
 
 Definition barForall3 : testTypeForall3 := ↑ fooForall3.
 
-Eval compute in fooForall3 (S; (1;10)).
+Eval compute in fooForall3 (S, (1,10)).
 
-(* Eval compute in barForall3 (N.succ; (1;10%N)). *)
+Eval compute in barForall3 (N.succ, (1,10%N)).
 
 Definition barForall3_equiv : testTypeForall3' ≃ testTypeForall3 := _.
 
+Definition testTypeForall4 := forall f : {f : N -> nat & { x : nat & N}}, vector N (f.1 0%N).
 
-(* with product, no rewriting so it computes *)
+Definition testTypeForall4' := forall f : {f : nat -> nat & { x : nat & nat}}, vector nat (f.1 0).
 
-Definition testTypeForall4 := forall f : (N -> N) * { x : nat & N}, vector N (snd f).1.
-
-Definition testTypeForall4' := forall f : (nat -> nat) * { x : nat & nat}, vector nat (snd f).1.
-
-Definition fooForall4 : testTypeForall4' := fun f => ConstantVector 10 (snd f).1.
+Definition fooForall4 : testTypeForall4' := fun f => ConstantVector 10 (f.1 0).
 
 Hint Extern 0 => progress (unfold testTypeForall4, testTypeForall4') :  typeclass_instances.
 
 Definition barForall4 : testTypeForall4 := ↑ fooForall4.
 
-Eval compute in fooForall4 (S, (1;10)).
+Eval compute in fooForall4 (S; (1;10)).
 
-(* Eval compute in barForall4 (N.succ, (2;10%N)). *)
+Eval compute in barForall4 (fun n => ↑ (N.succ n); (1;10%N)).
 
 
-Definition testTypeForall5 := forall X : {f : (N -> nat) & vector N (f 0%N)}, vector N (S (X.1 0%N)).
+Definition testTypeForall5 := forall f : (N -> N) * { x : nat & N}, vector N (snd f).1.
 
-Definition testTypeForall5' := forall X : {f : (nat -> nat) & vector nat (f 0)}, vector nat (S (X.1 0)).
+Definition testTypeForall5' := forall f : (nat -> nat) * { x : nat & nat}, vector nat (snd f).1.
 
-Definition fooForall5 : testTypeForall5 := fun X => cons _ 0%N _ X.2.
+Definition fooForall5 : testTypeForall5' := fun f => ConstantVector 10 (snd f).1.
 
 Hint Extern 0 => progress (unfold testTypeForall5, testTypeForall5') :  typeclass_instances.
 
-Definition barForall5 : testTypeForall5' := ↑ fooForall5.
+Definition barForall5 : testTypeForall5 := ↑ fooForall5.
 
-Eval compute in fooForall5 (fun n => S (↑ n) ; ConstantVector (5%N) 1).
+Eval compute in fooForall5 (S, (1;10)).
 
-(* does not compuite because the retraction used to rewrite in the sigma 
-  is on dependent product, so does not compute *)
-(* Eval compute in barForall5 (S; ConstantVector 5 1). *)
+Eval compute in barForall5 (N.succ, (2;10%N)).
+
+
+Definition testTypeForall6 := forall X : {f : (N -> nat) & vector N (f 0%N)}, vector N (S (X.1 0%N)).
+
+Definition testTypeForall6' := forall X : {f : (nat -> nat) & vector nat (f 0)}, vector nat (S (X.1 0)).
+
+Definition fooForall6 : testTypeForall6 := fun X => cons _ 0%N _ X.2.
+
+Hint Extern 0 => progress (unfold testTypeForall6, testTypeForall6') :  typeclass_instances.
+
+Definition barForall6 : testTypeForall6' := ↑ fooForall6.
+
+Eval compute in fooForall6 (fun n => S (↑ n) ; ConstantVector (6%N) 1).
+
+Eval compute in barForall6 (S; ConstantVector 6 1).
 
 
 
