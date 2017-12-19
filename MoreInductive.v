@@ -174,12 +174,15 @@ Instance Equiv_vector_list (A B:Type) {H: A ≃ B} (n n':nat) (en : n ≈ n')
 
 Axiom admit : forall A, A. 
 
+Definition Equiv_Vector_id A n :Equiv_Vector A A (Equiv_id A) n n  eq_refl = Equiv_id (t A n).
+apply path_Equiv, funext. intro v.
+induction v. reflexivity. cbn. apply ap. exact IHv. 
+Defined. 
+
 Instance Transportable_vector A : Transportable (t A).
-unshelve econstructor. intros. unshelve econstructor.
+unshelve econstructor. intros. 
 apply Equiv_Vector. apply Equiv_id. auto.
-econstructor. destruct H;apply (@eq _). econstructor. cbn. destruct H. apply Equiv_id.
-cbn. intros. apply admit.
-intros n. cbn. apply admit. 
+apply Equiv_Vector_id. 
 Defined.
 
 Definition Equiv_vector_list_
@@ -250,16 +253,14 @@ Proof.
   cbn. intros A B e.
   split.
   unshelve econstructor. intros.
-  unshelve econstructor.   unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)).
+  unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)).
   intros [l Hl]; exists l. exact (Hl @ H). 
   intros [l Hl]; exists l. exact (Hl @ H^).
   intros; cbn. destruct x0. apply path_sigma_uncurried. exists eq_refl.
   cbn. apply is_hset.
   intros; cbn. destruct x0. apply path_sigma_uncurried. exists eq_refl.
   cbn. apply is_hset.
-  econstructor. destruct H; exact (@eq _). 
-  cbn. unshelve econstructor. intros ; cbn. destruct H. destruct a'. cbn. destruct e0. cbn. apply Equiv_id.
-  intros n. cbn. apply path_Equiv. cbn. apply funext. intros [l Hl]. destruct Hl; reflexivity. 
+  cbn. intros ; cbn. apply path_Equiv. cbn. apply funext. intros [l Hl]. destruct Hl; reflexivity. 
   intros n n' en.
   apply UR_Type_Inverse. apply Equiv_vector_list_. apply UR_Type_Inverse. 
   typeclasses eauto. apply eq_sym. exact en. 

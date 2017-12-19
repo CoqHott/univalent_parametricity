@@ -152,14 +152,15 @@ Defined.
 
 Class Transportable {A} (P:A -> Type) :=
   {
-    transportable :> forall x y, x = y -> P x ≈ P y;
-    transportable_refl : forall x, equiv (transportable x x eq_refl) = Equiv_id _
+    transportable :> forall x y, x = y -> P x ≃ P y;
+    transportable_refl : forall x, transportable x x eq_refl = Equiv_id _
   }.
 
 Definition Transportable_default {A} (P:A -> Type) : Transportable P.
 Proof.
-  unshelve econstructor. intros x y e; destruct e.
-  apply (@ur_refl_ _ _ _ _ URType_Refl). reflexivity.
+  unshelve econstructor.
+  - intros x y e; destruct e. apply Equiv_id.
+  - reflexivity.
 Defined. 
 
 Definition URForall_Type A A' {HA : UR A A'} :

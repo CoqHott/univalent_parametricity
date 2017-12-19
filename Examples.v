@@ -318,7 +318,7 @@ Hint Extern 0 => progress (unfold testType, testType2) :  typeclass_instances.
 Instance Transportable_sigma (A:Type) `{A ≈ A} A' B (f : A -> B) (x:A') :
   Transportable (fun g => {a: A & f a = g x}).
 Proof.
-  unshelve econstructor. intros. erefine (snd (@FP_Sigma _ _ _) _ _ _).
+  unshelve econstructor. intros. erefine (@Equiv_Sigma _ _ _ _ _ _).
   exact H. cbn. split.
   typeclasses eauto. 
   intros. apply admit. 
@@ -347,20 +347,23 @@ Eval compute in bar''.2.
 
 Definition foo''' : testType' := (N.succ ; cons nat 1 0 (nil nat)).
 
+Definition Transportable_lift_ A B C (g : B -> C) (P : C -> Type) `{Transportable C P} x:
+  forall f f': A -> B, f = f' -> P (g (f x)) ≃ P (g (f' x)). 
+  intros. assert (g (f x) = g (f' x)). destruct X; reflexivity.
+  apply H. typeclasses eauto.
+Defined.
+
 Instance Transportable_lift A B C (g : B -> C) (P : C -> Type) `{Transportable C P} x:
-  Transportable (fun (f:A -> B) => P (g (f x))).
+  Transportable (fun (f:A -> B) => P (g (f x))). 
 Proof.
-  unshelve econstructor.
-  intros. assert (g (x0 x) = g (y x)). destruct X; reflexivity.
-  apply H. typeclasses eauto. cbn. intros. apply H. 
+  refine (Build_Transportable _ _ (Transportable_lift_ A B C g P x) _). 
+  intros. apply H. 
 Defined. 
 
 Instance Transportable_lift_cst B C (g : B -> C) (P : C -> Type) `{Transportable C P}:
   Transportable (fun (f:B) => P (g f)).
 Proof.
-  unshelve econstructor.
-  intros. assert (g x = g y). destruct X; reflexivity.
-  apply H. typeclasses eauto. cbn. intros. apply H. 
+  unshelve econstructor. intros. apply H. 
 Defined. 
 
 Definition bar''' : testType2' := ↑ foo'''.
