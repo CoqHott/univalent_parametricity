@@ -601,9 +601,6 @@ Hint Extern 0 (Transportable (fun _ : _ => _ = _))
 Hint Extern 0 (Transportable (eq _ _))
 => apply Transportable_default : typeclass_instances.
 
-Instance Transportable_Eq' A (P: forall (x y:A) (e : x = y), Type) y :
-  Transportable (fun x => forall (e:y = x), P y x e)  := Transportable_default _.
-
 Definition FP_forall :
             (fun A B => forall x:A , B x) ≈ (fun A' B' => forall x:A', B' x).
 Proof.
