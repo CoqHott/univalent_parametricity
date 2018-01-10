@@ -240,24 +240,19 @@ Fixpoint incrVector n : Vector.t nat n :=
   | S n => cons _ n _ (incrVector n)
   end. 
 
-Definition largeVector := incrVector 20.
+Definition largeVector := incrVector 200.
 
-Definition largeVectorN : Vector.t N 20 := ↑ largeVector.
+Definition largeVectorN : Vector.t N 200 := ↑ largeVector.
 
-(* Time Eval vm_compute in largeVectorN. *)
+Time Eval vm_compute in largeVectorN.
 
 (* 3 secs *) 
 
-Definition largeVectorN' : Vector.t N 20 := e_fun (Equiv_Vector _ _ _ _ _ eq_refl) largeVector.
+Definition largeVectorN' : Vector.t N 200 := e_fun (Equiv_Vector _ _ _ _ _ eq_refl) largeVector.
 
-(* Time Eval vm_compute in largeVectorN'. *)
-
+Time Eval vm_compute in largeVectorN'.
 
 Definition foo : forall f: nat -> nat, f = f:= fun f  => eq_refl.
-
-(* Set Typeclasses Debug Verbosity 2. *)
-
-Instance Transportable_eq A B (f g : A -> B) : Transportable (fun a => f a = g a) := Transportable_default _.
 
 Definition bar := ↑ foo : forall f: N -> N, f = f.
 
@@ -278,9 +273,6 @@ Definition foo' : testType2 := (S ; [[4]]).
 Hint Extern 100 (_ = _) => solve [typeclasses eauto with typeclass_instances] : typeclass_instances.
 
 Hint Extern 0 => progress (unfold testType, testType2) :  typeclass_instances.
-
-Instance Transportable_eq2 (A B:Type) (a:A) (b:B):
-  Transportable (fun f => f a = b) := Transportable_default _ . 
 
 Definition bar' : testType := ↑ foo'.
 
