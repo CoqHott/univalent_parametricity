@@ -869,7 +869,6 @@ Definition equiv_path_sigma {A : Type} {P : A -> Type} (u v : {x : A & P x}) :
 
 Definition FP_Sigma : @sigT ≈ @sigT.
   cbn in *; intros.
-  (* this instance of transportable is on Type, we can only use the default one*)
   split ; [typeclasses eauto | ].
   intros. unshelve eexists. 
   - eapply URSigma. typeclasses eauto.
@@ -880,7 +879,6 @@ Definition FP_Sigma : @sigT ≈ @sigT.
     unshelve eapply Equiv_Sigma.
     apply Canonical_UR. 
     destruct a, a'. apply ur_coh.
-    (* this instance of transportable is for the equality type, we can use the default one*)
     cbn. split ; [typeclasses eauto | ].
     intros e e' E.
     apply Canonical_UR. 
@@ -896,32 +894,14 @@ Transparent functor_forall sigma_map.
 Hint Transparent functor_forall sigma_map. 
 Hint Unfold functor_forall sigma_map. 
 
-Definition foo :
-  UR (forall (A : Type) (P : A -> Type) (x : A), P x -> {x : A & P x})
-         (forall (A : Type) (P : A -> Type) (x : A), P x -> {x : A & P x}).
-typeclasses eauto. 
-Defined.
-
-Definition FP_existT : (* (fun (A : Type) (P : A -> Type) (x : A) (p : P x) => (x; p)) ≈ (fun (A : Type) (P : A -> Type) (x : A) (p : P x) => (x; p)). *)
-  @ur _ _ foo (fun (A:Type) (P:A->Type) (x:A) (p:P x) => (x;p)) (fun (A:Type) (P:A->Type) (x:A) (p:P x) => (x;p)).
-  intros A B H P Q H' x y e X Y E.
+Definition FP_existT : @existT ≈ @existT.
+  intros A B H P Q H' x y e X Y E. 
   exact (existT _ e E).
 Defined. 
 
 Hint Extern 0 ({e0 : ?x ≈ ?y & ?X ≈ ?Y}) => unshelve refine (FP_existT _ _ _ _ _ _ _ _ _ _ _ _ ): typeclass_instances.
 
-Definition bar :  UR
-         (forall (x : Type) (x0 : x -> Type) (x1 : {x : x & x0 x} -> Type),
-          (forall (x2 : x) (p : x0 x2), x1 (x2; p)) ->
-          forall x3 : {x : x & x0 x}, x1 x3)
-         (forall (x : Type) (x0 : x -> Type) (x1 : {x : x & x0 x} -> Type),
-          (forall (x2 : x) (p : x0 x2), x1 (x2; p)) ->
-          forall x3 : {x : x & x0 x}, x1 x3).
-  typeclasses eauto with typeclass_instances. 
-Defined. 
-
-Definition FP_sigT_rect : @ur _ _ bar (fun A P P0 PS s => sigT_rect A P P0 PS s)
-  (fun A P P0 PS s => sigT_rect A P P0 PS s).
+Definition FP_sigT_rect : @sigT_rect ≈ @sigT_rect.
 Proof.
   cbn. intros A B H P Q [H' H'']. cbn. intros P' Q' [H1 H2]. cbn. intros. 
   destruct x0, y0, H3. apply H0. 
