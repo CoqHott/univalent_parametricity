@@ -69,31 +69,6 @@ Instance issig_lib_hd_map_inv C :
            forall n A B (f : A -> B) (v : C A (S n)), hd _ _ (map _ _ f _ v) = f (hd _ _ v)}} :=
   Equiv_inverse _.
 
-
-(* Instance Transportable_snd A B P (HP: Transportable P) : Transportable (fun a : { _ : A & B} => P a.2 ). *)
-(* Proof. *)
-(*   unshelve econstructor. *)
-(*   - intros. cbn. rewrite transportable_refl. reflexivity. *)
-(* Defined.  *)
-
-Definition inversion_S {n m} : S m = S n -> m = n.
-  inversion 1. reflexivity.
-Defined. 
-
-Instance Transportable_nat (P: nat -> Type) : Transportable P.
-Proof.
-  unshelve econstructor.
-  - intros n m; revert P; revert m.
-    induction n; intro m; destruct m; intros P e. 
-    + apply Equiv_id.
-    + inversion e.
-    + inversion e.
-    + pose (inversion_S e). exact (IHn _ (fun n => P (S n)) e0).
-  - cbn. intro n; revert P; induction n; cbn; intro P. 
-    + reflexivity.
-    + apply (IHn (fun n => P (S n))).      
-Defined. 
-
 Definition FP_Lib : Lib ≈ Lib.
 Proof.
     univ_param_record.

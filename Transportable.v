@@ -3,6 +3,46 @@ Require Import BinInt BinNat Nnat Vector.
 
 Set Universe Polymorphism.
 
+Definition inversion_S {n m} : S m = S n -> m = n.
+  inversion 1. reflexivity.
+Defined. 
+
+Instance Transportable_nat (P: nat -> Type) : Transportable P.
+Proof.
+  unshelve econstructor.
+  - intros n m; revert P; revert m.
+    induction n; intro m; destruct m; intros P e. 
+    + apply Equiv_id.
+    + inversion e.
+    + inversion e.
+    + pose (inversion_S e). exact (IHn _ (fun n => P (S n)) e0).
+  - cbn. intro n; revert P; induction n; cbn; intro P. 
+    + reflexivity.
+    + apply (IHn (fun n => P (S n))).      
+Defined. 
+
+Definition inversion_cons {A} {l l':list A} {a a'} : a :: l = a' :: l' -> (a = a') * (l = l').
+  inversion 1. split; reflexivity.
+Defined. 
+
+Instance Transportable_list A (P: list A -> Type)
+         (HP : forall (P:A->Type), Transportable P) : Transportable P.
+Proof.
+  unshelve econstructor.
+  - intros n m. revert P; revert m.
+    induction n; intro m; destruct m; intros P e. 
+    + apply Equiv_id.
+    + inversion e.
+    + inversion e.
+    + pose (inversion_cons e). specialize (IHn _ (fun n => P (a :: n)) (snd p)).
+      cbn in IHn. eapply equiv_compose; try exact IHn. apply (HP (fun x => P (x :: m))).
+      exact (fst p). 
+  - cbn. intro n; revert P; induction n; cbn; intro P. 
+    + reflexivity.
+    + rewrite transportable_refl. rewrite (IHn (fun n => P (a :: n))).
+      apply path_Equiv. reflexivity.
+Defined. 
+
 Instance Transportable_Sigma (A:Type) B (P : A -> B -> Type) (HP: forall a, Transportable (P a))
   (HP': forall x, Transportable (fun a => P a x)):
   Transportable (fun x => {a: A & P a x}).
