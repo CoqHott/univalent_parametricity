@@ -115,18 +115,7 @@ Definition libvec : Lib Vector.t :=
      map := fun A B f n => Vector.map f;
      prop := lib_vector_prop |}.
 
-(* Definition URForall_Type_class_split A A' {HA : UR A A'} *)
-(*          (P : A -> Type) (Q : A' -> Type) (H : Transportable P) *)
-(*          (H' : forall x y (H:x ≈ y), P x ⋈ Q y) *)
-(*   : URForall_Type_class A A' P Q := _.  *)
-(* econstructor; auto. *)
-(* Defined.  *)
-
-
-
 Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑ libvec.
-
-(* Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑eff libvec. *)
 
 Transparent vector_to_list list_to_vector.
 
@@ -190,15 +179,15 @@ Instance issig_monoid_inv {A : Type} :
                                                                                forall x y z, m x (m y z) = m (m x y) z}}}}
          := Equiv_inverse _.
 
-(*
+
 Definition FP_Monoid : Monoid ≈ Monoid.
 Proof.
   univ_param_record.
 Defined. 
 
-Hint Extern 0 (Monoid ≈ Monoid) => exact FP_Monoid : typeclass_instances. 
+Hint Extern 0 (Monoid ≈ Monoid) => exact (ur_type FP_Monoid) : typeclass_instances. 
 
-Hint Extern 0 (Monoid _ ≃ Monoid _) => unshelve refine (equiv (FP_Monoid _ _ _)) : typeclass_instances. 
+Hint Extern 0 (Monoid _ ≃ Monoid _) => unshelve refine (equiv (ur_type FP_Monoid _ _ _)) : typeclass_instances. 
 
 Definition N_mon : Monoid N.
 Proof.
@@ -221,11 +210,10 @@ Fixpoint even (n:nat) := match n with
                            end. 
 
 Definition nat_pow : nat -> nat -> nat := ↑ N.pow.
- *)
-
+ 
 (* Those tests are commented at compilation time *)
 
-(* Time Eval vm_compute in lt x := nat_pow 2 26 in 0. *)
+(* Time Eval vm_compute in let x := nat_pow 2 26 in 0. *)
 (* 18.725u *)
 
 (* Time Eval vm_compute in let x := Nat.pow 2 26 in 0. *)
@@ -258,9 +246,9 @@ Definition bar := ↑ foo : forall f: N -> N, f = f.
 
 (* Definition bar_equiv : (forall f: nat -> nat, f = f) ≃ (forall f: N -> N, f = f) := _. *)
 
-(* does not compute because of the index on a dependent product *)
-
 Eval compute in foo S.
+
+(* does not compute because of the index on a dependent product *)
 
 (* Eval compute in (bar N.succ). *)
 
