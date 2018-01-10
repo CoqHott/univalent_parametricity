@@ -1,11 +1,7 @@
-Require Import HoTT Tactics UR URTactics FP Record MoreInductive.
+Require Import HoTT Tactics UR URTactics FP Record MoreInductive Transportable.
 Require Import BinInt BinNat Nnat Vector.
 
 Set Universe Polymorphism.
-
-Definition univalent_transport_eff {A B : Type} {e: A ≃ B} `{@Equiv_eff A B e} : A -> B := e_fun e.  
-
-Notation "↑eff" := univalent_transport_eff (at level 65, only parsing).
 
 Definition append_list {A:Type} {n p} {H : A ⋈ A} :
   {l : list A & length l = n} ->
@@ -36,17 +32,24 @@ Arguments map {_} _ {_ _} _ {_} _.
 Arguments head {_} _ {_ _} _.
 
 
-(* Definition FL_Lib_Noneff : Lib ≈ Lib.  *)
-(*   split; [apply Transportable_default | ]. *)
+Definition FL_Lib_Noneff : Lib ≈ Lib.
+  split; [apply Transportable_default | ].
   
-(*   intros C C' e.  *)
-(*   pose (eqCC' := e_inv (ur_coh (H := @URForall Type Type (fun _ : Type => forall _ : nat, Type) *)
-(*        (fun _ : Type => forall _ : nat, Type) UR_Type_def *)
-(*        (fun (x y : Type) (_ : @ur Type Type UR_Type_def x y) => *)
-(*         @URForall nat nat (fun _ : nat => Type) (fun _ : nat => Type) UR_nat *)
-(*                   (fun (x0 y0 : nat) (_ : @ur nat nat UR_nat x0 y0) => UR_Type_def))) _ _) e). *)
-(*   destruct eqCC'. apply Canonical_UR. apply Equiv_id. *)
-(* Defined. *)
+  intros C C' e.
+  pose (@URForall Type Type (fun _ : Type => forall _ : nat, Type)
+       (fun _ : Type => forall _ : nat, Type) UR_Type_def
+       (fun (x y : Type) (_ : @ur Type Type UR_Type_def x y) =>
+        @URForall nat nat (fun _ : nat => Type) (fun _ : nat => Type)
+	          (UR_gen nat) (fun (x0 y0 : nat) (_ : eq nat x0 y0) => UR_Type_def))).
+  pose (@ur_coh _ _ _ u). cbn in e0.
+  pose (@Ur_Coh (Type -> nat -> Type) (Type -> nat -> Type) _). cbn in u0.
+  unfold u in *. clear u. 
+  unfold Equiv_Arrow in e0.
+  pose (e_inv (e0 u0 C C')).
+  cbn in e.
+  specialize  (e1 (fun _ _ _ =>  ur_type (e _ _ _))). 
+  destruct e1. apply Canonical_UR. apply Equiv_id.
+Defined.
 
 Instance issig_lib_hd_map C :
   {hd : forall {A : Type} {n : nat}, C A (S n) -> A  &
@@ -66,81 +69,37 @@ Instance issig_lib_hd_map_inv C :
            forall n A B (f : A -> B) (v : C A (S n)), hd _ _ (map _ _ f _ v) = f (hd _ _ v)}} :=
   Equiv_inverse _.
 
+
+(* Instance Transportable_snd A B P (HP: Transportable P) : Transportable (fun a : { _ : A & B} => P a.2 ). *)
+(* Proof. *)
+(*   unshelve econstructor. *)
+(*   - intros. cbn. rewrite transportable_refl. reflexivity. *)
+(* Defined.  *)
+
+Definition inversion_S {n m} : S m = S n -> m = n.
+  inversion 1. reflexivity.
+Defined. 
+
+Instance Transportable_nat (P: nat -> Type) : Transportable P.
+Proof.
+  unshelve econstructor.
+  - intros n m; revert P; revert m.
+    induction n; intro m; destruct m; intros P e. 
+    + apply Equiv_id.
+    + inversion e.
+    + inversion e.
+    + pose (inversion_S e). exact (IHn _ (fun n => P (S n)) e0).
+  - cbn. intro n; revert P; induction n; cbn; intro P. 
+    + reflexivity.
+    + apply (IHn (fun n => P (S n))).      
+Defined. 
+
 Definition FP_Lib : Lib ≈ Lib.
 Proof.
-  cbn. split ; [apply Transportable_default | ]. intros.
-  unshelve refine (UR_Type_Equiv_gen _ _ _ _ _ _ _ _).
-  cbn; intros. apply H; typeclasses eauto.
-  unshelve refine (snd (FP_Sigma _ _ _) _ _ _).
-  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
-  typeclasses eauto with typeclass_instances.
-  apply Transportable_default.
-  cbn. intros.
-  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
-  typeclasses eauto with typeclass_instances. 
-  (* maybe better here *)
-  apply Transportable_default.
-  intros.
-  erefine (snd (FP_forall _ _ _) _ _ (Transportable_arrow _ _,_)).
-  apply H. cbn. 
-  typeclasses eauto with typeclass_instances.
-  typeclasses eauto with typeclass_instances.
-  typeclasses eauto with typeclass_instances.
-  split. apply Transportable_default.
-  intros.
-  unshelve refine (snd (FP_Sigma _ _ _) _ _ _).
-  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
-  typeclasses eauto with typeclass_instances.
-  apply Transportable_default.
-  cbn. intros.
-  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
-  typeclasses eauto with typeclass_instances. 
-  (* maybe better here *)
-  apply Transportable_default.
-  intros.
-  erefine (snd (FP_forall _ _ _) _ _ (Transportable_arrow _ _,_)).
-  erefine (snd (FP_forall _ _ _) _ _ (Transportable_arrow _ _,_)).
-  typeclasses eauto with typeclass_instances.
-  typeclasses eauto with typeclass_instances.
-  intros.
-  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
-  typeclasses eauto with typeclass_instances.
-  pose (fst (H x1 x1 (ur_refl x1))). destruct t. unshelve econstructor. intros. apply admit. apply admit. 
-  intros.
-  erefine (snd (FP_forall _ _ _) _ _ (Transportable_arrow _ _,_)).
-  apply H. 
-  typeclasses eauto with typeclass_instances.
-  typeclasses eauto with typeclass_instances.
-  intros; apply H. typeclasses eauto with typeclass_instances.
-  typeclasses eauto with typeclass_instances.
-  cbn. split. apply Transportable_default. 
-  intros.
-  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
-  typeclasses eauto with typeclass_instances.
-  apply Transportable_default.
-  intros. cbn.
-  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
-  typeclasses eauto with typeclass_instances.
-  apply Transportable_default.
-  cbn. intros. 
-  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
-  typeclasses eauto with typeclass_instances.
-  apply Transportable_default.
-  cbn. intros. 
-  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
-  typeclasses eauto with typeclass_instances.
-  apply Transportable_default.
-  cbn. intros. 
-  unshelve refine (snd (FP_forall _ _ _) _ _ (_,_)).
-  apply H; typeclasses eauto with typeclass_instances.
-  apply Transportable_default.
-  cbn. intros. 
-  typeclasses eauto with typeclass_instances.
-
-  (* univ_param_record. *)
+    univ_param_record.
 Defined.
 
-Hint Extern 0 (Lib _ ≃ Lib _) => erefine (snd FP_Lib _ _ _).(equiv); simpl
+Hint Extern 0 (Lib _ ≃ Lib _) => erefine (ur_type FP_Lib _ _ _).(equiv); simpl
 :  typeclass_instances.
 
 Definition lib_vector_prop : forall (n : nat) (A B : Type) (f : A -> B) (v : t A (S n)),
@@ -150,11 +109,20 @@ Proof.
   apply (Vector.caseS (fun _ v => Vector.hd (Vector.map f v) = f (Vector.hd v))).
   intros. reflexivity.
 Defined.
-
+                                                   
 Definition libvec : Lib Vector.t :=
   {| head := fun A n x => @Vector.hd A n x;
      map := fun A B f n => Vector.map f;
      prop := lib_vector_prop |}.
+
+(* Definition URForall_Type_class_split A A' {HA : UR A A'} *)
+(*          (P : A -> Type) (Q : A' -> Type) (H : Transportable P) *)
+(*          (H' : forall x y (H:x ≈ y), P x ⋈ Q y) *)
+(*   : URForall_Type_class A A' P Q := _.  *)
+(* econstructor; auto. *)
+(* Defined.  *)
+
+
 
 Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑ libvec.
 
@@ -295,10 +263,6 @@ Definition bar := ↑ foo : forall f: N -> N, f = f.
 
 (* Definition bar_equiv : (forall f: nat -> nat, f = f) ≃ (forall f: N -> N, f = f) := _. *)
 
-(* Goal Equiv_eff _ _ bar_equiv. *)
-(*   Fail typeclasses eauto.  *)
-(* Abort.  *)
-
 (* does not compute because of the index on a dependent product *)
 
 Eval compute in foo S.
@@ -315,19 +279,8 @@ Hint Extern 100 (_ = _) => solve [typeclasses eauto with typeclass_instances] : 
 
 Hint Extern 0 => progress (unfold testType, testType2) :  typeclass_instances.
 
-Instance Transportable_sigma (A:Type) `{A ≈ A} A' B (f : A -> B) (x:A') :
-  Transportable (fun g => {a: A & f a = g x}).
-Proof.
-  unshelve econstructor. intros. erefine (@Equiv_Sigma _ _ _ _ _ _).
-  exact H. cbn. split.
-  typeclasses eauto. 
-  intros. apply admit. 
-  apply admit.
-Defined.
-
 Instance Transportable_eq2 (A B:Type) (a:A) (b:B):
   Transportable (fun f => f a = b) := Transportable_default _ . 
-
 
 Definition bar' : testType := ↑ foo'.
 
@@ -346,25 +299,6 @@ Definition bar'' : testType' := ↑ foo''.
 Eval compute in bar''.2.
 
 Definition foo''' : testType' := (N.succ ; cons nat 1 0 (nil nat)).
-
-Definition Transportable_lift_ A B C (g : B -> C) (P : C -> Type) `{Transportable C P} x:
-  forall f f': A -> B, f = f' -> P (g (f x)) ≃ P (g (f' x)). 
-  intros. assert (g (f x) = g (f' x)). destruct X; reflexivity.
-  apply H. typeclasses eauto.
-Defined.
-
-Instance Transportable_lift A B C (g : B -> C) (P : C -> Type) `{Transportable C P} x:
-  Transportable (fun (f:A -> B) => P (g (f x))). 
-Proof.
-  refine (Build_Transportable _ _ (Transportable_lift_ A B C g P x) _). 
-  intros. apply H. 
-Defined. 
-
-Instance Transportable_lift_cst B C (g : B -> C) (P : C -> Type) `{Transportable C P}:
-  Transportable (fun (f:B) => P (g f)).
-Proof.
-  unshelve econstructor. intros. apply H. 
-Defined. 
 
 Definition bar''' : testType2' := ↑ foo'''.
 Eval compute in bar'''.2.1.
@@ -391,9 +325,6 @@ Eval compute in barForall (N.succ; eq_refl).
 
 Definition barForall_equiv : testTypeForall' ≃ testTypeForall := _.
 
-(* Goal Equiv_eff _ _ barForall_equiv. *)
-(*   Fail typeclasses eauto. *)
-(* Abort.  *)
 
 
 Definition testTypeForall2 := forall f : {n : nat & N}, vector N f.1.
@@ -422,13 +353,6 @@ Eval compute in fooForall2 (2;10).
 Eval compute in barForall2 (2;10%N).
 
 Definition barForall2_equiv : testTypeForall2' ≃ testTypeForall2 := _.
-
-Instance Equiv_eff_compose A B C (e: A ≃ B) (e': B ≃ C)
-         `{@Equiv_eff _ _ e} `{@Equiv_eff _ _ e'} : Equiv_eff _ _ (e' ∘∘ e).
-
-(* Goal Equiv_eff _ _ barForall2_equiv. *)
-(*   typeclasses eauto.  *)
-(* Defined.  *)
 
 Definition testTypeForall3 := forall f : ((N -> N) * (nat * N)), vector N (fst (snd f)).
 

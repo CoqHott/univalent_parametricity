@@ -164,6 +164,7 @@ Defined.
 
 (* A tactic to show that record type are univalent type constructor *)
 Ltac univ_param_record := 
-  cbn; intros; unshelve refine (UR_Type_Equiv_gen _ _ _ _ _ _ _ _);
+  cbn;   split ; [typeclasses eauto | ]; intros;
+  unshelve refine (UR_Type_Equiv_gen _ _ _ _ _ _ _ _);
   typeclasses eauto with typeclass_instances. 
 

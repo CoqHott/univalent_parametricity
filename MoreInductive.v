@@ -20,6 +20,7 @@ Defined.
 
 (*! non effective FP for list !*)
 Definition FP_List' : list ≈ list.
+  (* this instance of transportable is on Type, we can only use the default one*)
   cbn. split; [apply Transportable_default | ].
   intros A B e.
   destruct (e_inv (eq_to_equiv _ _) (equiv e)).
@@ -68,21 +69,6 @@ Proof.
   typeclasses eauto with equiv typeclass_instances. auto. 
 Defined.
 
-
-Instance Equiv_eff_vector (A A':Type) (e_A : A ≃ A') n n' en
-         `{@Equiv_eff A A' e_A} : Equiv_eff _ _ (Equiv_Vector _ _ e_A n n' en).
-
-Instance Equiv_eff_inv_vector (A A':Type) (e_A : A ≃ A') n n' en
-         `{@Equiv_eff_inv A A' e_A} : Equiv_eff_inv _ _ (Equiv_Vector _ _ e_A n n' en).
-
-Instance Equiv_eff_section_vector (A A':Type) (e_A : A ≃ A') n n' en
-         `{@Equiv_eff_section A A' e_A} : Equiv_eff_section _ _ (Equiv_Vector _ _ e_A n n' en).
-
-Instance Equiv_eff_retraction_vector (A A':Type) (e_A : A ≃ A') n n' en
-         `{@Equiv_eff_retraction A A' e_A} : Equiv_eff_retraction _ _ (Equiv_Vector _ _ e_A n n' en).
-
-Instance Equiv_eff_full_vector (A A':Type) (e_A : A ≃ A') n n' en
-         `{@Equiv_eff_full A A' e_A} : Equiv_eff_full _ _ (Equiv_Vector _ _ e_A n n' en) := { }.
 
 Definition length {A} (l:list A) : nat := list_rect _ (fun _ => (nat:Type)) 0 (fun _ _ n => S n) l.
 
@@ -193,8 +179,8 @@ Definition Equiv_vector_list_
   - eapply UR_Equiv'. apply Equiv_vector_list; typeclasses eauto.
     unshelve eapply URSigma. apply UR_list_. apply UR_gen.
     intros. cbn.
-    refine (Ur (snd (FP_eq nat nat FP_nat _ _ _) _ _ _ )).
-    unfold length. refine (FP_List_rect B B (ur_refl B) _ _ (_,_) _ _ _ _ _ _ x y H); typeclasses eauto.
+    refine (Ur (ur_type (FP_eq nat nat FP_nat _ _ _) _ _ _ )).
+    unfold length. refine (FP_List_rect B B (ur_refl B) _ _ {| transport_ := _; ur_type := _|} _ _ _ _ _ _ x y H); typeclasses eauto.
     typeclasses eauto.
   - econstructor. intros v v'.
     cbn. eapply equiv_compose. apply isequiv_ap.
@@ -207,8 +193,9 @@ Definition Equiv_vector_list_
     eq_map_inv nat nat FP_nat (length l.1)
       (length l' .1)
       (FP_List_rect B B (ur_refl B) (fun _ : list B => nat)
-         (fun _ : list B => nat)
-         (_,fun (x y : list B) (_ : UR_list (eq B) x y) => FP_nat) 0 0 eq_refl
+                    (fun _ : list B => nat)
+                    {| transport_ := _; ur_type := fun _ _ _ => FP_nat|}
+                    0 0 eq_refl
          (fun (_ : B) (_ : list B) (n0 : nat) => S n0)
          (fun (_ : B) (_ : list B) (n0 : nat) => S n0)
          (fun (x0 y0 : B) (_ : x0 = y0) (x1 y1 : list B)
@@ -220,16 +207,18 @@ Definition Equiv_vector_list_
     eapply equiv_compose. apply Equiv_inverse. apply equiv_path_sigma.
     unshelve eapply Equiv_Sigma.
     cbn. eapply UR_Type_Equiv'.
-    unshelve refine (@ur_coh _ _ _ _ (@Ur_Coh _ _ (snd FP_List B B (@ur_refl_ _ _ _ _ URType_Refl  B))) _ _).
+    unshelve refine (@ur_coh _ _ _ _ (@Ur_Coh _ _ (ur_type FP_List B B (@ur_refl_ _ _ _ _ URType_Refl  B))) _ _).
     cbn. assert (forall l, list_rect B (fun _ : list B => list B) []
        (fun (H0 : B) (_ H2 : list B) => H0 :: H2) l = l). clear. 
     induction l; cbn. reflexivity. apply ap. assumption.
     rewrite X. apply (@ur_refl_ _ _ _ _ URType_Refl).
     cbn. intros. destruct l, l'. cbn in *. destruct x.
+    (* this instance of transportable is for the equality type, we can use the default one*)
     split ; [apply Transportable_default | ]. 
     cbn. intros. 
     match goal with | |- (u = ?u0) ⋈ (u = ?u1) => assert (u1 = u0) by apply is_hset end. 
     rewrite X. apply (@ur_refl_ _ _ _ _ URType_Refl).
+    (* this instance of transportable is for the equality type, we can use the default one*)
     split ; [apply Transportable_default | ]. 
     cbn. intros.     match goal with | |- (u = ?u0) ⋈ (u = ?u1) => assert (u1 = u0) by apply is_hset end. 
     rewrite X. apply (@ur_refl_ _ _ _ _ URType_Refl).
@@ -238,13 +227,13 @@ Definition Equiv_vector_list_
 Defined. 
 
 Hint Extern 0 (UR_Type (t ?A ?n) _) =>
-erefine (snd (Equiv_vector_list_ _ _ _) _ _ _) : typeclass_instances.
+erefine (ur_type (Equiv_vector_list_ _ _ _) _ _ _) : typeclass_instances.
 
 Hint Extern 0 (UR_Type (vector ?A ?n) _) =>
-erefine (snd (Equiv_vector_list_ _ _ _) _ _ _) : typeclass_instances.
+erefine (ur_type (Equiv_vector_list_ _ _ _) _ _ _) : typeclass_instances.
 
 Hint Extern 0 (t ?A ?n ≃ _) =>
-erefine (snd (Equiv_vector_list A _ n)) : typeclass_instances.
+erefine (ur_type (Equiv_vector_list A _ n)) : typeclass_instances.
 
 Instance Equiv_list_vector (A B:Type) {H : ur B A} n : {l : list A & length l = n} ≃ Vector.t B n | 1 := Equiv_inverse _.
 
@@ -267,60 +256,10 @@ Proof.
 Defined. 
 
 Hint Extern 0 (UR_Type _ (vector ?A ?n)) =>
-erefine (snd (Equiv_list_vector_ _ _ _) _ _ _) : typeclass_instances.
+erefine (ur_type (Equiv_list_vector_ _ _ _) _ _ _) : typeclass_instances.
 
 Hint Extern 0 (UR_Type _ (t ?A ?n)) =>
-erefine (snd (Equiv_list_vector_ _ _ _) _ _ _) : typeclass_instances.
-
-Instance Equiv_eff_vector_list (A A':Type) (e_A : A ≈ A') n n' en
-         `{@UR_eff A A' e_A} : Equiv_eff _ _ (equiv (snd (Equiv_vector_list_ _ _ e_A) n n' en)).
-
-Instance Equiv_eff_inv_vector_list (A A':Type) (e_A : A ≈ A') n n' en
-         `{@UR_eff A A' e_A} : Equiv_eff_inv _ _ (equiv (snd (Equiv_vector_list_ _ _ e_A) n n' en)).
-
-Instance Equiv_eff_section_vector_list (A A':Type) (e_A : A ≈ A') n n' en
-         `{@UR_eff A A' e_A} : Equiv_eff_section _ _ (equiv (snd (Equiv_vector_list_ _ _ e_A) n n' en)).
-
-Instance Equiv_eff_retraction_vector_list (A A':Type) (e_A : A ≈ A') n n' en
-         `{@UR_eff A A' e_A} : Equiv_eff_retraction _ _ (equiv (snd (Equiv_vector_list_ _ _ e_A) n n' en)).
-
-Instance Equiv_eff_full_vector_list (A A':Type) (e_A : A ≈ A') n n' en
-         `{@UR_eff A A' e_A} : Equiv_eff_full _ _ (equiv (snd (Equiv_vector_list_ _ _ e_A) n n' en)) :=
-  {|
- equiv_eff := Equiv_eff_vector_list A A' e_A n n' en;
- equiv_eff_inv := Equiv_eff_inv_vector_list A A' e_A n n' en;
- equiv_eff_section := Equiv_eff_section_vector_list A A' e_A n n' en;
- equiv_eff_retraction := Equiv_eff_retraction_vector_list A A' e_A n n' en |}.
-
-Instance Ur_Coh_eff_inv_vector_list (A A':Type) (e_A : A ≈ A') n n' en
-         `{@UR_eff A A' e_A} : Ur_Coh_eff _ _ (snd (Equiv_vector_list_ _ _ e_A) n n' en). 
-
-Instance UR_eff_inv_vector_list (A A':Type) (e_A : A ≈ A') n n' en
-         `{@UR_eff A A' e_A} : UR_eff _ _ (snd (Equiv_vector_list_ _ _ e_A) n n' en) :=
-   {| equiv_eff_full := Equiv_eff_full_vector_list A A' e_A n n' en; ur_Coh_eff := Ur_Coh_eff_inv_vector_list A A' e_A n n' en |}.
-
-Instance Equiv_eff_list_vector (A A':Type) (e_A : A ≈ A') n n' en
-         `{@UR_eff A A' e_A} : Equiv_eff _ _ (equiv (snd (Equiv_list_vector_ _ _ e_A) n n' en)).
-
-Instance Equiv_eff_inv_list_vector (A A':Type) (e_A : A ≈ A') n n' en
-         `{@UR_eff A A' e_A} : Equiv_eff_inv _ _ (equiv (snd (Equiv_list_vector_ _ _ e_A) n n' en)).
-
-Instance Equiv_eff_section_list_vector (A A':Type) (e_A : A ≈ A') n n' en
-         `{@UR_eff A A' e_A} : Equiv_eff_section _ _ (equiv (snd (Equiv_list_vector_ _ _ e_A) n n' en)).
-
-Instance Equiv_eff_retraction_list_vector (A A':Type) (e_A : A ≈ A') n n' en
-         `{@UR_eff A A' e_A} : Equiv_eff_retraction _ _ (equiv (snd (Equiv_list_vector_ _ _ e_A) n n' en)).
-
-Instance Equiv_eff_full_list_vector (A A':Type) (e_A : A ≈ A') n n' en
-         `{@UR_eff A A' e_A} : Equiv_eff_full _ _ (equiv (snd (Equiv_list_vector_ _ _ e_A) n n' en)) := {}.
-
-Instance Ur_Coh_eff_inv_list_vector (A A':Type) (e_A : A ≈ A') n n' en
-         `{@UR_eff A A' e_A} : Ur_Coh_eff _ _ (snd (Equiv_list_vector_ _ _ e_A) n n' en). 
-
-Instance UR_eff_inv_list_vector (A A':Type) (e_A : A ≈ A') n n' en
-         `{@UR_eff A A' e_A} : UR_eff _ _ (snd (Equiv_list_vector_ _ _ e_A) n n' en) :=
-  {| equiv_eff_full := Equiv_eff_full_list_vector A A' e_A n n' en; ur_Coh_eff := Ur_Coh_eff_inv_list_vector A A' e_A n n' en |}. 
-
+erefine (ur_type (Equiv_list_vector_ _ _ _) _ _ _) : typeclass_instances.
 
 Definition FP_Vector : Vector.t ≈ Vector.t.
   intros A B e. cbn in e. split.
@@ -341,12 +280,12 @@ Definition FP_Vector : Vector.t ≈ Vector.t.
     cbn. apply ap2. apply eq_sym. apply e_sect.
     apply ap. exact IHv'. cbn. apply is_hset. cbn in X. 
     rewrite <- X.  
-    pose (@Ur_Coh _ _ (snd (Equiv_vector_list_ A A (ur_refl A)) _ _ en)).
+    pose (@Ur_Coh _ _ (@ur_type nat nat _ _ _ (Equiv_vector_list_ A A (ur_refl A)) _ _ en)).
     exact (@ur_coh _ _ _ _ u v v'). 
 Defined.
 
 Instance Equiv_Vector_instance : forall x y : Type, x ⋈ y -> forall n n' (e:n=n'), (Vector.t x n) ⋈ (Vector.t y n') :=
-  fun x y e n n' en => snd (FP_Vector x y e) n n' en. 
+  fun x y e n n' en => ur_type (FP_Vector x y e) n n' en. 
 
 Definition UREq A (x x' y y' : A) (H:x=x') (H':y=y') : UR (x = y) (x' = y') :=
   {| ur := fun e e' => H^ @ e @ H' = e' |}.
@@ -367,7 +306,9 @@ Inductive Expr@{i} : Set -> Type@{i} :=
 
 Definition FP_Expr : Expr ≈ Expr.
 Proof.
-  cbn. split; [apply Transportable_default | ].
+  cbn.
+  (* this instance of transportable is on Type, we can only use the default one*)
+  split; [apply Transportable_default | ].
   intros A B e. 
   rewrite (@e_inv _ _ _ (univalence _ _) (equiv e)).
   apply (@ur_refl_ _ _ _ _ URType_Refl).
@@ -509,12 +450,12 @@ Instance FP_Expr_p : Expr_p ⋈ Expr_p :=
   @Canonical_UR _ _ (Equiv_id _).
 
 Definition FP_Expr_p_rect : @Expr_p_rect ≈ @Expr_p_rect.
-  cbn. intros. destruct H. cbn. intros. destruct H4; induction x5; cbn.
-   refine (H _ _ eq_refl).
+  cbn. intros. destruct H. cbn. intros. destruct H5. induction x5; cbn.
    refine (H0 _ _ eq_refl).
-   refine (H1 _ _ eq_refl _ _ IHx5_1 _ _ eq_refl _ _ IHx5_2).
+   refine (H1 _ _ eq_refl).
    refine (H2 _ _ eq_refl _ _ IHx5_1 _ _ eq_refl _ _ IHx5_2).
    refine (H3 _ _ eq_refl _ _ IHx5_1 _ _ eq_refl _ _ IHx5_2).
+   refine (H4 _ _ eq_refl _ _ IHx5_1 _ _ eq_refl _ _ IHx5_2).
 Defined.
 
 Hint Extern 0 (Expr_p_rect ?P ?x1 ?x2 ?x3 ?x4 ?x5 ?X ≈ Expr_p_rect ?P' ?x1' ?x2' ?x3' ?x4' ?x5' ?X') =>
@@ -526,8 +467,9 @@ Hint Extern 0 => progress (unfold index_Expr) : typeclass_instances.
 Hint Extern 0 (UR_Type Set Set) => exact FP_Type : typeclass_instances. 
 
 Definition FP_Expr_sigma (A B:Set) (e:A ≈ B): {E : Expr_p & index_Expr E A} ≈ {E : Expr_p & index_Expr E B}.
-  erefine (snd (@FP_Sigma _ _ _) _ _ _).
+  erefine (ur_type (@FP_Sigma _ _ _) _ _ _).
   exact FP_Expr_p. cbn; intros.
+  (* this instance of transportable is on Type, we can only use the default one*)
   cbn. split; [apply Transportable_default | ].
   unfold index_Expr. intros. 
   destruct H.
@@ -685,31 +627,3 @@ Instance compat_nat_N : nat ⋈ N.
   econstructor. intros. cbn.
   rewrite (Nat2N_id _). apply Equiv_id.
 Defined.
-
-Instance Equiv_eff_nat_N : Equiv_eff nat N (equiv compat_nat_N).
-
-Instance Equiv_eff_inv_nat_N : Equiv_eff_inv nat N (equiv compat_nat_N).
-
-Instance Equiv_eff_section_nat_N : Equiv_eff_section nat N (equiv compat_nat_N).
-
-Instance Equiv_eff_retraction_nat_N : Equiv_eff_retraction nat N (equiv compat_nat_N).
-
-Instance Equiv_eff_full_nat_N : Equiv_eff_full nat N (equiv compat_nat_N) := {}.
-
-Instance Ur_Coh_eff_nat_N : Ur_Coh_eff nat N compat_nat_N.
-
-Instance UR_eff_nat_N : UR_eff nat N compat_nat_N := {}.
-
-Instance Equiv_eff_N_nat : Equiv_eff N nat (equiv compat_N_nat).
-
-Instance Equiv_eff_inv_N_nat : Equiv_eff_inv N nat (equiv compat_N_nat).
-
-Instance Equiv_eff_section_N_nat : Equiv_eff_section N nat (equiv compat_N_nat).
-
-Instance Equiv_eff_retraction_N_nat : Equiv_eff_retraction N nat (equiv compat_N_nat).
-
-Instance Equiv_eff_full_N_nat : Equiv_eff_full N nat (equiv compat_N_nat) := {}.
-
-Instance Ur_Coh_eff_N_nat : Ur_Coh_eff N nat compat_N_nat.
-
-Instance UR_eff_N_nat : UR_eff N nat compat_N_nat := {}.

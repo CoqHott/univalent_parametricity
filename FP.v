@@ -6,12 +6,6 @@ Set Universe Polymorphism.
 
 Require Import HoTT URTactics String UR.
 
-Instance Equiv_eff_id A : Equiv_eff A A (Equiv_id A).
-Instance Equiv_eff_inv_id A : Equiv_eff_inv A A (Equiv_id A).
-Instance Equiv_eff_retraction_id A : Equiv_eff_retraction A A (Equiv_id A). 
-Instance Equiv_eff_section_id A : Equiv_eff_section A A (Equiv_id A). 
-Instance Equiv_eff_full_id A : Equiv_eff_full A A (Equiv_id A) := {}.
-
 (*! Establishing FP for Type !*)
 
 Instance URType_Refl : URRefl Type Type (Equiv_id _) _ :=
@@ -204,9 +198,6 @@ Proof.
   econstructor; try typeclasses eauto.
 Defined.
 
-(* This one is not effective due to the use of univalence *)
-(* Instance UR_coh_eff_Type : Equiv_eff Type Type.  *)
-
 (*! Establishing FP for Type !*)
 
 Instance UR_Prop : UR Prop Prop :=
@@ -254,9 +245,6 @@ Proof.
   econstructor; typeclasses eauto. 
 Defined.
 
-(* This one is not effective due to the use of univalence *)
-(* Instance UR_coh_eff_Prop : Equiv_eff Prop Prop.  *)
-
 (*! Establishing FP for Prop !*)
 
 
@@ -289,9 +277,6 @@ Proof.
     refine (transport_eq (fun X => _ ≃ (a = X)) (e_sect' H _)^ _). apply Equiv_id. 
 Defined.     
 
-Instance Ur_Coh_eff_gen (A B:Type) e (H:Equiv_eff_full A B e) : Ur_Coh_eff A B (@Canonical_UR A B e).
-
-Instance UR_eff_gen (A B:Type) e (H:Equiv_eff_full A B e) : UR_eff A B (@Canonical_UR A B e) := {}.
 
 
 (* Definition UR_Type_gen (A:Type) : ur A A := @Canonical_UR _ _ (Equiv_id A).  *)
@@ -313,26 +298,6 @@ Proof.
   equiv_adt (@prod_rect _ _) (@pair _ _).
 Defined.
 
-Instance Equiv_eff_prod (A A' B B':Type) (e_A : A ≃ A') (e_B : B ≃ B')
-         `{@Equiv_eff A A' e_A} `{@Equiv_eff B B' e_B}
-  : Equiv_eff (A*B) (A'*B') (Equiv_prod _ _ _ _ e_A e_B).
-
-Instance Equiv_eff_inv_prod (A A' B B':Type) (e_A : A ≃ A') (e_B : B ≃ B')
-         `{@Equiv_eff_inv A A' e_A} `{@Equiv_eff_inv B B' e_B}
-  : Equiv_eff_inv (A*B) (A'*B') (Equiv_prod _ _ _ _ e_A e_B) := { }.
-
-Instance Equiv_eff_section_prod (A A' B B':Type) (e_A : A ≃ A') (e_B : B ≃ B')
-         `{@Equiv_eff_section A A' e_A} `{@Equiv_eff_section B B' e_B}
-  : Equiv_eff_section (A*B) (A'*B') (Equiv_prod _ _ _ _ e_A e_B).
-
-Instance Equiv_eff_retraction_prod (A A' B B':Type) (e_A : A ≃ A') (e_B : B ≃ B')
-         `{@Equiv_eff_retraction A A' e_A} `{@Equiv_eff_retraction B B' e_B}
-  : Equiv_eff_retraction (A*B) (A'*B') (Equiv_prod _ _ _ _ e_A e_B) := { }.
-
-Instance Equiv_eff_full_prod (A A' B B':Type) (e_A : A ≃ A') (e_B : B ≃ B')
-         `{@Equiv_eff_full A A' e_A} `{@Equiv_eff_full B B' e_B}
-  : Equiv_eff_full (A*B) (A'*B') (Equiv_prod _ _ _ _ e_A e_B) := { }.
-
 Instance isequiv_path_prod {A B : Type} {z z' : A * B}
 : IsEquiv (path_prod_uncurried z z') | 0.
 Proof.
@@ -347,9 +312,16 @@ Defined.
 Definition equiv_path_prod {A B : Type} (u v : A * B): ((fst u = fst v) * (snd u = snd v)) ≃ (u = v)
   := BuildEquiv _ _ _ _. 
 
+Instance UR_Prod (x y : Type) (H : x ⋈ y) (x0 y0 : Type) (H0 : x0 ⋈ y0) : UR (x * x0) (y * y0).
+econstructor. exact (fun e e' => prod (fst e ≈ fst e') (snd e ≈ snd e')).
+Defined. 
+
 Definition FP_prod : prod ≈ prod.
-  cbn in *. intros. split ; [apply Transportable_default | ].
-  intros. unshelve refine (Build_UR_Type _ _ _ _ _).
+  cbn in *. intros.
+  (* this instance of transportable is on Type, we can only use the default one*)
+  split; [typeclasses eauto | ].
+  intros. 
+  unshelve refine (Build_UR_Type _ _ _ _ _).
   unshelve refine (Equiv_prod _ _ _ _ _ _); typeclasses eauto. 
   econstructor. exact (fun e e' => prod (fst e ≈ fst e') (snd e ≈ snd e')). 
   econstructor. intros [X Y] [X' Y']. cbn.
@@ -360,18 +332,10 @@ Definition FP_prod : prod ≈ prod.
   apply ur_coh. apply ur_coh. apply Equiv_id. 
 Defined.
 
-Instance Ur_Coh_eff_prod (A A' B B':Type) (UR_A : A ⋈ A') (UR_B : B ⋈ B')
-         `{@Ur_Coh_eff A A' UR_A} `{@Ur_Coh_eff B B' UR_B}
-  : Ur_Coh_eff (A*B) (A'*B') (snd (FP_prod _ _ UR_A) _ _ UR_B).
-
-Instance UR_eff_prod (A A' B B':Type) (UR_A : A ⋈ A') (UR_B : B ⋈ B')
-         `{@UR_eff A A' UR_A} `{@UR_eff B B' UR_B}
-  : UR_eff (A*B) (A'*B') (snd (FP_prod _ _ UR_A) _ _ UR_B) := { }.
-
 Hint Extern 0 ((_ * _) ≃ (_ * _)) => erefine (@Equiv_prod _ _ _ _ _ _)
 :  typeclass_instances.
 
-Hint Extern 0 (UR_Type (_ * _) (_ * _)) => erefine (snd (@FP_prod _ _ _) _ _ _)
+Hint Extern 0 (UR_Type (_ * _) (_ * _)) => erefine (ur_type (@FP_prod _ _ _) _ _ _)
 :  typeclass_instances.
  
 (*! FL for List !*)
@@ -395,21 +359,6 @@ Instance Equiv_List A B (e:A ≃ B) : list A ≃ list B.
 Proof.
     equiv_adt2 (@list_rect _) (@nil _) (@cons _).
 Defined.
-
-Instance Equiv_eff_list (A A':Type) (e_A : A ≃ A')
-         `{@Equiv_eff A A' e_A} : Equiv_eff (list A) (list A') (Equiv_List _ _ e_A).
-
-Instance Equiv_eff_inv_list (A A':Type) (e_A : A ≃ A')
-         `{@Equiv_eff_inv A A' e_A} : Equiv_eff_inv (list A) (list A') (Equiv_List _ _ e_A).
-
-Instance Equiv_eff_section_list (A A':Type) (e_A : A ≃ A')
-         `{@Equiv_eff_section A A' e_A} : Equiv_eff_section (list A) (list A') (Equiv_List _ _ e_A).
-
-Instance Equiv_eff_retraction_list (A A':Type) (e_A : A ≃ A')
-         `{@Equiv_eff_retraction A A' e_A} : Equiv_eff_retraction (list A) (list A') (Equiv_List _ _ e_A).
-
-Instance Equiv_eff_full_list (A A':Type) (e_A : A ≃ A')
-         `{@Equiv_eff_full A A' e_A} : Equiv_eff_full (list A) (list A') (Equiv_List _ _ e_A) := { }.
 
 Inductive UR_list {A B} (R : A -> B -> Type) : list A -> list B -> Type :=
   UR_list_nil : UR_list R nil nil
@@ -491,21 +440,16 @@ Proof.
 Defined. 
 
 Definition FP_List : list ≈ list.
-  cbn. split ; [apply Transportable_default | ]. 
+  (* this instance of transportable is on Type, we can only use the default one*)
+  split ; [typeclasses eauto | ]. 
   intros A B e. 
   econstructor; try typeclasses eauto. econstructor.
   intros a b. apply URIsUR_list. 
 Defined.
 
-Instance Ur_Coh_eff_list (A A':Type) (UR_A : A ⋈ A') 
-         `{@Ur_Coh_eff A A' UR_A} : Ur_Coh_eff (list A) (list A') (snd FP_List _ _ UR_A).
-
-Instance UR_eff_list (A A':Type) (UR_A : A ⋈ A') 
-         `{@UR_eff A A' UR_A} : UR_eff (list A) (list A') (snd FP_List _ _ UR_A) := {}.
-
 Definition FP_List_rect : @list_rect ≈ @list_rect.
 Proof.
-  cbn. intros A B e X X' [eX eXX'] P P' P_nil Q Q' Q_cons l l' el. 
+  cbn. intros A B e X X' eX P P' P_nil Q Q' Q_cons l l' el. 
   induction el; typeclasses eauto with typeclass_instances. 
 Defined.
 
@@ -523,7 +467,7 @@ Proof.
   typeclasses eauto.  
 Defined.
 
-Instance Equiv_List_instance : forall x y : Type, x ⋈ y -> (list x) ⋈ (list y) := snd FP_List.
+Instance Equiv_List_instance : forall x y : Type, x ⋈ y -> (list x) ⋈ (list y) := ur_type FP_List.
 
 (*! FL for Dependent product !*)
 
@@ -554,7 +498,7 @@ Defined.
 
 Instance isequiv_functor_forall_ur {A B} `{P : A -> Type} `{Q : B -> Type} (e : B ≈ A) (e' : Q ≈ P) (eP : Transportable P)
   : IsEquiv (functor_forall (e_fun (equiv e))
-                            (fun x => (e_inv' ((equiv (snd e' x (e_fun (equiv e) x) (ur_refl x))))))).
+                            (fun x => (e_inv' ((equiv (ur_type e' x (e_fun (equiv e) x) (ur_refl x))))))).
 Proof.
   apply isequiv_functor_forall;[exact _|exact _|].
   intros b. unfold e_inv'.
@@ -565,53 +509,11 @@ Instance Equiv_forall (A A' : Type) (eA : A ≈ A') (B : A -> Type) (B' : A' -> 
          : (forall x:A , B x) ≃ (forall x:A', B' x).
 Proof.
   pose (e := UR_Type_Inverse _ _ eA).
-  pose (e' := fun x y E => UR_Type_Inverse _ _ (snd eB y x E)).
+  pose (e' := fun x y E => UR_Type_Inverse _ _ (ur_type eB y x E)).
   unshelve refine
            (BuildEquiv _ _ (functor_forall (e_fun (equiv e))
            (fun x => (e_inv' ((equiv (e' x (e_fun (equiv e) x) (ur_refl (e:=e) x))))))) _).
 Defined.
-
-(* Instance isequiv_functor_forall_noncomputable {A B} {P : A -> Type} {Q : B -> Type} *)
-(*          (f : B -> A) `{!IsEquiv f} (g : forall b, P (f b) -> Q b) `{!forall b, IsEquiv (g b)} *)
-(*   : IsEquiv (functor_forall f g). *)
-(* Proof. *)
-(*   simple refine (isequiv_adjointify _ _ _ _). *)
-(*   - refine (functor_forall (e_inv f) _). *)
-(*     intros a y. *)
-(*     generalize (e_inv (g _) y). clear y. *)
-(*     exact (transport_eq _ (e_retr f a)). *)
-(*   - intros h. apply funext. intro a. unfold functor_forall. *)
-(*     destruct (e_retr f a). apply e_sect.  *)
-(*   - intros h;apply funext. unfold functor_forall. intros b. *)
-(*     rewrite e_adj. destruct (e_sect f b). apply e_retr. *)
-(* Defined. *)
-
-(* Instance isequiv_functor_forall_ur_noncomputable {A B} `{P : A -> Type} `{Q : B -> Type} (e : B ≈ A) (e' : Q ≈ P)  *)
-(*   : IsEquiv (functor_forall (e_fun (equiv e)) *)
-(*                             (fun x => (e_inv' ((equiv (snd e' x (e_fun (equiv e) x) (ur_refl x))))))). *)
-(* Proof. *)
-(*   apply isequiv_functor_forall_noncomputable;[exact _|]. *)
-(*   intros b. unfold e_inv'. *)
-(*   apply isequiv_inverse. *)
-(* Defined. *)
-
-(* Definition Equiv_forall_noncomputable (A A' : Type) (eA : A ≈ A') (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B')  *)
-(*          : (forall x:A , B x) ≃ (forall x:A', B' x). *)
-(* Proof. *)
-(*   pose (e := UR_Type_Inverse _ _ eA). *)
-(*   pose (e' := fun x y E => UR_Type_Inverse _ _ (snd eB y x E)). *)
-(*   unshelve refine *)
-(*            (BuildEquiv _ _ (functor_forall (e_fun (equiv e)) *)
-(*            (fun x => (e_inv' ((equiv (e' x (e_fun (equiv e) x) (ur_refl (e:=e) x))))))) _). *)
-(* Defined. *)
-
-Instance Equiv_eff_forall (A A':Type) (eA : A ≈ A') (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B')  
-         `{@Equiv_eff_inv A A' (equiv eA)} `{forall x y e, @Equiv_eff (B x) (B' y) (equiv (snd eB _ _ e))} :
-  Equiv_eff (forall x:A, B x) (forall x: A', B' x) (Equiv_forall _ _ eA _ _ eB).
-
-Instance Equiv_eff_forall_inv (A A':Type) (eA : A ≈ A') (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B') 
-         `{@Equiv_eff A A' (equiv eA)} `{forall x y e, @Equiv_eff_inv (B x) (B' y) (equiv (snd eB _ _ e))} :
-  Equiv_eff_inv (forall x:A, B x) (forall x: A', B' x) (Equiv_forall _ _ eA _ _ eB).
 
 Definition transport_e_fun' A B (P : A -> Type) a a' (e : a = a') (e' : B ≃ P a) x
     :
@@ -642,13 +544,29 @@ Proof.
   exact (apD10 e0 y).
 Defined.
 
+Instance Transportable_Forall_nondep A B (P: B -> A -> Type)
+         (Hb : forall b, Transportable (P b)) : Transportable (fun a => forall b, P b a).
+Proof.
+  unshelve econstructor. intros x y e.
+  unshelve refine (BuildEquiv _ _ _ _).
+  intro a. cbn. 
+  unshelve refine (path_Equiv _).
+  apply funext; intro f. apply funext; intro b. cbn. 
+  exact (apD10 (ap e_fun (@transportable_refl _ _ (Hb b) a)) (f b)).  
+Defined.
+
+Instance Transportable_Eq A (P: forall (x y:A) (e : x = y), Type) y :
+  Transportable (fun x => forall (e:x = y), P x y e)  := Transportable_default _.
+
+Instance Transportable_Eq' A (P: forall (x y:A) (e : x = y), Type) y :
+  Transportable (fun x => forall (e:y = x), P y x e)  := Transportable_default _.
+
 Definition FP_forall :
             (fun A B => forall x:A , B x) ≈ (fun A' B' => forall x:A', B' x).
 Proof.
-  cbn. intros A A' eA. split ; [apply Transportable_default | ]. 
-  intros B B' eB. destruct eB as [eBrefl eB].
-  pose (H := UR_Type_Inverse _ _ eA).
-  pose (H' := fun x y E => UR_Type_Inverse _ _ (eB y x E)).
+  cbn. intros A A' eA. split ; [typeclasses eauto | ]. 
+  intros B B' eB.
+
   unshelve econstructor.
   econstructor. intros f g.
 
@@ -656,11 +574,16 @@ Proof.
   eapply (BuildEquiv _ _ (@apD10_gen _ _ f g) _).
 
   unshelve eapply Equiv_forall. apply (@ur_refl_ _ _ _ _ URType_Refl A). 
-  split ; [apply Transportable_default | ].
+  (* this instance of transportable is for the equality type, we can use the default one*)
+  split. apply Transportable_Forall_nondep. intro b.
+  cbn. exact (Transportable_Eq' _ (fun b a (e : b = a) => f a = transport_eq B e (g b)) b).
+  (* split; [apply Transportable_default | ]. *)
   intros a a' e. cbn in e. destruct e.
   apply Canonical_UR. 
   unshelve eapply Equiv_forall. typeclasses eauto.
-  split ; [apply Transportable_default | ].
+  (* this instance of transportable is for the equality type, we can use the default one*)
+  split. exact (Transportable_Eq _ (fun x a (e : x = a) =>  f a = transport_eq B e (g x)) a).
+  (* split; [apply Transportable_default | ]. *)
   intros a' b e'. 
   apply Canonical_UR. 
   unshelve eapply Equiv_forall.
@@ -669,7 +592,8 @@ Proof.
   apply Equiv_inverse. eapply equiv_compose. apply alt_ur_coh.
   eapply equiv_compose. apply isequiv_sym.
   exact (transport_eq (fun X => (X = _) ≃ _) e (Equiv_id _)).
-  split ; [apply Transportable_default | ].
+  (* this instance of transportable is for the equality type, we can use the default one*)
+  cbn. split; [apply Transportable_default | ].
   intros X X' X''. destruct X. 
   apply Canonical_UR.
   clear e' X''. 
@@ -678,8 +602,8 @@ Proof.
   unfold univalent_transport. cbn. 
   cbn in e.
   set (T := fun (XX : {XX : _ & b = univalent_transport XX}) =>
-               (f a' ≈ e_fun (equiv (eB a' b X')) (g a'))
-  ≃ (f a' ≈ e_fun (equiv (eB XX.1 b (e_fun (transport_eq (fun X : A' => (XX.1 ≈ X) ≃ (XX.1 ≈ b))
+               (f a' ≈ e_fun (equiv (ur_type eB a' b X')) (g a'))
+  ≃ (f a' ≈ e_fun (equiv (ur_type eB XX.1 b (e_fun (transport_eq (fun X : A' => (XX.1 ≈ X) ≃ (XX.1 ≈ b))
     XX.2 (Equiv_id (XX.1 ≈ b))) (e_fun (ur_coh XX.1 XX.1) eq_refl)))) (g XX.1))).
   change (T (_;(e_retr (e_fun (equiv eA)) b)^)).
   unshelve refine (transport_eq T _ _).
@@ -689,9 +613,9 @@ Proof.
   rewrite transport_paths_Fr. rewrite ap_V.
   rewrite <- concat_inv. reflexivity. 
   unfold T; cbn. clear T. 
-  pose (T := fun (XX : {XX : A' & a' ≈ XX}) => let foo := eB _ _ XX.2 in 
-               (f a' ≈ e_fun (equiv (eB a' b X')) (g a'))
-  ≃ (f a'  ≈ e_fun (equiv (eB a' b
+  pose (T := fun (XX : {XX : A' & a' ≈ XX}) => let foo := ur_type eB _ _ XX.2 in 
+               (f a' ≈ e_fun (equiv (ur_type eB a' b X')) (g a'))
+  ≃ (f a'  ≈ e_fun (equiv (ur_type eB a' b
                (e_fun (transport_eq (fun X : A' => (a' ≈ X) ≃ (a' ≈ b)) (Move_equiv (equiv eA) a' b e)^
                (Equiv_id (a' ≈ b))) (e_fun (ur_coh a' a') eq_refl)))) (g a'))).
   change (T (_; ur_refl a')).
@@ -736,15 +660,15 @@ Proof.
   destruct X0. apply Equiv_id. 
 Defined. 
 
-Hint Extern 0 (UR_Type (forall x:_ , _) (forall y:_, _)) => erefine (snd (FP_forall _ _ _) _ _ (_,_)); cbn in *; intros : typeclass_instances.
+Hint Extern 0 (UR_Type (forall x:_ , _) (forall y:_, _)) => erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros : typeclass_instances.
 
-Hint Extern 100 ((forall x:_ , _) ≃ (forall y:_, _)) => erefine (Equiv_forall _ _ _ _ _ (_,_)); cbn in *; intros : typeclass_instances.
+Hint Extern 100 ((forall x:_ , _) ≃ (forall y:_, _)) => erefine (Equiv_forall _ _ _ _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros : typeclass_instances.
 
 Hint Unfold ur. 
 Typeclasses Transparent ur.
 Hint Transparent ur. 
 
-Instance Transportable_arrow A B : Transportable (fun _ : A => B).
+Instance Transportable_cst A B : Transportable (fun _ : A => B).
 Proof.
   unshelve econstructor. cbn; intros. apply (@ur_refl_ _ _ _ _ URType_Refl B).
   reflexivity.
@@ -752,14 +676,13 @@ Defined.
 
 Definition Equiv_Arrow (A A' B B': Type)
            (eA: A ≈ A') (e' : B ≈ B') :
-  (A -> B) ≃ (A' -> B') := Equiv_forall _ _ eA _ _ (_ ,fun _ _ _ => e').
+  (A -> B) ≃ (A' -> B') := Equiv_forall _ _ eA _ _ {| transport_ := _ ; ur_type:= fun _ _ _ => e' |}.
 
 Hint Extern 0 ((_ -> _) ≃ (_ -> _)) =>
   erefine (Equiv_Arrow _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
 
 Hint Extern 0 (UR_Type (_ -> _) (_ -> _)) =>
-  erefine (snd (FP_forall _ _ _) _ _ (Transportable_arrow _ _,_)); cbn in *; intros : typeclass_instances.
-
+  erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := Transportable_cst _ _; ur_type := _|} ); cbn in *; intros : typeclass_instances.
 
 (* Fl for sigmas *)
 
@@ -881,26 +804,6 @@ Definition Equiv_Sigma (A A':Type) (e: A ≈ A')
     rewrite <- transport_e_fun. cbn. rewrite inv2. reflexivity. 
 Defined. 
 
-Instance Equiv_eff_Sigma (A A':Type) (eA : A ≈ A') (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B')
-         `{@Equiv_eff A A' (equiv eA)} `{forall x y e, @Equiv_eff (B x) (B' y) (equiv (snd eB _ _ e))} :
-  Equiv_eff (sigT B) (sigT B') (Equiv_Sigma _ _ eA _ _ eB).
-
-Instance Equiv_eff_inv_Sigma (A A':Type) (eA : A ≈ A') (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B')
-         `{@UR_eff A A' eA} `{forall x y e, @Equiv_eff_inv (B x) (B' y) (equiv (snd eB _ _ e))} :
-  Equiv_eff_inv (sigT B) (sigT B') (Equiv_Sigma _ _ eA _ _ eB).
-
-Instance Equiv_eff_section_Sigma (A A':Type) (eA : A ≈ A') (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B')
-         `{@UR_eff A A' eA} `{forall x y e, @Equiv_eff_full (B x) (B' y) (equiv (snd eB _ _ e))} :
-  Equiv_eff_section (sigT B) (sigT B') (Equiv_Sigma _ _ eA _ _ eB).
-
-Instance Equiv_eff_retraction_Sigma (A A':Type) (eA : A ≈ A') (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B')
-         `{@UR_eff A A' eA} `{forall x y e, @Equiv_eff_full (B x) (B' y) (equiv (snd eB _ _ e))} :
-  Equiv_eff_retraction (sigT B) (sigT B') (Equiv_Sigma _ _ eA _ _ eB).
-
-Instance Equiv_eff_full_Sigma (A A':Type) (eA : A ≈ A') (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B')
-         `{@UR_eff A A' eA} `{forall x y e, @Equiv_eff_full (B x) (B' y) (equiv (snd eB _ _ e))} :
-  Equiv_eff_full (sigT B) (sigT B') (Equiv_Sigma _ _ eA _ _ eB) := {}.
-
 Hint Extern 0 (sigT _ ≃ sigT _) => erefine (@Equiv_Sigma _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
 
 Definition pr1_path {A} `{P : A -> Type} {u v : sigT P} (p : u = v) : u.1 = v.1 := ap projT1 p.
@@ -932,9 +835,9 @@ Definition equiv_path_sigma {A : Type} {P : A -> Type} (u v : {x : A & P x}) :
 
 Definition FP_Sigma : @sigT ≈ @sigT.
   cbn in *; intros.
-  split ; [apply Transportable_default | ].
-  intros. destruct H0 as [Hrefl H0].
-  unshelve eexists. 
+  (* this instance of transportable is on Type, we can only use the default one*)
+  split ; [typeclasses eauto | ].
+  intros. unshelve eexists. 
   - eapply URSigma. typeclasses eauto.
   - econstructor. intros a a'.
     assert ((a = a') ≃ {p : a.1 = a'.1 & a.2 = p^# a'.2}).
@@ -943,6 +846,7 @@ Definition FP_Sigma : @sigT ≈ @sigT.
     unshelve eapply Equiv_Sigma.
     apply Canonical_UR. 
     destruct a, a'. apply ur_coh.
+    (* this instance of transportable is for the equality type, we can use the default one*)
     cbn. split ; [apply Transportable_default | ].
     intros e e' E.
     apply Canonical_UR. 
@@ -952,15 +856,7 @@ Definition FP_Sigma : @sigT ≈ @sigT.
     apply ur_coh.
 Defined.
 
-Hint Extern 0 (UR_Type (sigT _) (sigT _)) => erefine (snd (@FP_Sigma _ _ _) _ _ _); cbn in *; intros : typeclass_instances.
-
-Instance Ur_Coh_eff_section_Sigma (A A':Type) (eA : A ≈ A') (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B')
-         `{@UR_eff A A' eA} `{forall x y e, @Ur_Coh_eff (B x) (B' y) (snd eB _ _ e)} :
-  Ur_Coh_eff (sigT B) (sigT B') (snd (FP_Sigma _ _ eA) _ _ eB).
-
-(* Instance UR_eff_section_Sigma (A A':Type) (eA : A ≈ A') (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B') *)
-(*          `{@UR_eff A A' eA} `{forall x y e, @UR_eff (B x) (B' y) (snd eB _ _ e)} : *)
-(*   UR_eff (sigT B) (sigT B') (snd (FP_Sigma _ _ eA) _ _ eB) := {}. *)
+Hint Extern 0 (UR_Type (sigT _) (sigT _)) => erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn in *; intros : typeclass_instances.
 
 Transparent functor_forall sigma_map. 
 Hint Transparent functor_forall sigma_map. 
@@ -974,11 +870,11 @@ Defined.
 
 Definition FP_existT : (* (fun (A : Type) (P : A -> Type) (x : A) (p : P x) => (x; p)) ≈ (fun (A : Type) (P : A -> Type) (x : A) (p : P x) => (x; p)). *)
   @ur _ _ foo (fun (A:Type) (P:A->Type) (x:A) (p:P x) => (x;p)) (fun (A:Type) (P:A->Type) (x:A) (p:P x) => (x;p)).
-  intros A B H P Q [H' H''] x y e X Y E.
+  intros A B H P Q H' x y e X Y E.
   exact (existT _ e E).
 Defined. 
 
-Hint Extern 0 ({e0 : ?x ≈ ?y & ?X ≈ ?Y}) => unshelve refine (FP_existT _ _ _ _ _ (_,_) _ _ _ _ _ _ ): typeclass_instances.
+Hint Extern 0 ({e0 : ?x ≈ ?y & ?X ≈ ?Y}) => unshelve refine (FP_existT _ _ _ _ _ _ _ _ _ _ _ _ ): typeclass_instances.
 
 Definition bar :  UR
          (forall (x : Type) (x0 : x -> Type) (x1 : {x : x & x0 x} -> Type),
@@ -987,7 +883,7 @@ Definition bar :  UR
          (forall (x : Type) (x0 : x -> Type) (x1 : {x : x & x0 x} -> Type),
           (forall (x2 : x) (p : x0 x2), x1 (x2; p)) ->
           forall x3 : {x : x & x0 x}, x1 x3).
-  typeclasses eauto. 
+  typeclasses eauto with typeclass_instances. 
 Defined. 
 
 Definition FP_sigT_rect : @ur _ _ bar (fun A P P0 PS s => sigT_rect A P P0 PS s)
@@ -1072,6 +968,7 @@ Hint Extern 0 ((_ = _) ≃ (_ = _)) => erefine (Equiv_eq _ _ _ _ _ _ _ _ _) : ty
 
 Definition FP_eq : @eq ≈ @eq.
   cbn. intros.
+  (* this instance of transportable is for the equality type, we can use the default one*)
   split ; [apply Transportable_default | ]. 
   unshelve eexists. 
   - econstructor. intros e e'.
@@ -1084,9 +981,9 @@ Definition FP_eq : @eq ≈ @eq.
     apply Equiv_id. 
 Defined. 
 
-Hint Extern 0 (UR_Type (_ = _) (_ = _)) => erefine (snd (FP_eq _ _ _ _ _ _) _ _ _) :  typeclass_instances.
+Hint Extern 0 (UR_Type (_ = _) (_ = _)) => erefine (ur_type (FP_eq _ _ _ _ _ _) _ _ _) :  typeclass_instances.
  
-Hint Extern 0 (UR_Type (_ = _) (_ = _)) => unshelve notypeclasses refine (snd (FP_eq _ _ _ _ _ _) _ _ _) :  typeclass_instances.
+Hint Extern 0 (UR_Type (_ = _) (_ = _)) => unshelve notypeclasses refine (ur_type (FP_eq _ _ _ _ _ _) _ _ _) :  typeclass_instances.
 
 Opaque alt_ur_coh.
 
@@ -1104,12 +1001,12 @@ Definition FP_eq_rect : @eq_rect ≈ @eq_rect.
 Proof.
   simpl. intros. destruct x4 , y4. cbn.
   revert H2.  
-  assert (H1 x0 y0 H0 (@eq_refl x x0)
+  assert (ur_type (H1 x0 y0 H0) (@eq_refl x x0)
                 (@eq_refl y y0)
-                (FP_eq_refl x y H x0 y0 H0) = H1 x0 y0 H3 (@eq_refl x x0) (@eq_refl y y0) H4).
+                (FP_eq_refl x y H x0 y0 H0) = ur_type (H1 x0 y0 H3) (@eq_refl x x0) (@eq_refl y y0) H4).
   pose (T := fun (X:{X : x0 ≈ y0 & eq_refl =
   eq_map_inv x y H x0 y0 H0 x0 y0 
-              X eq_refl}) => H1 x0 y0 X.1 eq_refl eq_refl X.2).
+              X eq_refl}) => ur_type (H1 x0 y0 X.1) eq_refl eq_refl X.2).
   change (T (H0 ; FP_eq_refl x y H x0 y0 H0) =
           T (H3; H4)).
   refine (transport_eq (fun X => T X = _) _ eq_refl).

@@ -797,16 +797,15 @@ Proof.
   {
     destruct p.
     destruct (dec_paths_ a a) as [pr | f].
-    apply inverse_left_inverse.
-    specialize (f eq_refl).
-    inversion f.
+    - apply inverse_left_inverse.
+    - exact (f eq_refl).
   }
 
   intros p q.
   assert (p_given_by_dec := lemma p).
   assert (q_given_by_dec := lemma q).
-  destruct (dec_paths_ a a); try contradiction.
   destruct (dec_paths_ a b); try contradiction.
+  destruct (dec_paths_ a a); try contradiction.
   apply (p_given_by_dec @ q_given_by_dec ^).
 Defined.
 

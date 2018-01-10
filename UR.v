@@ -55,37 +55,6 @@ Arguments equiv {_ _} _.
 Arguments Ur {_ _} _.
 Arguments Ur_Coh {_ _} _.
 
-Class Equiv_eff (A B:Type) (e:A ≃ B) := { }.
-
-Class Equiv_eff_inv (A B:Type) (e:A ≃ B) := { }.
-
-Class Equiv_eff_section (A B:Type) (e:A ≃ B) := { }.
-
-Class Equiv_eff_retraction (A B:Type) (e:A ≃ B) := { }.
-
-Class Equiv_eff_full (A B:Type) (e:A ≃ B) :=
-  {
-    equiv_eff :> Equiv_eff A B e;
-    equiv_eff_inv :> Equiv_eff_inv A B e;
-    equiv_eff_section :> Equiv_eff_section A B e;
-    equiv_eff_retraction :> Equiv_eff_retraction A B e
-  }.
-
-(* Instance Equiv_eff_retraction_section_Equiv_eff A B e (H:@Equiv_eff_section A B e) (H' :@Equiv_eff_retraction A B e) *)
-(*   : Equiv_eff A B e *)
-(*   := {}. *)
-
-Class Ur_Coh_eff (A B:Type) (UR:A ⋈ B):= { }.
-
-Class UR_eff (A B:Type) (UR : A ⋈ B) :=
-  {
-    equiv_eff_full :> Equiv_eff_full A B (equiv UR);
-    ur_Coh_eff :> Ur_Coh_eff A B UR
-}.
-
-(* Instance Equiv_eff_Ur_Coh_UR_eff A B (UR : A ⋈ B) `{@Equiv_eff A B (equiv UR)} `{@Ur_Coh_eff A B UR} : UR_eff A B UR *)
-(*   := {}. *)
-
 (* some facilities to create an instance of UR_Type *)
 
 Definition UR_gen A : UR A A := {| ur := (eq A) |}.
@@ -140,7 +109,6 @@ Instance UR_Type_def@{i j} : UR@{j j j} Type@{i} Type@{i} :=
 
 Hint Extern 0 (?x ≈ ?y) => eassumption : typeclass_instances.
 
-
 Instance URType_Refl : URRefl Type Type (Equiv_id _) _ :=
   {| ur_refl_ := _ |}.
 Proof.
@@ -163,15 +131,27 @@ Proof.
   - reflexivity.
 Defined. 
 
+Instance Transportable_Type (P:Type -> Type) : Transportable P :=
+  Transportable_default P.
+
+Instance Transportable_Forall_default A B (P: (forall x: A, B x) -> Type) : Transportable P :=
+  Transportable_default P.
+
+Class URForall_Type_class A A' {HA : UR A A'}  (P : A -> Type) (Q : A' -> Type) :=
+  { transport_ :> Transportable P;
+    ur_type :> forall x y (H:x ≈ y), P x ⋈ Q y}.
+
+Arguments ur_type {_ _ _ _ _} _. 
+
 Definition URForall_Type A A' {HA : UR A A'} :
   UR (A -> Type) (A' -> Type)
   :=
-    {| ur := fun P Q => (Transportable P * forall x y (H:x ≈ y), P x ≈ Q y ) %type|}.
+    {| ur := fun P Q => URForall_Type_class A A' P Q |}.
 
-Definition URForall A A' (B : A -> Type) (B' : A' -> Type) {HA : UR A A'} (* {HAA : UR A A} *)
+Definition URForall A A' (B : A -> Type) (B' : A' -> Type) {HA : UR A A'} 
            {HB: forall x y (H: x ≈ y), UR (B x) (B' y)} : UR (forall x, B x) (forall y, B' y)
   :=
-  {| ur := fun f g => forall x y (H:x ≈ y) (* (Hx:x ≈ x) *), f x ≈ g y |}.
+  {| ur := fun f g => forall x y (H:x ≈ y), f x ≈ g y |}.
 
 Hint Extern 0 (UR (forall x:?A, _) (forall x:?A', _)) =>
   erefine (@URForall_Type A A' _); cbn in *; intros : typeclass_instances.
@@ -196,4 +176,5 @@ Instance UR_nat : UR nat nat := UR_gen nat.
 (*! bool !*)
 
 Instance UR_bool : UR bool bool := UR_gen bool. 
+
 
