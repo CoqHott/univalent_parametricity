@@ -555,8 +555,51 @@ Proof.
   exact (apD10 (ap e_fun (@transportable_refl _ _ (Hb b) a)) (f b)).  
 Defined.
 
-Instance Transportable_Eq A (P: forall (x y:A) (e : x = y), Type) y :
-  Transportable (fun x => forall (e:x = y), P x y e)  := Transportable_default _.
+Instance Transportable_Forall A (B:A -> Type) (P: forall a, B a -> Type)
+         (HB : Transportable B)
+         (HP : Transportable (fun x => P x.1 x.2)):
+  Transportable (fun a => forall b, P a b).
+Proof.
+  unshelve econstructor. intros x y e.
+  destruct HP as [HP HP'].
+  pose e^.
+  unshelve refine (BuildEquiv _ _ (functor_forall _ _) (isequiv_functor_forall _ _ _ )).
+  apply transportable; auto. intro b. cbn.
+  assert ((x;transportable y x e0 b) = (y;b)).
+  apply path_sigma_uncurried. unshelve esplit.  exact e. cbn. destruct e.
+  cbn. exact (apD10 (ap e_fun (@transportable_refl _ _ _ x)) b).
+  apply (HP _ _ X);  typeclasses eauto.
+  unshelve econstructor. intros.
+  assert ((x;x0) = (x;y0)). 
+  apply path_sigma_uncurried. unshelve esplit. reflexivity. exact X.
+  exact (HP _ _ X0).  
+  intros; cbn. apply (HP' (x;x0)).   
+  typeclasses eauto. 
+  typeclasses eauto. 
+  intro a. cbn.
+  unshelve refine (path_Equiv _).
+  apply funext; intro f. apply funext; intro b. cbn. unfold functor_forall.
+  pose (fun (e : {e : B a ≃ B a & e = Equiv_id (B a)}) =>
+               (transportable (a; e.1 b) (a; b)
+                            match apD10 (ap e_fun e.2) b in (_ = y) return ((a; e.1 b) = (a; y)) with
+                            | eq_refl => eq_refl
+                            end) (f (e.1 b)) = f b).
+  change (T (transportable a a eq_refl; transportable_refl a)).
+  assert ((transportable a a eq_refl; transportable_refl a) = ((Equiv_id (B a); eq_refl): {e : B a ≃ B a & e = Equiv_id (B a)})).
+  apply path_sigma_uncurried. unshelve esplit. apply (transportable_refl a).
+  cbn. rewrite transport_paths_l. rewrite inv2. rewrite concat_refl. reflexivity.  
+  apply (transport_eq T X^). unfold T. cbn.
+  exact (apD10 (ap e_fun (transportable_refl (a;b))) _). 
+Defined.
+
+
+(* this instance of transportable is for the equality type, we can use the default one*)
+
+Hint Extern 0 (Transportable (fun _ : _ => _ = _))
+=> apply Transportable_default : typeclass_instances.
+
+Hint Extern 0 (Transportable (eq _ _))
+=> apply Transportable_default : typeclass_instances.
 
 Instance Transportable_Eq' A (P: forall (x y:A) (e : x = y), Type) y :
   Transportable (fun x => forall (e:y = x), P y x e)  := Transportable_default _.
@@ -574,16 +617,11 @@ Proof.
   eapply (BuildEquiv _ _ (@apD10_gen _ _ f g) _).
 
   unshelve eapply Equiv_forall. apply (@ur_refl_ _ _ _ _ URType_Refl A). 
-  (* this instance of transportable is for the equality type, we can use the default one*)
-  split. apply Transportable_Forall_nondep. intro b.
-  cbn. exact (Transportable_Eq' _ (fun b a (e : b = a) => f a = transport_eq B e (g b)) b).
-  (* split; [apply Transportable_default | ]. *)
+  split; [typeclasses eauto | ].
   intros a a' e. cbn in e. destruct e.
   apply Canonical_UR. 
   unshelve eapply Equiv_forall. typeclasses eauto.
-  (* this instance of transportable is for the equality type, we can use the default one*)
-  split. exact (Transportable_Eq _ (fun x a (e : x = a) =>  f a = transport_eq B e (g x)) a).
-  (* split; [apply Transportable_default | ]. *)
+  split; [typeclasses eauto | ]. 
   intros a' b e'. 
   apply Canonical_UR. 
   unshelve eapply Equiv_forall.
@@ -592,8 +630,7 @@ Proof.
   apply Equiv_inverse. eapply equiv_compose. apply alt_ur_coh.
   eapply equiv_compose. apply isequiv_sym.
   exact (transport_eq (fun X => (X = _) ≃ _) e (Equiv_id _)).
-  (* this instance of transportable is for the equality type, we can use the default one*)
-  cbn. split; [apply Transportable_default | ].
+  cbn. split; [typeclasses eauto | ].
   intros X X' X''. destruct X. 
   apply Canonical_UR.
   clear e' X''. 
@@ -847,7 +884,7 @@ Definition FP_Sigma : @sigT ≈ @sigT.
     apply Canonical_UR. 
     destruct a, a'. apply ur_coh.
     (* this instance of transportable is for the equality type, we can use the default one*)
-    cbn. split ; [apply Transportable_default | ].
+    cbn. split ; [typeclasses eauto | ].
     intros e e' E.
     apply Canonical_UR. 
     destruct a, a'. cbn in *. unfold univalent_transport. 
@@ -966,10 +1003,10 @@ Inductive UR_eq (A_1 A_2 : Type) (A_R : A_1 -> A_2 -> Type) (x_1 : A_1) (x_2 : A
  
 Hint Extern 0 ((_ = _) ≃ (_ = _)) => erefine (Equiv_eq _ _ _ _ _ _ _ _ _) : typeclass_instances.
 
+
 Definition FP_eq : @eq ≈ @eq.
   cbn. intros.
-  (* this instance of transportable is for the equality type, we can use the default one*)
-  split ; [apply Transportable_default | ]. 
+  split ; [typeclasses eauto| ]. 
   unshelve eexists. 
   - econstructor. intros e e'.
     assert ((y0 = y1) ≃ (x0 = x1)). eapply Equiv_inverse. typeclasses eauto with typeclass_instances.
