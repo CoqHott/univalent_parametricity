@@ -3,8 +3,10 @@ Require Import HoTT UR.
 Set Universe Polymorphism.
 Set Primitive Projections.
 
-Ltac destruct_sigma := repeat (match goal with | H : {_ : _ & _} |- _ => destruct H end).
-                   
+(* Ltac destruct_sigma := repeat (match goal with | H : {_ : _ & _} |- _ => destruct H end). *)
+
+Existing Class eq. 
+
 Ltac resolve_eq := intros; 
                    progress (repeat (try reflexivity;
                    try eassumption;

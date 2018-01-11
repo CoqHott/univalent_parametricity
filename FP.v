@@ -310,7 +310,7 @@ Proof.
 Defined.
 
 Definition equiv_path_prod {A B : Type} (u v : A * B): ((fst u = fst v) * (snd u = snd v)) ≃ (u = v)
-  := BuildEquiv _ _ _ _. 
+  := BuildEquiv _ _ (path_prod_uncurried u v) _. 
 
 Instance UR_Prod (x y : Type) (H : x ⋈ y) (x0 y0 : Type) (H0 : x0 ⋈ y0) : UR (x * x0) (y * y0).
 econstructor. exact (fun e e' => prod (fst e ≈ fst e') (snd e ≈ snd e')).
@@ -566,12 +566,12 @@ Proof.
   unshelve refine (BuildEquiv _ _ (functor_forall _ _) (isequiv_functor_forall _ _ _ )).
   apply transportable; auto. intro b. cbn.
   assert ((x;transportable y x e0 b) = (y;b)).
-  apply path_sigma_uncurried. unshelve esplit.  exact e. cbn. destruct e.
+  apply path_sigma_uncurried. unshelve esplit. cbn. destruct e.
   cbn. exact (apD10 (ap e_fun (@transportable_refl _ _ _ x)) b).
   apply (HP _ _ X);  typeclasses eauto.
   unshelve econstructor. intros.
   assert ((x;x0) = (x;y0)). 
-  apply path_sigma_uncurried. unshelve esplit. reflexivity. exact X.
+  apply path_sigma_uncurried. unshelve esplit. exact X.
   exact (HP _ _ X0).  
   intros; cbn. apply (HP' (x;x0)).   
   typeclasses eauto. 
@@ -640,9 +640,8 @@ Proof.
   ≃ (f a' ≈ e_fun (equiv (ur_type eB XX.1 b (e_fun (transport_eq (fun X : A' => (XX.1 ≈ X) ≃ (XX.1 ≈ b))
     XX.2 (Equiv_id (XX.1 ≈ b))) (e_fun (ur_coh XX.1 XX.1) eq_refl)))) (g XX.1))).
   change (T (_;(e_retr (e_fun (equiv eA)) b)^)).
-  unshelve refine (transport_eq T _ _).
-  exact (_ ; (Move_equiv _ _ _ e)^).
-  apply path_sigma_uncurried. unshelve eexists. exact e.
+  unshelve refine (@transport_eq _ T (_ ; (Move_equiv _ _ _ e)^) _ _ _).
+  apply path_sigma_uncurried. unshelve eexists. 
   cbn. unfold univalent_transport.
   rewrite transport_paths_Fr. rewrite ap_V.
   rewrite <- concat_inv. reflexivity. 
@@ -679,8 +678,7 @@ Proof.
   set (e_inv (e_fun (ur_coh a' (e_inv (e_fun (equiv eA)) b))) h).
   destruct e3. reflexivity. 
 
-  unshelve refine (transport_eq T _ _).
-  exact (_ ; X'). 
+  unshelve refine (@transport_eq _ T (_ ; X') _ _ _).
   apply path_sigma_uncurried. unshelve eexists. cbn.
   unfold univalent_transport. apply inverse. apply Move_equiv. exact e.
   rewrite inv2. exact X. 
@@ -741,10 +739,8 @@ Definition sigma_map_eq {A P} (f: A -> A) (g : forall a, P a -> P (f a))
            (H : forall x, f x = x) (H' : forall a (l : P a), H a # g a l = l) (l : sigT P) :
  sigma_map f g l = l.
 Proof.
-  induction l.
-  - unshelve refine (exist_eq _ _ _ _ _ _). apply H. apply H'. 
+  induction l; unshelve refine (exist_eq _ _ _ _ _ _). 
 Defined.
-
 
 (* Equiv_Sigma is similar to equiv_functor_sigma *)
 (* in the [https://github.com/HoTT] *)
@@ -865,7 +861,7 @@ Defined.
 
 Definition equiv_path_sigma {A : Type} {P : A -> Type} (u v : {x : A & P x}) :
        {p : u .1 = v .1 & u .2 = transport_eq P p^ v .2} ≃ (u = v)
-  := BuildEquiv _ _ _ _. 
+  := BuildEquiv _ _ (path_sigma_uncurried P u v) _. 
 
 Definition FP_Sigma : @sigT ≈ @sigT.
   cbn in *; intros.
@@ -916,8 +912,8 @@ Proof.
   pose (e_i := Equiv_inverse (equiv e)).
   pose (e_fun (alt_ur_coh e _ _) e1).
   pose (e_fun (alt_ur_coh e _ _) e2).
-  - intro ex. 
-    exact ((e_retr _ y)^ @ ap _ (e0^ @ ex  @ e3) @ e_retr _ y').
+  intro ex. 
+  exact ((e_retr _ y)^ @ ap _ (e0^ @ ex  @ e3) @ e_retr _ y').
 Defined.
 
 Definition eq_map_inv (A B:Type) (e: A ≈ B)
@@ -928,8 +924,8 @@ Proof.
   pose (e_i := Equiv_inverse (equiv e)).
   pose (e_fun (alt_ur_coh e _ _) e1).
   pose (e_fun (alt_ur_coh e _ _) e2).
-  - intro ey. 
-    exact (e0 @ ap _ ey @ e3^). 
+  intro ey. 
+  exact (e0 @ ap _ ey @ e3^). 
 Defined.
 
 Definition Equiv_eq (A B:Type) (e: A ≈ B)

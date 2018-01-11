@@ -59,7 +59,7 @@ Proof.
   }
   intros. unshelve refine (path_Equiv _). cbn.
   apply funext. intros. eapply path_sigma_uncurried.
-  destruct x0. unshelve esplit.  reflexivity. cbn.
+  destruct x0. unshelve esplit. cbn.
   unfold univalent_transport. exact (apD10 (ap e_fun (transportable_refl x)) p). 
 Defined.
 

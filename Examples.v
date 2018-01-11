@@ -215,7 +215,12 @@ Definition largeVectorN' : Vector.t N 200 := e_fun (Equiv_Vector _ _ _ _ _ eq_re
 
 Time Eval vm_compute in largeVectorN'.
 
-Definition foo : forall f: nat -> nat, f = f:= fun f  => eq_refl.
+Fixpoint ConstantVector {A} (a:A) n : vector A n :=
+  match n with 0 => nil _
+          | S n => cons _ a _ (ConstantVector a n)
+  end.
+
+Definition foo : forall f: nat -> nat, f = f:= fun f => eq_refl.
 
 Definition bar := ↑ foo : forall f: N -> N, f = f.
 
@@ -225,44 +230,62 @@ Eval compute in foo S.
 
 (* does not compute because of the index on a dependent product *)
 
+(* Eval cbn in (bar N.succ). *)
+
+Definition foo' : forall f: nat -> nat, vector nat (f 0)
+  := fun f => ConstantVector 1 (f 0).
+
+
+Definition bar' := ↑ foo' : forall f: N -> nat, vector N (f (↑ 0)).
+
+(* Definition bar_equiv : (forall f: nat -> nat, f = f) ≃ (forall f: N -> N, f = f) := _. *)
+
+Eval compute in foo' S.
+
+Eval compute in bar' (↑ S).
+
+(* does not compute because of the index on a dependent product *)
+
 (* Eval compute in (bar N.succ). *)
+
+
 
 Definition testType := { f : nat -> nat & vector nat (f 0)}.
 
 Definition testType2 := { f : nat -> nat & {l : list nat & length l = f 0}}.
 
-Definition foo' : testType2 := (S ; [[4]]).
+Definition foo'' : testType2 := (S ; [[4]]).
 
 Hint Extern 100 (_ = _) => solve [typeclasses eauto with typeclass_instances] : typeclass_instances.
 
 Hint Extern 0 => progress (unfold testType, testType2) :  typeclass_instances.
 
-Definition bar' : testType := ↑ foo'.
+Definition bar'' : testType := ↑ foo''.
 
-Eval cbn in bar'.2.
+Eval cbn in bar''.2.
 
 Definition testType' := { f : N -> N & vector nat (↑ (f (N.add N0 N0)))}.
 
 Definition testType2' := { f : nat -> nat & {l : list nat & length l = f (0+0)}}.
 
-Definition foo'' : testType2' := (S ; [[1]]).
+Definition foo''' : testType2' := (S ; [[1]]).
 
 Hint Extern 0 => progress (unfold testType', testType2') :  typeclass_instances.
 
-Definition bar'' : testType' := ↑ foo''.
+Definition bar''' : testType' := ↑ foo'''.
 
-Eval compute in bar''.2.
+Eval compute in bar'''.2.
 
-Definition foo''' : testType' := (N.succ ; cons nat 1 0 (nil nat)).
+Definition foo'''' : testType' := (N.succ ; cons nat 1 0 (nil nat)).
 
-Definition bar''' : testType2' := ↑ foo'''.
-Eval compute in bar'''.2.1.
+Definition bar'''' : testType2' := ↑ foo''''.
+Eval compute in bar''''.2.1.
 
 Definition testEquiv : testType2' ≃ testType' := _.
 
-Definition bar2''' : testType2' := e_inv' testEquiv foo'''.
+Definition bar2'''' : testType2' := e_inv' testEquiv foo''''.
  
-Eval compute in bar2'''.2.1.
+Eval compute in bar2''''.2.1.
 
 Definition testTypeForall := forall f : {f : N -> N & f 0%N = 1%N}, N.
 
@@ -286,10 +309,6 @@ Definition testTypeForall2 := forall f : {n : nat & N}, vector N f.1.
 
 Definition testTypeForall2' := forall f : { x : nat & nat}, vector nat f.1.
 
-Fixpoint ConstantVector {A} (a:A) n : vector A n :=
-  match n with 0 => nil _
-          | S n => cons _ a _ (ConstantVector a n)
-  end.
                                                    
 Definition fooForall2 : testTypeForall2' := fun f => ConstantVector 10 f.1.
 

@@ -134,7 +134,7 @@ Proof.
     + intro rl. simpl. destruct rl as [l Hl].
       destruct l; try inversion Hl. 
       apply path_sigma_uncurried. unshelve eexists. 
-      reflexivity. simpl in *. apply nat_Hset. 
+      apply nat_Hset. 
     + intro rl. destruct rl as [l Hl].
       destruct l. inversion Hl.  
       apply path_sigma_uncurried. unshelve eexists. 
