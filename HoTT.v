@@ -83,9 +83,11 @@ Definition ap4 {A A' A'' A''' B:Type} (f:A -> A' -> A'' -> A''' -> B) {x y:A} (p
 
 
 Definition eq_sym {A} {x y : A} (H : x = y) : y = x :=
-match H in (_ = y0) return (y0 = x) with
-| eq_refl => eq_refl
-end.
+  match H with eq_refl => eq_refl end.
+(* ET: the [in ... return ...] does not seem needed *)
+(* match H in (_ = y0) return (y0 = x) with *)
+(* | eq_refl => eq_refl *)
+(* end. *)
 
 (* Instance EqSymm A : Symmetric (eq A) := @eq_sym A. *)
 
@@ -94,7 +96,6 @@ end.
 Definition apD10 {A} {B:A->Type} {f g : forall x, B x} (h:f=g)
   : f == g
   := fun x => match h with eq_refl => eq_refl  end.
-
 
 Definition transport_eq {A : Type} (P : A -> Type) {x y : A} (p : x = y) (u : P x) : P y :=
   match p with eq_refl => u end.
@@ -129,7 +130,7 @@ Definition transportD3 {A : Type} (B : A -> Type) (B' : A -> Type) B''
   {x1 x2 : A} (p : x1 = x2) y y' y'' (z : C x1 y y' y'')
   : C x2 (p # y) (p # y') (transportD2 _ _ _ p _ _ y'')
   :=
-  match p with eq_refl => z end.
+    match p with eq_refl => z end.
 
 Definition transport_double A (P : A -> A -> Type) x y (e : x = y) (f : forall a, P a a) :
   transport_eq (fun X => P X _ ) e (transport_eq (fun X => P _ X) e (f x)) = f y.  
@@ -137,6 +138,7 @@ Definition transport_double A (P : A -> A -> Type) x y (e : x = y) (f : forall a
 Defined.
 
 Definition transport_forall A B (f : forall x : A , B x)  y z (e : z = y) :
+  (* ET: why not [e # (f z) = f y]. *)
                 transport_eq B e (f z) =
                 f y.
 Proof.
@@ -159,8 +161,8 @@ Definition transport_pp {A : Type} (P : A -> Type) {x y z : A} (p : x = y) (q : 
     match p with eq_refl => eq_refl end
   end.
 
-Lemma inverse_left_inverse A (x y : A) (p : x = y) : eq_refl = (p ^ @ p).
-Proof. destruct p. reflexivity. Defined.
+Definition inverse_left_inverse A (x y : A) (p : x = y) : eq_refl = (p ^ @ p).
+Proof. destruct p; reflexivity. Defined.
 
 Definition transport_pV {A : Type} (P : A -> Type) {x y : A} (p : x = y) (z : P y)
   : p # p^ # z = z.
@@ -236,7 +238,7 @@ Definition transport_double' A B (P : A -> B -> Type) x y (e : x = y) g (f : for
 Defined.
 
 Definition path_sigma_uncurried {A : Type} (P : A -> Type) (u v : sigT P)
-           (pq : {p : u.1 = v.1 & u.2 = p^# v.2})
+           (pq : {p : u.1 = v.1 & u.2 = p^ # v.2})
 : u = v.
 Proof.
   destruct pq as [p q]. destruct u, v. simpl in *. destruct p.
@@ -367,8 +369,6 @@ Proof.
   destruct e; reflexivity.
 Defined. 
 
-
-
 Definition transport_switch {A : Type} (P : A -> Type) {x y : A} (p : y = x) (z : P y) z'
   : z = p^ # z' -> p # z = z'.
 Proof.
@@ -383,7 +383,7 @@ Proof.
   destruct e. reflexivity.
 Defined.
 
-Definition inv2 A (x y :A) (e: x = y) : e^ ^= e.
+Definition inv2 A (x y :A) (e: x = y) : e^ ^ = e.
 Proof.
   destruct e; reflexivity.
 Defined.
