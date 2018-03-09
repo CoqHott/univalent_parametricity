@@ -124,6 +124,19 @@ Class Transportable {A} (P:A -> Type) :=
     transportable_refl : forall x, transportable x x eq_refl = Equiv_id _
   }.
 
+Definition Transportable_decidable {A} (P:A -> Type) (Hdec:forall x y : A, (x=y) + ((x = y) -> False)): Transportable P.
+Proof.
+  unshelve econstructor.
+  - intros x y e. destruct (Hdec x y) as [e0 | n0].
+    destruct e0. apply Equiv_id.
+    destruct (n0 e).
+  - intro x. cbn. destruct (Hdec x x); cbn.
+    assert (e = eq_refl) by (eapply is_hset).
+    rewrite X. reflexivity.
+    destruct (f eq_refl).
+    Unshelve. apply Hedberg. auto.
+Defined. 
+
 Definition Transportable_default {A} (P:A -> Type) : Transportable P.
 Proof.
   unshelve econstructor.
