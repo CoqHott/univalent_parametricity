@@ -868,3 +868,18 @@ Proof.
   destruct e. reflexivity.
 Defined.
 
+
+
+
+Definition transport_paths_naturality' {A : Type} {g : A -> A} {y1 y2 : A} 
+  (p : y1 = y2) (q : forall x, g x = x)
+  : (q _) @ p = (ap g p) @ q _.
+Proof.
+  destruct p. apply concat_refl.
+Defined.
+
+Instance isequiv_moveR_M1 {A : Type} {x y : A} (p q : x = y)
+: IsEquiv (moveR_M1 p q).
+Proof.
+  destruct p. apply (@e_isequiv _ _ (Equiv_id _)).
+Defined.
