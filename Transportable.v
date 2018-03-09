@@ -3,23 +3,8 @@ Require Import BinInt BinNat Nnat Vector.
 
 Set Universe Polymorphism.
 
-Definition inversion_S {n m} : S m = S n -> m = n.
-  inversion 1. reflexivity.
-Defined. 
-
-Instance Transportable_nat (P: nat -> Type) : Transportable P.
-Proof.
-  unshelve econstructor.
-  - intros n m; revert P; revert m.
-    induction n; intro m; destruct m; intros P e. 
-    + apply Equiv_id.
-    + inversion e.
-    + inversion e.
-    + pose (inversion_S e). exact (IHn _ (fun n => P (S n)) e0).
-  - cbn. intro n; revert P; induction n; cbn; intro P. 
-    + reflexivity.
-    + apply (IHn (fun n => P (S n))).      
-Defined. 
+Instance Transportable_nat (P: nat -> Type) : Transportable P :=
+  Transportable_decidable P Decidable_eq_nat.
 
 Definition inversion_cons {A} {l l':list A} {a a'} : a :: l = a' :: l' -> (a = a') * (l = l').
   inversion 1. split; reflexivity.
@@ -106,6 +91,7 @@ Proof.
   exact (apD10 (ap e_fun (@transportable_refl _ _ HP a)) b).
 Defined.
 
-Hint Extern 0 (URForall_Type_class ?A ?B ?F ?G) => is_ground A; is_ground B; is_ground F; is_ground G;
-                                                     econstructor : typeclass_instances.
+Hint Extern 0 (URForall_Type_class ?A ?B ?F ?G) =>
+(is_ground A; is_ground B; is_ground F; is_ground G; econstructor)
+: typeclass_instances.
 
