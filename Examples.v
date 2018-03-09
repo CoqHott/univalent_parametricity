@@ -26,12 +26,13 @@ Opaque vector_to_list list_to_vector.
 Record Lib (C : Type -> nat -> Type) :=
   { head : forall {A : Type} {n : nat}, C A (S n) -> A;
     map : forall {A B} (f:A -> B) {n}, C A n -> C B n;
-    prop : forall n A B (f : A -> B) (v : C A (S n)), head (map f v) = f (head v)}.
+    lib_prop : forall n A B (f : A -> B) (v : C A (S n)), head (map f v) = f (head v)}.
 
 Arguments map {_} _ {_ _} _ {_} _.
 Arguments head {_} _ {_ _} _.
+Arguments lib_prop {_} _ {_ _ _} _ _.
 
-
+(*
 Definition FL_Lib_Noneff : Lib ≈ Lib.
   split; [apply Transportable_default | ].
   
@@ -50,7 +51,8 @@ Definition FL_Lib_Noneff : Lib ≈ Lib.
   specialize  (e1 (fun _ _ _ =>  ur_type (e _ _ _))). 
   destruct e1. apply Canonical_UR. apply Equiv_id.
 Defined.
-
+*)
+  
 Instance issig_lib_hd_map C :
   {hd : forall {A : Type} {n : nat}, C A (S n) -> A  &
                       {map : forall {A B} (f:A -> B) {n},
@@ -58,7 +60,7 @@ Instance issig_lib_hd_map C :
   forall n A B (f : A -> B) (v : C A (S n)), hd _ _ (map _ _ f _ v) = f (hd _ _ v)}}
   ≃ Lib C.
 Proof.
-  issig (Build_Lib C) (@head C) (@map C) (@prop C).
+  issig (Build_Lib C) (@head C) (@map C) (@lib_prop C).
 Defined.
 
 Instance issig_lib_hd_map_inv C :
@@ -68,10 +70,10 @@ Instance issig_lib_hd_map_inv C :
   C A n -> C B n &
            forall n A B (f : A -> B) (v : C A (S n)), hd _ _ (map _ _ f _ v) = f (hd _ _ v)}} :=
   Equiv_inverse _.
-
+  
 Definition FP_Lib : Lib ≈ Lib.
 Proof.
-    univ_param_record.
+  univ_param_record.
 Defined.
 
 Hint Extern 0 (Lib _ ≃ Lib _) => erefine (ur_type FP_Lib _ _ _).(equiv); simpl
@@ -88,9 +90,10 @@ Defined.
 Definition libvec : Lib Vector.t :=
   {| head := fun A n x => @Vector.hd A n x;
      map := fun A B f n => Vector.map f;
-     prop := lib_vector_prop |}.
+     lib_prop := lib_vector_prop |}.
 
 Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑ libvec.
+
 
 Transparent vector_to_list list_to_vector.
 
@@ -99,7 +102,6 @@ Notation "[[ x ]]" := ([x]; eq_refl).
 Notation "[[ x ; y ; .. ; z ]]" := ((FP.cons x (FP.cons y .. (FP.cons z FP.nil) ..)) ;eq_refl).
 
 Time Eval compute in lib_list.(map) S [[1;2]].
-
 
 Definition app {A} : list A -> list A -> list A :=
   fix app l m :=
@@ -128,7 +130,6 @@ Eval compute in (app_list [[1;2]] [[1;2]]).
 Eval compute in (app_list' [[1;2]] [[1;2]]).
 
 Eval compute in (lib_list.(map) S (app_list [[1;2]] [[5;6]])).
-
 
 
 Record Monoid A :=
@@ -230,7 +231,7 @@ Eval compute in foo S.
 
 (* does not compute because of the index on a dependent product *)
 
-(* Eval cbn in (bar N.succ). *)
+(* Eval compute in (bar N.succ). *)
 
 Definition foo' : forall f: nat -> nat, vector nat (f 0)
   := fun f => ConstantVector 1 (f 0).
@@ -244,19 +245,19 @@ Eval compute in foo' S.
 
 Eval compute in bar' (↑ S).
 
-(* does not compute because of the index on a dependent product *)
-
-(* Eval compute in (bar N.succ). *)
-
-
-
 Definition testType := { f : nat -> nat & vector nat (f 0)}.
 
 Definition testType2 := { f : nat -> nat & {l : list nat & length l = f 0}}.
 
+Transparent vector_to_list list_to_vector.
+
+Notation "[[ ]]" := ([ ]; eq_refl).
+Notation "[[ x ]]" := ([x]; eq_refl).
+Notation "[[ x ; y ; .. ; z ]]" := ((FP.cons x (FP.cons y .. (FP.cons z FP.nil) ..)) ;eq_refl).
+
 Definition foo'' : testType2 := (S ; [[4]]).
 
-Hint Extern 100 (_ = _) => solve [typeclasses eauto with typeclass_instances] : typeclass_instances.
+(* Hint Extern 100 (_ = _) => solve [typeclasses eauto with typeclass_instances] : typeclass_instances. *)
 
 Hint Extern 0 => progress (unfold testType, testType2) :  typeclass_instances.
 
@@ -264,11 +265,11 @@ Definition bar'' : testType := ↑ foo''.
 
 Eval cbn in bar''.2.
 
-Definition testType' := { f : N -> N & vector nat (↑ (f (N.add N0 N0)))}.
+Definition testType' := { f : N -> Type & vector (f 0%N) 1}.
 
-Definition testType2' := { f : nat -> nat & {l : list nat & length l = f (0+0)}}.
+Definition testType2' := { f : nat -> Type & {l : list (f 0) & length l = 1}}.
 
-Definition foo''' : testType2' := (S ; [[1]]).
+Definition foo''' : testType2' := (fun n => n = n ; [[eq_refl]]).
 
 Hint Extern 0 => progress (unfold testType', testType2') :  typeclass_instances.
 
@@ -276,43 +277,89 @@ Definition bar''' : testType' := ↑ foo'''.
 
 Eval compute in bar'''.2.
 
-Definition foo'''' : testType' := (N.succ ; cons nat 1 0 (nil nat)).
+(* Definition testEquiv : testType' ≃ testType2' := _. *)
 
-Definition bar'''' : testType2' := ↑ foo''''.
-Eval compute in bar''''.2.1.
+(* Definition bar2''' : testType' := e_inv' testEquiv foo'''. *)
 
-Definition testEquiv : testType2' ≃ testType' := _.
+(* Eval compute in bar2'''.2. *)
 
-Definition bar2'''' : testType2' := e_inv' testEquiv foo''''.
- 
-Eval compute in bar2''''.2.1.
+Definition testType'' := { f : forall x : N, { n : N & n = N.add x 1%N} & vector nat (↑ ((f (N.add N0 N0)).1))}.
 
-Definition testTypeForall := forall f : {f : N -> N & f 0%N = 1%N}, N.
+Definition testType2'' := { f : forall x : nat, { n : nat & n = x + 1} & {l : list nat & length l = (f (0+0)).1}}.
 
-Definition testTypeForall' := forall f : {f : nat -> nat & f 0 = 1}, nat.
+Definition foo'''' : testType2'' := (fun n => (n+1; eq_refl) ; [[1]]).
 
-Definition fooForall : testTypeForall' := fun f => f.1 0 + 1.
+Hint Extern 0 => progress (unfold testType'', testType2'') :  typeclass_instances.
+
+Definition to_nat_add : forall x y, N.to_nat (N.add x y) = N.to_nat x + N.to_nat y.
+  intros. pose (N2Nat.inj_add x y). destruct e. reflexivity.
+Defined. 
+
+Hint Extern 0 (_ = _) => rewrite to_nat_add :  typeclass_instances.
+
+Ltac destruct_sigma2 := repeat (match goal with | H : forall (x:_) (y:_) (z:_) , @sigT _ ?P |- _ => 
+                    let H1 := fresh "H1" in 
+                    let H2 := fresh "H2" in
+                    let P' := fresh "P'" in
+                    pose (H1:= fun x y z => (H x y z).1);
+                    pose (P' := forall x y z, P (H1 x y z));
+                    pose (H2:= (fun x y z => (H x y z).2) : P'); cbn in H2;
+                    clearbody H1; clearbody H2; clear H; unfold P' in H2; clear P' 
+  end).
+
+Hint Extern 0 (_ = _) => progress destruct_sigma2 : typeclass_instances.
+
+(* Hint Extern 0 (_ = _) => match goal with | H : forall _ _ _, _ |- ?G => is_ground G; refine (H _ _ _) end: typeclass_instances. *)
+
+Goal nat = N ->  (forall x : nat, {n : nat & n = x + 1})
+                 =
+                 (forall x : N, {n : N & n = (x + 1)%N}).
+  intro e.   
+  pose (P := fun X (pp : X -> X -> X) (one : X) => forall x:X, {n : X & n = pp x one}).
+  change (P nat plus 1 = P N N.add 1%N).
+  assert (P nat Nat.add 1 = P N (fun x y => transport_eq (fun X => X) e ((transport_eq (fun X => X) e^ x) + (transport_eq (fun X => X) e^ y))) (transport_eq (fun X => X) e 1)).
+  destruct e. reflexivity. etransitivity; try exact X.
+Abort. 
+  
+Instance toto :  Equiv testType2'' testType''.
+  erefine (@Equiv_Sigma _ _ _ _ _ _); cbn in *; intros.
+  typeclasses eauto.
+  econstructor.   typeclasses eauto.
+  intros. erefine (ur_type (Equiv_list_vector_ _ _ _) _ _ _) .
+  typeclasses eauto. cbn in *.
+  destruct_sigma2. refine (H1 _ _ _). 
+Defined.
+  
+Definition bar'''' : testType'' := ↑ foo''''.
+
+Eval compute in (bar''''.1 0%N).2 .
+Eval compute in bar''''.2.
+
+Definition testTypeForall := forall f : { f : N -> Type & N}, N.
+
+Definition testTypeForall' := forall f : { f : nat -> Type & nat}, nat.
+
+Definition fooForall : testTypeForall' := fun f => f.2.
 
 Hint Extern 0 => progress (unfold testTypeForall, testTypeForall') :  typeclass_instances.
 
 Definition barForall : testTypeForall := ↑ fooForall.
 
-Eval compute in fooForall (S; eq_refl).
+Eval compute in fooForall (fun n => n = n; 1).
 
-Eval compute in barForall (N.succ; eq_refl).
+Eval compute in barForall (fun n => n = n; 1%N).
 
 Definition barForall_equiv : testTypeForall' ≃ testTypeForall := _.
-
-
 
 Definition testTypeForall2 := forall f : {n : nat & N}, vector N f.1.
 
 Definition testTypeForall2' := forall f : { x : nat & nat}, vector nat f.1.
-
                                                    
 Definition fooForall2 : testTypeForall2' := fun f => ConstantVector 10 f.1.
 
 Hint Extern 0 => progress (unfold testTypeForall2, testTypeForall2') :  typeclass_instances.
+
+Ltac destruct_sigma := repeat (match goal with | H : {_ : _ & _} |- _ => destruct H end).
 
 Hint Extern 100 (_ = _) => progress destruct_sigma : typeclass_instances.
 
@@ -388,6 +435,52 @@ Eval compute in fooForall6 (fun n => S (↑ n) ; ConstantVector (6%N) 1).
 
 Eval compute in barForall6 (S; ConstantVector 6 1).
 
+Definition iEq {A} (x y: A) : Type := forall (P : A -> Type), P x -> P y.
+
+Definition iEq_refl {A} (x: A) : iEq x x := fun P X => X.
+
+Definition foo_iEq : forall f: N -> N, iEq (f 0%N) (f 0%N) := fun f => iEq_refl _.
+
+Hint Extern 0 => progress (unfold iEq) :  typeclass_instances.
+
+Definition bar_iEq := ↑ foo_iEq : forall f: nat -> nat, iEq (f 0) (f 0).
+
+(* Definition bar_equiv : (forall f: nat -> nat, f = f) ≃ (forall f: N -> N, f = f) := _. *)
+
+Eval compute in foo_iEq N.succ.
+
+(* does not compute because of the index on a dependent product *)
+
+(* Eval compute in (bar_iEq S). *)
+
+Goal (bar_iEq S) = iEq_refl _.
+  unfold bar_iEq, univalent_transport.
+  Opaque FP_forall. cbn. Transparent FP_forall.
+  cbv delta [FP_forall]. cbv delta [Equiv_forall].
+  Opaque isequiv_functor_forall. Opaque functor_forall. 
+  simpl. 
+  lazy beta. 
+  unfold FP_forall. simpl. 
+
+Definition foo_iEq : forall f: N -> N, iEq (f 0%N) (f 0%N) := fun f => iEq_refl _.
+
+Hint Extern 0 => progress (unfold iEq) :  typeclass_instances.
+
+Definition bar_iEq := ↑ foo_iEq : forall f: nat -> nat, iEq (f 0) (f 0).
+
+(* Definition bar_equiv : (forall f: nat -> nat, f = f) ≃ (forall f: N -> N, f = f) := _. *)
+
+Eval compute in foo_iEq N.succ.
+
+(* does not compute because of the index on a dependent product *)
+
+(* Eval compute in (bar_iEq S). *)
 
 
+Definition foo_iEq' : forall f: nat, n =  n := fun n => eq_refl.
 
+Definition bar_iEq' := ↑ foo_iEq' : forall n: N, n = n.
+
+Eval compute in foo_iEq' 5.
+
+Eval compute in (bar_iEq' 5%N).
