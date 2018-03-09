@@ -1,7 +1,265 @@
 Require Import HoTT Tactics UR URTactics FP Record.
 
 Set Universe Polymorphism.
+  
+(* Set Typeclasses Debug Verbosity 2.  *)
 
+Ltac tc := typeclasses eauto with typeclass_instances.
+
+Instance issig_isequiv {A B : Type} (f : A -> B):
+{ e_inv : B -> A & {
+    e_sect : forall x : A, e_inv (f x) = x & {
+    e_retr : forall y : B, f (e_inv y) = y &
+    forall x : A, e_retr (f x) = ap f (e_sect x) }}} ≃ IsEquiv f.
+issig (BuildIsEquiv A B f) (@e_inv A B f) (@e_sect A B f) (@e_retr A B f) (@e_adj A B f).
+Defined. 
+
+Instance issig_isequiv_inv {A B : Type} (f : A -> B):
+  IsEquiv f ≃
+{ e_inv : B -> A & {
+    e_sect : forall x : A, e_inv (f x) = x & {
+    e_retr : forall y : B, f (e_inv y) = y &
+    forall x : A, e_retr (f x) = ap f (e_sect x) }}} := Equiv_inverse _.
+
+Hint Extern 0 (UR (_ = _) (_ = _)) => unshelve notypeclasses refine (Ur (ur_type (FP_eq _ _ _ _ _ _) _ _ _)) :  typeclass_instances.
+
+Instance foo: UR (forall (A B : Type) (f : A -> B) (x y : A), x = y -> f x = f y)(forall (A B : Type) (f : A -> B) (x y : A), x = y -> f x = f y).
+    typeclasses eauto with typeclass_instances. 
+Defined. 
+  
+Definition FP_ap:  @ap ≈ @ap.
+  intros A A' eA B B' eB f f' ef x x' ex y y' ey p p' ep. 
+  cbn in *.
+  induction ep. apply UR_eq_refl. 
+Defined.
+
+Hint Extern 0 (UR_eq _ _ _ _ _ _ _ _ _ _ _ ) => 
+  erefine (FP_ap _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) : typeclass_instances.
+
+Definition equivalence_hprop (P Q: Type) (eP:forall p p':P, p = p')
+           (eQ: forall q q':Q, q = q')
+           (f : P -> Q) (g : Q -> P)
+  : P ≃ Q := BuildEquiv _ _ f (isequiv_adjointify _ g _ _).
+
+Definition FP_IsEquiv : @IsEquiv ≈ @IsEquiv.
+Proof.
+  cbn. split ; [typeclasses eauto | ]; intros.
+  unshelve refine (UR_Type_Equiv _ _ _). cbn.
+  unshelve refine (UR_Type_Equiv' _ _ _).
+  erefine ((ur_type (@FP_Sigma _ _ _) _ _ _)); cbn ; intros .
+  typeclasses eauto with typeclass_instances.
+  split.
+  typeclasses eauto with typeclass_instances.
+  intros. erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn; intros.
+  typeclasses eauto with typeclass_instances.
+  split.
+  typeclasses eauto with typeclass_instances.
+  intros. erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn; intros.
+  typeclasses eauto with typeclass_instances.
+  split.
+  typeclasses eauto with typeclass_instances.
+  typeclasses eauto with typeclass_instances.
+Defined. 
+
+Hint Extern 0 (IsEquiv _ ⋈ IsEquiv _) => refine (ur_type (FP_IsEquiv _ _ _ _ _ _) _ _ _) : typeclass_instances. 
+
+Definition ur_hprop A A' (H : A ⋈ A') (HA: forall x y:A, x = y) (x:A) (y:A')
+  : x ≈ y. 
+  intros. apply alt_ur_coh. apply HA. 
+Defined.   
+
+Definition Isequiv_ur_hprop A A' B B' (H : A ⋈ A')(H' : B ⋈ B') (f:A->B) (g:A'->B')
+           (e : IsEquiv f) (e' : IsEquiv g)
+           (efg:f ≈ g) : e ≈ e'. 
+  intros; apply ur_hprop. apply hprop_isequiv. 
+Defined.   
+
+Instance issig_equiv A B : { e_fun : A -> B &  IsEquiv e_fun }
+                               ≃ (A ≃ B).
+  issig (BuildEquiv A B) (@e_fun A B) (@e_isequiv A B).
+Defined.
+
+Instance issig_equiv' A B :  (A ≃ B) ≃ { e_fun : A -> B &  IsEquiv e_fun } :=
+  Equiv_inverse _.
+  
+Definition FP_Equiv : @Equiv ≈ @Equiv.
+Proof.
+  cbn;   split ; [typeclasses eauto | ]; intros.
+  unshelve refine (UR_Type_Equiv _ _ _). cbn. 
+  unshelve refine (UR_Type_Equiv' _ _ _).
+  erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn ; intros .
+  typeclasses eauto with typeclass_instances. 
+  split; tc.
+Defined. 
+
+Hint Extern 0 (UR (_ ≃ _) (_ ≃ _)) => refine (Ur (ur_type (FP_Equiv _ _ _) _ _ _)) : typeclass_instances.
+
+Definition FP_transport_eq : @transport_eq ≈ @transport_eq.
+  cbn; intros. induction H3. auto.
+Defined. 
+
+Definition FP_Equiv_id : @Equiv_id ≈ @Equiv_id.
+  intros A A' eA. unshelve eexists. cbn. auto.
+  apply Isequiv_ur_hprop.
+Defined. 
+
+Definition FP_eq_to_equiv : @eq_to_equiv ≈ @eq_to_equiv.
+  intros A A' eA B B' eB f f' ef. destruct ef. 
+  apply FP_Equiv_id. 
+Defined. 
+
+Opaque eq_to_equiv. 
+
+Hint Extern 0 (eq_to_equiv _ _ ≈ eq_to_equiv _ _) => refine (FP_eq_to_equiv _ _ _ _ _ _ _ _ _) : typeclass_instances.
+
+Instance bar : UR (forall A B, IsEquiv (eq_to_equiv A B))
+     (forall A B, IsEquiv (eq_to_equiv A B)).
+unshelve erefine (@URForall _ _ _ _ _ _); cbn in *; intros .
+tc. 
+unshelve erefine (@URForall _ _ _ _ _ _); cbn in *; intros .
+tc.
+unshelve refine (Ur (ur_type (FP_IsEquiv _ _ _ _ _ _) _ _ _)).
+tc. cbn; intros. refine (ur_type (FP_Equiv _ _ _) _ _ _); tc.
+apply FP_eq_to_equiv.
+Defined.
+
+Definition neg : bool -> bool := fun b => match b with
+                                          | true => false
+                                          | false => true
+                                                       end. 
+
+Instance neg_isequiv : IsEquiv neg.
+refine (isequiv_adjointify _ neg _ _).
+- destruct x; reflexivity.  
+- destruct x; reflexivity. 
+Defined.
+
+Definition neg_ur : bool ≈ bool.
+  unshelve refine (Build_UR_Type _ _ (BuildEquiv _ _ neg neg_isequiv) _ _).
+  econstructor. exact (fun b b' => b = neg b').
+  unshelve econstructor. intros. destruct a, a'; apply Equiv_id.  
+Defined. 
+
+Goal forall n m, n + m = m + n.
+  refine (fun n m => _).
+
+
+Definition absurd : neg = id -> False.
+  intro e. pose (apD10 e true). inversion e0.
+Defined.
+
+(* Goal univalence ≈ univalence -> False. *)
+(*   intro e. *)
+(*   Opaque FP_Equiv. *)
+(*   pose ((e bool bool neg_ur bool bool (ur_refl bool)).1 (BuildEquiv _ _ neg neg_isequiv) (Equiv_id bool)). clearbody u; clear e.  *)
+(*   match goal with | H : forall _ : ?X , _ |- _ => assert X end.  *)
+(*   unshelve eexists. cbn; intros. rewrite H. destruct y; reflexivity. *)
+(* Abort. *)
+
+Definition UR_Type_equiv (A A' : Type) (eA : A ⋈ A') (eA': A ≃ A')
+  (e  : equiv eA = eA') : 
+  eA =
+  Build_UR_Type _ _ eA' (Ur eA)
+                (transport_eq (fun X => UR_Coh A A' X _) e (Ur_Coh eA)). 
+  destruct e. reflexivity.
+Defined. 
+
+Definition UR_Type_eq (A A' : Type) (eA eA': A ⋈ A')
+           (equiv_eq  : equiv eA = equiv eA')
+           (ur_eq  : Ur eA = Ur eA')
+           (coh_eq  : transport_eq (fun X => UR_Coh A A' _ X) ur_eq (transport_eq (fun X => UR_Coh A A' X _) equiv_eq (Ur_Coh eA))
+                     = Ur_Coh eA') : eA = eA'. 
+  destruct eA, eA'.
+  cbn in *. rewrite <- coh_eq. destruct equiv_eq, ur_eq.
+  reflexivity.
+Defined.                  
+
+Definition  transport_Ur_Coh (A A': Type)
+            (equiv : A ≃ A')
+            (_ur _ur' : A -> A' -> Type)
+            (ur_coh : forall a a' : A, (a = a') ≃ (_ur a (equiv a')))
+            (e : _ur = _ur')
+  :   transport_eq (fun X => UR_Coh A A' equiv {| ur := X |}) e
+                   (Build_UR_Coh _ _ equiv {| ur := _ur |} ur_coh)
+      =
+      Build_UR_Coh _ _ equiv {| ur := _ur' |} (fun a a' => transport_eq (fun X =>
+                                               (a = a') ≃ (X a (equiv a'))) e (ur_coh a a')).
+  destruct e. reflexivity.
+Defined.
+
+Definition transport_apD10 A B (f g : forall x:A, B x)
+           (P : forall x:A, B x -> Type)
+           (e : f = g) x v: transport_eq (fun X => P x (X x))
+                                                       e v
+                                          = transport_eq (fun X => P x X)
+                                                (apD10 e x) v.
+  destruct e. reflexivity.
+Defined. 
+
+
+Definition transport_funext {A B} {f g : forall x:A, B x}
+           (P : forall x:A, B x -> Type) x 
+           (v : P x (f x)) (e : forall x, f x = g x)
+            : transport_eq (fun X => P x (X x))
+                                                       (e_inv apD10 e) v
+                                          = transport_eq (fun X => P x X)
+                                                (e x) v.
+Proof.
+  rewrite transport_apD10. rewrite e_retr. reflexivity.
+Defined.
+
+Definition transport_univalence A B C (e: A ≃ B) (e': C ≃ A)  :
+  transport_eq (Equiv C) (e_inv (eq_to_equiv A B) e) e'
+  = e ∘∘ e'.
+Proof.
+  pose (@e_retr _ _ (eq_to_equiv A B) _ e). 
+  set (e_inv (eq_to_equiv A B) e) in *.  rewrite <- e0.
+  clear e0. destruct e1. cbn. apply path_Equiv. apply funext; reflexivity. 
+Defined. 
+  
+Definition UR_Type_canonical_eq (A A' : Type) (eA : A ⋈ A') :
+  eA = @Canonical_UR A A' (equiv eA).
+  unshelve eapply UR_Type_eq.
+  destruct eA, Ur, Ur_Coh. cbn; apply ap.
+  apply funext; intro a. 
+  apply funext; intro a'.
+  specialize (ur_coh a (e_inv equiv a')).
+  apply univalence.
+  exact (transport_eq (fun X => ur a X ≃ _) (e_retr equiv _)
+                      (Equiv_inverse ur_coh)).
+
+  destruct eA, Ur, Ur_Coh. cbn.
+  rewrite transport_ap. rewrite transport_Ur_Coh. apply ap.
+  apply funext; intro a; apply funext; intro a'.
+  apply path_Equiv. apply funext. intro e. 
+  unfold univalent_transport in ur_coh.
+  pose (@transport_funext _ _ ur (fun a a' => a = e_inv equiv a') (fun _ (X : A' -> Type) => (a = a') ≃ X (equiv a')) a (ur_coh a a')). 
+  cbn in e0.
+  rewrite e0. clear e0. 
+  pose (@transport_funext _ _ (ur a) (fun a' => a = e_inv equiv a')
+                          (fun _ X => (a = a') ≃ X) (equiv a') (ur_coh a a')). 
+  rewrite e0. clear e0.
+  rewrite transport_univalence. cbn.
+  rewrite (e_adj equiv a'). rewrite transport_ap. 
+  unfold e_sect'.
+  pose (T := fun (X:{a'' : A & a'' = a'}) => (transport_eq (fun x : A => ur a (equiv x) ≃ (a = X.1))
+     X.2 (Equiv_inverse (ur_coh a X.1)))
+    ((ur_coh a a') e) =
+  (transport_eq (fun X : A => (a = a') ≃ (a = X)) X.2^
+     (Equiv_id (a = a'))) e).
+  change (T (_ ; e_sect equiv a')).
+  assert ((e_inv equiv (equiv a'); e_sect equiv a') =
+          ((_;eq_refl):{a'' : A & a'' = a'})).
+  apply path_sigma_uncurried. unshelve eexists. exact (e_sect equiv a').
+  cbn. rewrite transport_paths_l. rewrite inv2. apply eq_sym, concat_refl.
+  rewrite X. unfold T; clear T. cbn. apply e_sect. 
+Defined. 
+
+
+Definition FP_univalence : univalence ≈ univalence.
+  intros A A' eA B B' eB. 
+  apply Isequiv_ur_hprop.
+Defined. 
 
 Definition inversionS n m : S n = S m -> n = m.
   inversion 1. reflexivity.
@@ -43,7 +301,7 @@ Proof.
   equiv_adt2 (@Vector.t_rect _) (@Vector.nil _) (@Vector.cons _).
 Defined.
 
-Definition Equiv_Vector_fun A B (e:A ≃ B) n n' (en :n = n') : Vector.t A n -> Vector.t B n'.
+Definition Equiv_Vector_fun A B (e:A ≃ B) n n' (en : n = n') : Vector.t A n -> Vector.t B n'.
 Proof.
   intros v; generalize dependent n'. 
   induction v; destruct n'; intros. 
@@ -171,59 +429,46 @@ apply Equiv_Vector. apply Equiv_id. auto.
 apply Equiv_Vector_id. 
 Defined.
 
+Definition URForall_Type_sym A A' {HA : UR A A'}  (P : A -> Type) (Q : A' -> Type)
+           (HP :Transportable P)
+           : @URForall_Type_class A' A {| ur := fun x y => ur y x |} Q P -> URForall_Type_class A A' P Q. 
+Proof.
+  destruct 1. econstructor; auto.
+  intros. apply UR_Type_Inverse. apply ur_type; auto.
+Defined. 
+
+Inductive UR_vect_list {A B} (R : A -> B -> Type) : forall n m,
+    Vector.t A n -> {l : list B & length l ≈ m} -> Type :=
+  UR_vect_list_nil : UR_vect_list R 0 0 (nil _) (FP.nil;eq_refl)
+| UR_vect_list_cons : forall {a b n m v l},
+    (R a b) -> (UR_vect_list R n m v l) ->
+    UR_vect_list R (S n) (S m) (cons _ a n v) (b::l.1;ap S l.2).
+
 Definition Equiv_vector_list_
   : Vector.t ≈ (fun A n => {l : list A & length l ≈ n}).
   intros A B e. cbn in e. cbn. split. typeclasses eauto. 
   intros n n' en.
   unshelve eexists.
-  - eapply UR_Equiv'. apply Equiv_vector_list; typeclasses eauto.
-    unshelve eapply URSigma. apply UR_list_. apply UR_gen.
-    intros. cbn.
-    refine (Ur (ur_type (FP_eq nat nat FP_nat _ _ _) _ _ _ )).
-    unfold length. refine (FP_List_rect B B (ur_refl B) _ _ {| transport_ := _; ur_type := _|} _ _ _ _ _ _ x y H); typeclasses eauto.
-    typeclasses eauto.
-  - econstructor. intros v v'.
-    cbn. eapply equiv_compose. apply isequiv_ap.
-    unfold univalent_transport.
-    assert (forall (l l':{l : list B & length l ≈ n'}), (l = l')
-  ≃ {H
-    : UR_list (eq B) l .1
-        l' .1 &
-    (l.2 =
-    eq_map_inv nat nat FP_nat (length l.1)
-      (length l' .1)
-      (FP_List_rect B B (ur_refl B) (fun _ : list B => nat)
-                    (fun _ : list B => nat)
-                    {| transport_ := _; ur_type := fun _ _ _ => FP_nat|}
-                    0 0 eq_refl
-         (fun (_ : B) (_ : list B) (n0 : nat) => S n0)
-         (fun (_ : B) (_ : list B) (n0 : nat) => S n0)
-         (fun (x0 y0 : B) (_ : x0 = y0) (x1 y1 : list B)
-            (_ : UR_list (fun a b : B => a = b) x1 y1) (x2 y2 : nat) 
-            (H2 : x2 = y2) => ap S H2) l.1
-         l'.1 H) n' n' eq_refl
-      l'.2)}).
-    intros. 
-    eapply equiv_compose. apply Equiv_inverse. apply equiv_path_sigma.
-    unshelve eapply Equiv_Sigma.
-    cbn. eapply UR_Type_Equiv'.
-    unshelve refine (@ur_coh _ _ _ _ (@Ur_Coh _ _ (ur_type FP_List B B (@ur_refl_ _ _ _ _ URType_Refl  B))) _ _).
-    cbn. assert (forall l, list_rect B (fun _ : list B => list B) []
-       (fun (H0 : B) (_ H2 : list B) => H0 :: H2) l = l). clear. 
-    induction l; cbn. reflexivity. apply ap. assumption.
-    rewrite X. apply (@ur_refl_ _ _ _ _ URType_Refl).
-    cbn. intros. destruct l, l'. cbn in *. destruct x.
-    (* this instance of transportable is for the equality type, we can use the default one*)
-    split ; [apply Transportable_default | ]. 
-    cbn. intros. 
-    match goal with | |- (u = ?u0) ⋈ (u = ?u1) => assert (u1 = u0) by apply is_hset end. 
-    rewrite X. apply (@ur_refl_ _ _ _ _ URType_Refl).
-    (* this instance of transportable is for the equality type, we can use the default one*)
-    split ; [apply Transportable_default | ]. 
-    cbn. intros.     match goal with | |- (u = ?u0) ⋈ (u = ?u1) => assert (u1 = u0) by apply is_hset end. 
-    rewrite X. apply (@ur_refl_ _ _ _ _ URType_Refl).
-    
-    apply X. 
+  - econstructor. apply (UR_vect_list ur). 
+    (* eapply UR_Equiv'. apply Equiv_vector_list; typeclasses eauto. *)
+    (* unshelve eapply URSigma. apply UR_list_. apply UR_gen. *)
+    (* intros. cbn. *)
+    (* refine (Ur (ur_type (FP_eq nat nat FP_nat _ _ _) _ _ _ )). *)
+    (* unfold length. refine (FP_List_rect B B (ur_refl B) _ _ {| transport_ := _; ur_type := _|} _ _ _ _ _ _ x y H); typeclasses eauto. *)
+    (* typeclasses eauto. *)
+  - econstructor. intros v v'. cbn. 
+    unshelve econstructor.
+    destruct 1. destruct en. induction v; econstructor; auto.
+    exact (ur_coh _ _ eq_refl).
+    (* unshelve refine (isequiv_adjointify _ _ _ _). *)
+    (* induction 1. *)
+    (* assert (forall n (e:n = 0) (v':t A n), en # v' = nil). *)
+    (* destruct v'.  *)
+    (* generalize intros v.  *)
+    (* intros  *)
+    (* eapply (equiv_compose (B := UR_list (eq B) (vector_to_list A B (equiv e) n n' en v) .1 *)
+    (*    (vector_to_list A B (equiv e) n n' en v') .1)). *)
+    apply admit. 
 Defined. 
 
 Hint Extern 0 (UR_Type (t ?A ?n) _) =>
