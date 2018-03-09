@@ -977,18 +977,108 @@ Inductive UR_eq (A_1 A_2 : Type) (A_R : A_1 -> A_2 -> Type) (x_1 : A_1) (x_2 : A
 Hint Extern 0 ((_ = _) ≃ (_ = _)) => erefine (Equiv_eq _ _ _ _ _ _ _ _ _) : typeclass_instances.
 
 
+
+Definition alt_ur_coh' {A B:Type} (H:A ⋈ B) :
+           forall (a:A) (b:B), (a ≈ b) ≃ (↑a = b).
+Proof.
+  intros a b. cbn.
+  eapply equiv_compose. apply alt_ur_coh. unfold univalent_transport. 
+  eapply equiv_compose. apply isequiv_ap. 
+  unshelve refine (transport_eq (fun X => (_ = X) ≃ (_ = _))
+                       (e_retr _ b)^ _). apply Equiv_id. 
+Defined.
+
+
+Definition UR_eq_equiv (A B : Type) P
+           (x : A) (y : B) (H : P x y)
+           (x' : A) (y' : B) (H' : P x' y') (X : x = x') (Y:y=y') :
+  UR_eq A B P x y H x' y' H' X Y ≃
+        (transport_eq (P _) Y (transport_eq (fun X => P X _) X H) = H').
+Proof.
+  unshelve econstructor. intros XX.
+  destruct XX. reflexivity.
+  unshelve refine (isequiv_adjointify _ _ _ _).
+  - intros eH.
+    destruct X, Y, eH. apply UR_eq_refl. 
+  - cbn. intros XX. destruct XX. reflexivity.
+  - cbn. intros eH; destruct X, Y, eH. reflexivity.
+Defined. 
+
+Definition alt_ur_coh_transport_r A B H (x1 x2 :A) (y:B) H1 (XX:x1=x2) :
+  (alt_ur_coh H x2 y) (transport_eq (fun X : A => X ≈ y) XX H1)
+  = XX^ @ alt_ur_coh H x1 y H1.
+destruct XX; reflexivity.
+Defined. 
+
+Definition alt_ur_coh_transport_l A B H (x :A) (y1 y2:B) H1 (XX:y1=y2) :
+  (alt_ur_coh H x y2) (transport_eq (ur x) XX H1)
+  = alt_ur_coh H x y1 H1 @ ap _ XX.
+destruct XX. cbn. apply inverse, concat_refl.
+Defined. 
+
 Definition FP_eq : @eq ≈ @eq.
   cbn. intros.
   split ; [typeclasses eauto| ]. 
   unshelve eexists. 
-  - econstructor. intros e e'.
-    assert ((y0 = y1) ≃ (x0 = x1)). eapply Equiv_inverse. typeclasses eauto with typeclass_instances.
-    exact (e = ↑ e').
-  - econstructor. intros e e'.
-    Opaque Equiv_eq. 
-    unfold univalent_transport. cbn. 
-    Transparent Equiv_eq. rewrite e_sect. 
-    apply Equiv_id. 
+  - econstructor. exact (UR_eq x y _ x0 y0 H0 x1 y1 H1).
+  - econstructor. intros e e'. cbn. 
+    eapply equiv_compose. Focus 2. apply Equiv_inverse.
+    apply UR_eq_equiv.
+    eapply Equiv_inverse,  equiv_compose.
+    apply (@isequiv_ap _ _ (alt_ur_coh H x1 y1) (transport_eq (ur x1) (eq_map x y H x0 y0 H0 x1 y1 H1 e')
+     (transport_eq (fun X : x => X ≈ y0) e H0)) H1).
+    rewrite alt_ur_coh_transport_l.
+    rewrite alt_ur_coh_transport_r. cbn. 
+    unfold eq_map. repeat rewrite ap_pp. 
+    set ((alt_ur_coh H x0 y0) H0).
+    set ((alt_ur_coh H x1 y1) H1).
+    change ( ((e^ @ e0) @
+   ((ap (e_inv (equiv H)) (e_retr (equiv H) y0)^ @
+     ((ap (e_inv (equiv H)) (ap (equiv H) e0^) @
+       ap (e_inv (equiv H)) (ap (equiv H) e')) @
+      ap (e_inv (equiv H)) (ap (equiv H) e1))) @
+    ap (e_inv (equiv H)) (e_retr (equiv H) y1)) = e1) ≃ 
+                                                      (e = e')).
+    assert (forall y0,  ap (e_inv (equiv H)) (e_retr (equiv H) y0) = (e_sect _ _)).
+    intro.
+    apply (@isequiv_ap _ _ (@isequiv_ap _ _ (equiv H) _ _)). cbn.
+    rewrite <- e_adj. rewrite <- ap_compose. apply moveR_M1.
+    rewrite <- (ap_inv (fun x2 : y => (equiv H) (e_inv (equiv H) x2))).
+    rewrite <- (transport_paths_naturality' _ (e_retr (equiv H))).
+    apply inverse, inv_inv'.
+    rewrite ap_inv. 
+    repeat rewrite X. 
+    assert (e0 @ (e_sect (equiv H) (e_inv (equiv H) y0))^  @
+                                                               ((ap (e_inv (equiv H)) (ap (equiv H) e0^))) = (e_sect (equiv H) x0)^).
+    rewrite <- concat_p_pp.
+    rewrite <- ap_compose.
+    repeat rewrite ap_inv.
+    rewrite <- concat_inv. 
+    rewrite <- (transport_paths_naturality' _ (e_sect (equiv H))).
+    rewrite concat_inv. rewrite concat_p_pp. rewrite inv_inv'. reflexivity.
+    repeat rewrite <- concat_p_pp.
+    rewrite (concat_p_pp e0).
+    rewrite (concat_p_pp (e0 @ (e_sect (equiv H) (e_inv (equiv H) y0))^)).
+    rewrite X0. rewrite <- ap_compose. 
+    rewrite (concat_p_pp (e_sect (equiv H) x0)^).
+    rewrite <- (transport_paths_naturality _ (fun x => (e_sect (equiv H) x)^)).
+    rewrite <- ap_compose. 
+    repeat rewrite <- concat_p_pp.
+    rewrite (concat_p_pp (e_sect (equiv H) x1)^).
+    rewrite <- (transport_paths_naturality _ (fun x => (e_sect (equiv H) x)^)).
+    repeat rewrite <- concat_p_pp.
+    rewrite inv_inv. rewrite concat_refl.
+
+    eapply equiv_compose. apply (Equiv_inverse (BuildEquiv _ _ _ (isequiv_moveL_M1 (e^ @ (e' @ e1)) e1))). 
+    repeat rewrite concat_inv.     repeat rewrite <- concat_p_pp.
+    rewrite (concat_p_pp e1). rewrite inv_inv'. cbn. rewrite inv2. 
+    eapply equiv_compose. apply (BuildEquiv _ _ _ (isequiv_moveR_M1 _ _)). 
+
+    clear.
+    unshelve econstructor.
+    intro X; destruct X. reflexivity. 
+    unshelve refine (isequiv_adjointify _ _ _ _);
+    intro X; destruct X; reflexivity. 
 Defined. 
 
 Hint Extern 0 (UR_Type (_ = _) (_ = _)) => erefine (ur_type (FP_eq _ _ _ _ _ _) _ _ _) :  typeclass_instances.
@@ -1000,59 +1090,14 @@ Opaque alt_ur_coh.
 Definition FP_eq_refl : @eq_refl ≈ @eq_refl.
 Proof.
   cbn; intros. unfold eq_map_inv. cbn.
-  apply inverse.
-  exact ((ap2 _ (concat_refl _ _ _ _) eq_refl) @ inv_inv' _ _ _ _).
+  apply UR_eq_refl.
 Defined.
 
-Hint Extern 0 (eq_refl = eq_map_inv _ _ _ _ _ _ _ _ _  eq_refl) =>
+Hint Extern 0 ( UR_eq _ _ _ _ _ _ _ _ _ eq_refl eq_refl) =>
 erefine (FP_eq_refl _ _ _ _ _ _):  typeclass_instances.
 
 Definition FP_eq_rect : @eq_rect ≈ @eq_rect.
 Proof.
-  simpl. intros. destruct x4 , y4. cbn.
-  revert H2.  
-  assert (ur_type (H1 x0 y0 H0) (@eq_refl x x0)
-                (@eq_refl y y0)
-                (FP_eq_refl x y H x0 y0 H0) = ur_type (H1 x0 y0 H3) (@eq_refl x x0) (@eq_refl y y0) H4).
-  pose (T := fun (X:{X : x0 ≈ y0 & eq_refl =
-  eq_map_inv x y H x0 y0 H0 x0 y0 
-              X eq_refl}) => ur_type (H1 x0 y0 X.1) eq_refl eq_refl X.2).
-  change (T (H0 ; FP_eq_refl x y H x0 y0 H0) =
-          T (H3; H4)).
-  refine (transport_eq (fun X => T X = _) _ eq_refl).
-  clear T. 
-  cbn. rename H4 into X. 
-  unfold eq_map_inv in X.
-  set (eq := alt_ur_coh H x0 y0) in *. 
-  apply path_sigma_uncurried. unshelve eexists. cbn in *. 
-  apply (ap_inv_equiv (e_fun eq)).
-  cbn. apply moveL_M1 in X. exact (X @ concat_refl _ _ _ _).
-  cbn.
-  rewrite transport_paths_Fr.
-  apply moveR_pV.
-  unfold FP_eq_refl, ap_inv_equiv, ap_inv_equiv',  eq_map_inv.
-  fold eq. unfold univalent_transport; cbn.
-  rewrite inv2.
-  set (moveL_M1 (e_fun eq H3) (e_fun eq H0 @ eq_refl) X @
-         concat_refl x x0 (e_inv (e_fun (equiv H)) y0) (e_fun eq H0)) in *.
-  cbn in *. 
-  rewrite (ap_compose (fun x => (e_fun eq x)^)).
-  rewrite (ap_compose (fun x => (e_fun eq x))).
-  assert (forall X , ap (fun x3 : x0 ≈ y0 => e_fun eq x3)
-          (((e_sect (e_fun eq) H3)^ @ ap (e_inv (e_fun eq)) X) @
-            e_sect (e_fun eq) H0)^ = X^).
-  clear. intro X. rewrite ap_V. apply ap. repeat rewrite ap_pp.
-  rewrite <- ap_compose. rewrite <- e_adj.
-  rewrite <- concat_p_pp. rewrite (concat_A1p (f:=(fun x1 : x0 = e_inv (e_fun (equiv H)) y0 => e_fun eq (e_inv (e_fun eq) x1)))).
-  rewrite ap_V. rewrite e_adj. rewrite concat_p_pp, inv_inv. reflexivity. 
-  rewrite X0. clear X0.
-  rewrite concat_inv. 
-  repeat rewrite ap_pp. 
-  rewrite moveL_M1_eq.
-  rewrite concat_p_pp. apply whiskerR.
-  clear e X.
-  set (e_fun eq H0). 
-  destruct e. cbn in *. reflexivity.
-  rewrite X. exact id. 
-Defined.
-
+  cbn; intros.
+  induction H4. cbn. auto.
+Defined. 
