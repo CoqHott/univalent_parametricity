@@ -90,9 +90,15 @@ Definition Canonical_eq_eq A (e e':Canonical_eq A)
   e = e'.
 Proof.
   destruct e, e'. cbn in *. destruct H. cbn.
-  unfold can_eq_eq. admit.
-  (* intro H. destruct H. reflexivity. *)
-Admitted.
+  unfold can_eq_eq.
+  intros H. apply ap_inv_equiv' in H. cbn in H. 
+  assert (can_eq_refl0  = can_eq_refl1).
+  apply funext. intro x. 
+  pose (H' := apD10 H x). apply ap_inv_equiv' in H'.
+  pose (H'' := apD10 H' x). apply ap_inv_equiv' in H''.
+  exact (apD10 H'' eq_refl). 
+  destruct X. reflexivity.
+Defined. 
 
 Definition Canonical_contr A (e :Canonical_eq A) : e = Canonical_eq_gen A.
 Proof.
