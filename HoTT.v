@@ -825,6 +825,16 @@ induction x.
     intro H; right. intro e. inversion e. apply (H (logic_eq_is_eq H1)).
 Defined.
 
+Definition Decidable_eq_bool : forall (x y : bool),  (x = y) + (x = y -> False).
+induction x.
+- destruct y.
+ + left ;reflexivity.
+ + right; intro H; inversion H.
+- destruct y.
+ + right; intro H; inversion H.
+ + left ;reflexivity.
+Defined.
+
 Instance nat_Hset : HSet nat := Hedberg nat Decidable_eq_nat.
 
 

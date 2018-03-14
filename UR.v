@@ -20,6 +20,8 @@ Definition Funext := forall (A : Type) (P : A -> Type) f g, IsEquiv (@apD10 A P 
 Axiom univalence : forall A B, IsEquiv (eq_to_equiv A B).
 Axiom funext : Funext. 
 
+Instance funext_isequiv A P (f g : forall x : A, P x) : IsEquiv (@apD10 _ _ f g) := funext _ _ _ _.
+
 (* for minor differences between Prop and Type (coming from impredicativity)  *)
 (* we need to state again univalence for Prop, even if in principle Prop is  *)
 (* a subtype iof Type *)
@@ -44,16 +46,98 @@ Notation "x ≈ y" := (ur x y) (at level 20).
 Class UR_Coh@{i j k} A B (e : Equiv@{i j} A B) (H: UR@{i j k} A B) := {
   ur_coh : forall (a a':A), Equiv (a = a') (a ≈ (↑ a')) }.
 
+Class Canonical_eq@{i} (A:Type@{i}) :=
+  { purify : forall (x y : A), x = y -> x = y ;
+    purify_refl : forall x, purify x x eq_refl = eq_refl }.
+
+Definition Canonical_eq_gen A : Canonical_eq A :=
+  {| purify := fun x y e => e ;
+     purify_refl := fun x => eq_refl |}.
+
+Arguments purify {_} _.
+Arguments purify_refl {_}.
+
+Definition purify_eq {A} (e :Canonical_eq A) : e.(purify) = fun x y e => e.
+Proof.
+  apply funext; intros x. apply funext; intros y. apply funext; intro E.
+  destruct E. apply purify_refl. 
+Defined. 
+
+Definition transport_apD10 A B (f g : forall x:A, B x)
+           (P : forall x:A, B x -> Type)
+           (e : f = g) x v: transport_eq (fun X => P x (X x))
+                                                       e v
+                                          = transport_eq (fun X => P x X)
+                                                (apD10 e x) v.
+  destruct e. reflexivity.
+Defined. 
+
+
+Definition transport_funext {A B} {f g : forall x:A, B x}
+           (P : forall x:A, B x -> Type) x 
+           (v : P x (f x)) (e : forall x, f x = g x)
+            : transport_eq (fun X => P x (X x))
+                                                       (e_inv apD10 e) v
+                                          = transport_eq (fun X => P x X)
+                                                (e x) v.
+Proof.
+  rewrite transport_apD10. rewrite e_retr. reflexivity.
+Defined.
+
+Definition Canonical_eq_eq A (e e':Canonical_eq A)
+           (H : e.(purify) = e'.(purify)) :
+  (transport_eq (fun X => X = _) H  (purify_eq e) = (purify_eq e')) ->
+  e = e'.
+Proof.
+  destruct e, e'. cbn in *. destruct H. cbn.
+  unfold purify_eq. admit.
+  (* intro H. destruct H. reflexivity. *)
+Admitted.
+
+Definition Canonical_contr A (e :Canonical_eq A) : e = Canonical_eq_gen A.
+Proof.
+  unshelve eapply Canonical_eq_eq.
+  apply purify_eq.
+  cbn. rewrite transport_paths_l. rewrite inv_inv.
+  unfold purify_eq. cbn. apply inverse. 
+  pose (@e_sect _ _ _ (funext _ _  (fun (x y : A) (e0 : eq A x y) => e0) (fun (x y : A) (e0 : eq A x y) => e0)) eq_refl).
+  eapply concat; try apply e0. clear e0. apply ap. apply funext. intros. cbn.
+  pose (@e_sect _ _ _ (funext _ _  (fun (y : A) (e0 : eq A x y) => e0) (fun (y : A) (e0 : eq A x y) => e0)) eq_refl).
+  eapply concat; try apply e0. clear e0. apply ap. apply funext. intros y. cbn.
+  pose (@e_sect _ _ _ (funext _ _  (fun (e0 : eq A x y) => e0) (fun (e0 : eq A x y) => e0)) eq_refl). 
+  eapply concat; try apply e0. clear e0. apply ap. apply funext. intros e0. cbn.
+  destruct e0. reflexivity.                  
+Defined. 
+
+
+Definition Canonical_eq_decidable A (Hdec:forall x y : A, (x=y) + ((x = y) -> False)) : Canonical_eq A.
+  unshelve econstructor.
+  - intros x y e.
+    destruct (Hdec x y) as [e0 | n0].
+    destruct e0. reflexivity. 
+    destruct (n0 e).
+  - intro x. cbn. destruct (Hdec x x); cbn.
+    assert (e = eq_refl) by (eapply is_hset).
+    rewrite X. reflexivity.
+    destruct (f eq_refl).
+    Unshelve. apply Hedberg. auto.
+Defined.
+
 Class UR_Type A B :=
   { equiv :> A ≃ B;
     Ur :> UR A B;
-    Ur_Coh:> UR_Coh A B equiv Ur}.
+    Ur_Coh:> UR_Coh A B equiv Ur;
+    Ur_Can_A :> Canonical_eq A;
+    Ur_Can_B :> Canonical_eq B;
+  }.
 
 Infix "⋈" := UR_Type (at level 25).
 
 Arguments equiv {_ _} _.
 Arguments Ur {_ _} _.
 Arguments Ur_Coh {_ _} _.
+Arguments Ur_Can_A {_ _} _.
+Arguments Ur_Can_B {_ _} _.
 
 (* some facilities to create an instance of UR_Type *)
 
@@ -116,6 +200,8 @@ Proof.
   - apply Equiv_id.
   - apply UR_gen.
   - constructor. intros;apply Equiv_id.
+  - apply Canonical_eq_gen.
+  - apply Canonical_eq_gen.    
 Defined.
 
 Class Transportable {A} (P:A -> Type) :=

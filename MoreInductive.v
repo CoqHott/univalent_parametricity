@@ -135,14 +135,13 @@ refine (isequiv_adjointify _ neg _ _).
 Defined.
 
 Definition neg_ur : bool ≈ bool.
-  unshelve refine (Build_UR_Type _ _ (BuildEquiv _ _ neg neg_isequiv) _ _).
+  unshelve refine (Build_UR_Type _ _ (BuildEquiv _ _ neg neg_isequiv) _ _ _ _).
   econstructor. exact (fun b b' => b = neg b').
   unshelve econstructor. intros. destruct a, a'; apply Equiv_id.  
 Defined. 
 
 Goal forall n m, n + m = m + n.
   refine (fun n m => _).
-
 
 Definition absurd : neg = id -> False.
   intro e. pose (apD10 e true). inversion e0.
@@ -160,7 +159,7 @@ Definition UR_Type_equiv (A A' : Type) (eA : A ⋈ A') (eA': A ≃ A')
   (e  : equiv eA = eA') : 
   eA =
   Build_UR_Type _ _ eA' (Ur eA)
-                (transport_eq (fun X => UR_Coh A A' X _) e (Ur_Coh eA)). 
+                (transport_eq (fun X => UR_Coh A A' X _) e (Ur_Coh eA)) _ _. 
   destruct e. reflexivity.
 Defined. 
 
@@ -168,9 +167,12 @@ Definition UR_Type_eq (A A' : Type) (eA eA': A ⋈ A')
            (equiv_eq  : equiv eA = equiv eA')
            (ur_eq  : Ur eA = Ur eA')
            (coh_eq  : transport_eq (fun X => UR_Coh A A' _ X) ur_eq (transport_eq (fun X => UR_Coh A A' X _) equiv_eq (Ur_Coh eA))
-                     = Ur_Coh eA') : eA = eA'. 
+                      = Ur_Coh eA')
+           (canonA_eq  : eA.(Ur_Can_A) = eA'.(Ur_Can_A))
+           (canonB_eq  : eA.(Ur_Can_B) = eA'.(Ur_Can_B))
+  : eA = eA'. 
   destruct eA, eA'.
-  cbn in *. rewrite <- coh_eq. destruct equiv_eq, ur_eq.
+  cbn in *. rewrite <- coh_eq. destruct equiv_eq, ur_eq, canonA_eq, canonB_eq.
   reflexivity.
 Defined.                  
 
@@ -252,7 +254,9 @@ Definition UR_Type_canonical_eq (A A' : Type) (eA : A ⋈ A') :
           ((_;eq_refl):{a'' : A & a'' = a'})).
   apply path_sigma_uncurried. unshelve eexists. exact (e_sect equiv a').
   cbn. rewrite transport_paths_l. rewrite inv2. apply eq_sym, concat_refl.
-  rewrite X. unfold T; clear T. cbn. apply e_sect. 
+  rewrite X. unfold T; clear T. cbn. apply e_sect.
+  - apply Canonical_contr.
+  - apply Canonical_contr.    
 Defined. 
 
 
@@ -468,7 +472,9 @@ Definition Equiv_vector_list_
     (* intros  *)
     (* eapply (equiv_compose (B := UR_list (eq B) (vector_to_list A B (equiv e) n n' en v) .1 *)
     (*    (vector_to_list A B (equiv e) n n' en v') .1)). *)
-    apply admit. 
+    apply admit.
+  - apply Canonical_eq_gen.
+  - apply Canonical_eq_gen.
 Defined. 
 
 Hint Extern 0 (UR_Type (t ?A ?n) _) =>
@@ -527,6 +533,8 @@ Definition FP_Vector : Vector.t ≈ Vector.t.
     rewrite <- X.  
     pose (@Ur_Coh _ _ (@ur_type nat nat _ _ _ (Equiv_vector_list_ A A (ur_refl A)) _ _ en)).
     exact (@ur_coh _ _ _ _ u v v'). 
+  - apply Canonical_eq_gen.
+  - apply Canonical_eq_gen.
 Defined.
 
 Instance Equiv_Vector_instance : forall x y : Type, x ⋈ y -> forall n n' (e:n=n'), (Vector.t x n) ⋈ (Vector.t y n') :=
@@ -846,7 +854,16 @@ Defined.
 
 Instance UR_N : UR N N := UR_gen N. 
 
-Instance FP_N : N ⋈ N := @ur_refl_ _ _ _ _ URType_Refl _.
+Definition Decidable_eq_N : forall (x y : N),  (x = y) + (x = y -> False).
+  intros. destruct (Decidable_eq_nat (N.to_nat x) (N.to_nat y)). 
+  - left. apply (@isequiv_ap _ _ Equiv_nat_N). exact e.
+  - right. intro e. apply f. exact (ap _ e).
+Defined. 
+
+Instance FP_N : N ⋈ N := URType_Refl_decidable N Decidable_eq_N.
+
+Instance Transportable_nat (P: N -> Type) : Transportable P :=
+  Transportable_decidable P Decidable_eq_N.
 
 Hint Extern 0 (?f ?x = ?y ) => erefine (Move_equiv Equiv_nat_N x y _)
                                : typeclass_instances.
@@ -862,13 +879,13 @@ Defined.
 
 Instance compat_N_nat : N ⋈ nat.
 Proof.
-  unshelve eexists. 
+  unshelve eexists; try tc.
   econstructor. intros. cbn.
-  rewrite (N2Nat_id _). apply Equiv_id. 
+  rewrite (N2Nat_id _). apply Equiv_id.
 Defined. 
 
 Instance compat_nat_N : nat ⋈ N.
-  unshelve eexists. 
+  unshelve eexists; try tc. 
   econstructor. intros. cbn.
   rewrite (Nat2N_id _). apply Equiv_id.
 Defined.

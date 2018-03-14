@@ -229,8 +229,6 @@ Definition bar := ↑ foo : forall f: N -> N, f = f.
 
 Eval compute in foo S.
 
-(* does not compute because of the index on a dependent product *)
-
 (* Eval compute in (bar N.succ). *)
 
 Definition foo' : forall f: nat -> nat, vector nat (f 0)
@@ -257,31 +255,6 @@ Notation "[[ x ; y ; .. ; z ]]" := ((FP.cons x (FP.cons y .. (FP.cons z FP.nil) 
 
 Definition foo'' : testType2 := (S ; [[4]]).
 
-(* Hint Extern 100 (_ = _) => solve [typeclasses eauto with typeclass_instances] : typeclass_instances. *)
-
-Hint Extern 0 => progress (unfold testType, testType2) :  typeclass_instances.
-
-Definition bar'' : testType := ↑ foo''.
-
-Eval cbn in bar''.2.
-
-Definition testType' := { f : N -> Type & vector (f 0%N) 1}.
-
-Definition testType2' := { f : nat -> Type & {l : list (f 0) & length l = 1}}.
-
-Definition foo''' : testType2' := (fun n => n = n ; [[eq_refl]]).
-
-Hint Extern 0 => progress (unfold testType', testType2') :  typeclass_instances.
-
-Definition bar''' : testType' := ↑ foo'''.
-
-Eval compute in bar'''.2.
-
-(* Definition testEquiv : testType' ≃ testType2' := _. *)
-
-(* Definition bar2''' : testType' := e_inv' testEquiv foo'''. *)
-
-(* Eval compute in bar2'''.2. *)
 
 Definition testType'' := { f : forall x : N, { n : N & n = N.add x 1%N} & vector nat (↑ ((f (N.add N0 N0)).1))}.
 
@@ -435,52 +408,10 @@ Eval compute in fooForall6 (fun n => S (↑ n) ; ConstantVector (6%N) 1).
 
 Eval compute in barForall6 (S; ConstantVector 6 1).
 
-Definition iEq {A} (x y: A) : Type := forall (P : A -> Type), P x -> P y.
-
-Definition iEq_refl {A} (x: A) : iEq x x := fun P X => X.
-
-Definition foo_iEq : forall f: N -> N, iEq (f 0%N) (f 0%N) := fun f => iEq_refl _.
-
-Hint Extern 0 => progress (unfold iEq) :  typeclass_instances.
-
-Definition bar_iEq := ↑ foo_iEq : forall f: nat -> nat, iEq (f 0) (f 0).
-
-(* Definition bar_equiv : (forall f: nat -> nat, f = f) ≃ (forall f: N -> N, f = f) := _. *)
-
-Eval compute in foo_iEq N.succ.
-
-(* does not compute because of the index on a dependent product *)
-
-(* Eval compute in (bar_iEq S). *)
-
-Goal (bar_iEq S) = iEq_refl _.
-  unfold bar_iEq, univalent_transport.
-  Opaque FP_forall. cbn. Transparent FP_forall.
-  cbv delta [FP_forall]. cbv delta [Equiv_forall].
-  Opaque isequiv_functor_forall. Opaque functor_forall. 
-  simpl. 
-  lazy beta. 
-  unfold FP_forall. simpl. 
-
-Definition foo_iEq : forall f: N -> N, iEq (f 0%N) (f 0%N) := fun f => iEq_refl _.
-
-Hint Extern 0 => progress (unfold iEq) :  typeclass_instances.
-
-Definition bar_iEq := ↑ foo_iEq : forall f: nat -> nat, iEq (f 0) (f 0).
-
-(* Definition bar_equiv : (forall f: nat -> nat, f = f) ≃ (forall f: N -> N, f = f) := _. *)
-
-Eval compute in foo_iEq N.succ.
-
-(* does not compute because of the index on a dependent product *)
-
-(* Eval compute in (bar_iEq S). *)
 
 
-Definition foo_iEq' : forall f: nat, n =  n := fun n => eq_refl.
+Definition foo_Eq : forall f: N -> N, forall n, f n = f n := fun f n => eq_refl.
 
-Definition bar_iEq' := ↑ foo_iEq' : forall n: N, n = n.
+Definition bar_Eq := ↑ foo_Eq : forall f: nat -> nat, forall n,  f n = f n.
 
-Eval compute in foo_iEq' 5.
-
-Eval compute in (bar_iEq' 5%N).
+Eval compute in foo_Eq N.succ 0.
