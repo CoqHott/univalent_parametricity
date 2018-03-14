@@ -106,10 +106,10 @@ Proof.
   - apply H0.(Ur_Can_A).
   - pose H0.(Ur_Can_B). destruct c.
     unshelve refine (let x : forall (x y:C) , x=y -> x = y := _ in _).
-    intros x y e. pose (purify _ _ (ap H e)).
+    intros x y e. pose (can_eq _ _ (ap H e)).
     apply (Equiv_inverse (@isequiv_ap _ _ H _ _) e0). 
     apply (Build_Canonical_eq _ x).
-    cbn. clear x; intro x. rewrite purify_refl. cbn. rewrite concat_refl.
+    cbn. clear x; intro x. rewrite can_eq_refl. cbn. rewrite concat_refl.
     apply inv_inv.
 Defined.     
 
@@ -125,10 +125,10 @@ Proof.
     apply ur_coh.
   - pose H0.(Ur_Can_A). destruct c.
     unshelve refine (let x : forall (x y:C) , x=y -> x = y := _ in _).
-    intros x y e. pose (purify _ _ (ap H e)).
+    intros x y e. pose (can_eq _ _ (ap H e)).
     apply (Equiv_inverse (@isequiv_ap _ _ H _ _) e0). 
     apply (Build_Canonical_eq _ x).
-    cbn. clear x; intro x. rewrite purify_refl. cbn. rewrite concat_refl.
+    cbn. clear x; intro x. rewrite can_eq_refl. cbn. rewrite concat_refl.
     apply inv_inv.
   - apply H0.(Ur_Can_B).
 Defined. 
@@ -282,7 +282,7 @@ Proof.
     eapply equiv_compose. apply (@isequiv_ap _ _ ( Equiv_inverse (equiv e))).
     eapply equiv_compose. apply ur_coh.
     cbn. unfold univalent_transport.
-    refine (transport_eq (fun X => (_ ≈ X) ≃ _) (purify _ _ _ (e_retr _ _))^ (Equiv_id _)).
+    refine (transport_eq (fun X => (_ ≈ X) ≃ _) (can_eq _ _ _ (e_retr _ _))^ (Equiv_id _)).
   - exact (e.(Ur_Can_B)).
   - exact (e.(Ur_Can_A)).
 Defined.
@@ -369,16 +369,16 @@ Definition FP_prod : prod ≈ prod.
   apply ur_coh. apply ur_coh. apply Equiv_id.
   unshelve refine (let X : forall (a b:x*x0) , a=b -> a = b := _ in _).
   intros. apply path_prod_uncurried. apply (Equiv_inverse (BuildEquiv _ _ (path_prod_uncurried a b) _)) in X.
-  split. apply purify. apply H. exact (fst X). 
-  apply purify. apply H0. exact (snd X).
+  split. apply can_eq. apply H. exact (fst X). 
+  apply can_eq. apply H0. exact (snd X).
   apply (Build_Canonical_eq _ X). cbn; clear X. intros [a b].
-  cbn. repeat rewrite purify_refl. reflexivity.
+  cbn. repeat rewrite can_eq_refl. reflexivity.
   unshelve refine (let X : forall (a b:y*y0) , a=b -> a = b := _ in _).
   intros. apply path_prod_uncurried. apply (Equiv_inverse (BuildEquiv _ _ (path_prod_uncurried a b) _)) in X.
-  split. apply purify. apply H. exact (fst X). 
-  apply purify. apply H0. exact (snd X).
+  split. apply can_eq. apply H. exact (fst X). 
+  apply can_eq. apply H0. exact (snd X).
   apply (Build_Canonical_eq _ X). cbn; clear X. intros [a b].
-  cbn. repeat rewrite purify_refl. reflexivity.
+  cbn. repeat rewrite can_eq_refl. reflexivity.
 Defined.
 
 Hint Extern 0 ((_ * _) ≃ (_ * _)) => erefine (@Equiv_prod _ _ _ _ _ _)
@@ -540,12 +540,12 @@ Proof.
   - refine (functor_forall (e_inv f) _).
     intros a y.
     generalize (e_inv (g _) y). clear y.
-    apply (transportable _ _ (eA.(purify) _ _ (e_retr f a))).
+    apply (transportable _ _ (eA.(can_eq) _ _ (e_retr f a))).
   - intros h. apply funext. intro a. unfold functor_forall.
-    destruct (e_retr f a). rewrite purify_refl, transportable_refl. apply e_sect. 
+    destruct (e_retr f a). rewrite can_eq_refl, transportable_refl. apply e_sect. 
   - intros h;apply funext. unfold functor_forall. intros b.
     rewrite e_adj. destruct (e_sect f b).
-    cbn. rewrite purify_refl, transportable_refl. apply e_retr.
+    cbn. rewrite can_eq_refl, transportable_refl. apply e_retr.
 Defined.
 
 Instance isequiv_functor_forall_ur {A B} `{P : A -> Type} `{Q : B -> Type} (e : B ≈ A) (e' : Q ≈ P) (eA : Canonical_eq A) (eP : Transportable P)
@@ -621,11 +621,11 @@ Proof.
     destruct HP as [HP HP'].
     pose e^.
     unshelve refine (BuildEquiv _ _ (functor_forall _ _) (isequiv_functor_forall _ _ _ _ )).
-    intro X. apply (transportable _ _ (HA_can.(purify) _ _ e0) X); auto. intro b. cbn.
-  assert ((x;transportable y x (purify HA_can y x e0) b) = (y;b)).
+    intro X. apply (transportable _ _ (HA_can.(can_eq) _ _ e0) X); auto. intro b. cbn.
+  assert ((x;transportable y x (can_eq HA_can y x e0) b) = (y;b)).
   apply path_sigma_uncurried. unshelve esplit. cbn. destruct e.
   cbn. 
-  exact (apD10 (ap e_fun (ap (transportable x x) (HA_can.(purify_refl) x) @ (@transportable_refl _ _ _ x))) b).
+  exact (apD10 (ap e_fun (ap (transportable x x) (HA_can.(can_eq_refl) x) @ (@transportable_refl _ _ _ x))) b).
   apply (HP _ _ X);  typeclasses eauto.
   
   unshelve econstructor. intros.
@@ -633,7 +633,7 @@ Proof.
   apply path_sigma_uncurried. unshelve esplit. exact X.
   exact (HP _ _ X0).  
   intros; cbn. apply (HP' (x;x0)).   
-  apply (transportable y x (purify HA_can y x e0)). typeclasses eauto. 
+  apply (transportable y x (can_eq HA_can y x e0)). typeclasses eauto. 
   - intro a. cbn.
     unshelve refine (path_Equiv _).
     apply funext; intro f. apply funext; intro b. cbn. unfold functor_forall.
@@ -642,12 +642,12 @@ Proof.
                            match apD10 (ap e_fun e.2) b in (_ = y) return ((a; e.1 b) = (a; y)) with
                             | eq_refl => eq_refl
                             end) (f (e.1 b)) = f b). 
-    change (T (transportable a a (purify HA_can a a eq_refl);
-               (ap (transportable a a) (HA_can.(purify_refl) a) @ (transportable_refl a)))).
-  assert ((transportable a a (purify HA_can a a eq_refl);
-               (ap (transportable a a) (HA_can.(purify_refl) a) @ (transportable_refl a)))= ((Equiv_id (B a); eq_refl): {e : B a ≃ B a & e = Equiv_id (B a)})).
+    change (T (transportable a a (can_eq HA_can a a eq_refl);
+               (ap (transportable a a) (HA_can.(can_eq_refl) a) @ (transportable_refl a)))).
+  assert ((transportable a a (can_eq HA_can a a eq_refl);
+               (ap (transportable a a) (HA_can.(can_eq_refl) a) @ (transportable_refl a)))= ((Equiv_id (B a); eq_refl): {e : B a ≃ B a & e = Equiv_id (B a)})).
   apply path_sigma_uncurried. unshelve esplit. cbn. 
-  apply (ap (transportable a a) (HA_can.(purify_refl) a) @ (transportable_refl a)). 
+  apply (ap (transportable a a) (HA_can.(can_eq_refl) a) @ (transportable_refl a)). 
   cbn. rewrite transport_paths_l. rewrite inv2. rewrite concat_refl. reflexivity.  
   apply (transport_eq T X^). unfold T. cbn.
   exact (apD10 (ap e_fun (transportable_refl (a;b))) _). 
@@ -699,7 +699,7 @@ Proof.
   pose (e_fun (alt_ur_coh eA _ _) X').
   eapply equiv_compose. apply ur_coh. cbn. 
   unfold univalent_transport. cbn. 
-  cbn in e. rewrite purify_eq. 
+  cbn in e. rewrite can_eq_eq. 
   set (T := fun (XX : {XX : _ & b = univalent_transport XX}) =>
                (f a'' ≈ e_fun (equiv (ur_type eB a'' b X')) (g a''))
   ≃ (f a'' ≈ e_fun (equiv (ur_type eB XX.1 b (e_fun (transport_eq (fun X : A' => (XX.1 ≈ X) ≃ (XX.1 ≈ b))
@@ -847,7 +847,7 @@ Definition Equiv_Sigma (A A':Type) (e: A ≈ A')
     pose (e_sect' (equiv0 (e_inv (e_fun equiv1) (e_fun equiv1 a)) (e_fun (equiv e) a)
                           X0) b).
     etransitivity; try apply e0. clear e0. unfold b. 
-    rewrite purify_eq. apply ap. 
+    rewrite can_eq_eq. apply ap. 
     symmetry. etransitivity; try apply transport_equiv.
     apply (ap (fun X => e_fun X l)). rewrite inv2.
     set (e'' := fun x XX => equiv0 x (e_fun (equiv e) a) XX).
@@ -898,7 +898,7 @@ Definition Equiv_Sigma (A A':Type) (e: A ≈ A')
           xx
           XX)
        _)) _ _ (e_retr (e_fun (equiv e)) a) (ur_refl (e_inv (e_fun (equiv e)) a))).
-    rewrite purify_eq. 
+    rewrite can_eq_eq. 
     apply (ap (fun x => e_fun x _)).
     apply ap. unfold ur_refl.
     rewrite <- transport_e_fun. cbn. rewrite inv2. reflexivity. 
@@ -956,11 +956,11 @@ Definition FP_Sigma : @sigT ≈ @sigT.
     apply ur_coh.
   - unshelve refine (let X : forall (a b: {x : x & x0 x}) , a=b -> a = b := _ in _).
     intros. apply path_sigma_uncurried. apply (Equiv_inverse (BuildEquiv _ _ (path_sigma_uncurried _ a b) _)) in X.
-    unshelve eexists. apply purify. apply H. exact (X.1). 
-    apply purify. destruct H0. apply (ur_type _ _ (ur_coh _ _ X.1)).
-    cbn in *. rewrite purify_eq. exact X.2. 
+    unshelve eexists. apply can_eq. apply H. exact (X.1). 
+    apply can_eq. destruct H0. apply (ur_type _ _ (ur_coh _ _ X.1)).
+    cbn in *. rewrite can_eq_eq. exact X.2. 
     apply (Build_Canonical_eq _ X). cbn; clear X. intros [a b].
-    cbn. pose (purify_refl _ a). apply cheat.
+    cbn. pose (can_eq_refl _ a). apply cheat.
   - apply cheat.
 Defined.
 
@@ -993,7 +993,7 @@ Proof.
   pose (e_fun (alt_ur_coh e _ _) e1).
   pose (e_fun (alt_ur_coh e _ _) e2).
   intro ex. 
-  exact (HB.(purify) _ _ ((e_retr _ y)^ @ ap _ (e0^ @ ex  @ e3) @ e_retr _ y')).
+  exact (HB.(can_eq) _ _ ((e_retr _ y)^ @ ap _ (e0^ @ ex  @ e3) @ e_retr _ y')).
 Defined.
 
 Definition eq_map_inv (A B:Type) (e: A ≈ B) (HA : Canonical_eq A)
@@ -1005,7 +1005,7 @@ Proof.
   pose (e_fun (alt_ur_coh e _ _) e1).
   pose (e_fun (alt_ur_coh e _ _) e2).
   intro ey. 
-  exact (HA.(purify) _ _ (e0 @ ap _ ey @ e3^)). 
+  exact (HA.(can_eq) _ _ (e0 @ ap _ ey @ e3^)). 
 Defined.
 
 Definition Equiv_eq (A B:Type) (e: A ≈ B)
@@ -1018,7 +1018,7 @@ Proof.
   - eapply eq_map; eauto. apply e. 
   - eapply eq_map_inv; eauto. apply e. 
   - intro E. unfold eq_map_inv, eq_map.
-    unfold univalent_transport. cbn. repeat rewrite purify_eq. 
+    unfold univalent_transport. cbn. repeat rewrite can_eq_eq. 
     repeat rewrite ap_pp.
     repeat rewrite <- (ap_compose (e_fun (equiv e))).
     repeat rewrite concat_p_pp.
@@ -1039,7 +1039,7 @@ Proof.
     rewrite (concat_A1p (f := (fun x0 : A => e_inv (e_fun (equiv e)) (e_fun (equiv e) x0)))).
     repeat rewrite <- concat_p_pp.
     rewrite inv_inv'. rewrite concat_refl. rewrite inv_inv. apply concat_refl.    
-  - intro E. cbn. unfold eq_map_inv, eq_map. repeat rewrite purify_eq. 
+  - intro E. cbn. unfold eq_map_inv, eq_map. repeat rewrite can_eq_eq. 
     repeat rewrite <- concat_p_pp. rewrite inv_inv.
     rewrite concat_refl.
     rewrite (concat_p_pp _ _ (ap univalent_transport E)).
@@ -1109,7 +1109,7 @@ Definition FP_eq : @eq ≈ @eq.
      (transport_eq (fun X : x => X ≈ y0) e H0)) H1).
     rewrite alt_ur_coh_transport_l.
     rewrite alt_ur_coh_transport_r. cbn. 
-    unfold eq_map. repeat rewrite purify_eq. repeat rewrite ap_pp. 
+    unfold eq_map. repeat rewrite can_eq_eq. repeat rewrite ap_pp. 
     set ((alt_ur_coh H x0 y0) H0).
     set ((alt_ur_coh H x1 y1) H1).
     change ( ((e^ @ e0) @
