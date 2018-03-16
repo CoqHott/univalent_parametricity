@@ -933,8 +933,6 @@ Definition equiv_path_sigma {A : Type} {P : A -> Type} (u v : {x : A & P x}) :
        {p : u .1 = v .1 & u .2 = transport_eq P p^ v .2} ≃ (u = v)
   := BuildEquiv _ _ (path_sigma_uncurried P u v) _. 
 
-Axiom cheat : forall X, X. 
-
 Definition FP_Sigma : @sigT ≈ @sigT.
   cbn in *; intros.
   split ; [typeclasses eauto | ].
@@ -955,13 +953,13 @@ Definition FP_Sigma : @sigT ≈ @sigT.
     apply  Move_equiv in E. rewrite <- E. 
     apply ur_coh.
   - unshelve refine (let X : forall (a b: {x : x & x0 x}) , a=b -> a = b := _ in _).
-    intros. apply path_sigma_uncurried. apply (Equiv_inverse (BuildEquiv _ _ (path_sigma_uncurried _ a b) _)) in X.
-    unshelve eexists. apply can_eq. apply H. exact (X.1). 
-    apply can_eq. destruct H0. apply (ur_type _ _ (ur_coh _ _ X.1)).
-    cbn in *. rewrite can_eq_eq. exact X.2. 
+    intros. apply path_sigma_uncurried. apply (Equiv_inverse (BuildEquiv _ _ (path_sigma_uncurried _ a b) _)) in X. exact X.
     apply (Build_Canonical_eq _ X). cbn; clear X. intros [a b].
-    cbn. pose (can_eq_refl _ a). apply cheat.
-  - apply cheat.
+    reflexivity.
+  - unshelve refine (let X : forall (a b: {x : y & y0 x}) , a=b -> a = b := _ in _).
+    intros. apply path_sigma_uncurried. apply (Equiv_inverse (BuildEquiv _ _ (path_sigma_uncurried _ a b) _)) in X. exact X.
+    apply (Build_Canonical_eq _ X). cbn; clear X. intros [a b].
+    reflexivity.
 Defined.
 
 Hint Extern 0 (UR_Type (sigT _) (sigT _)) => erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn in *; intros : typeclass_instances.
