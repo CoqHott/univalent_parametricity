@@ -529,7 +529,7 @@ Instance Equiv_List_instance : forall x y : Type, x ⋈ y -> (list x) ⋈ (list 
 Definition functor_forall {A B} `{P : A -> Type} `{Q : B -> Type}
     (f : B -> A) (g : forall b:B, P (f b) -> Q b)
   : (forall a:A, P a) -> (forall b:B, Q b) := fun H b => g b (H (f b)).
-
+  
 Instance isequiv_functor_forall {A B} {P : A -> Type} {Q : B -> Type}
          (eA : Canonical_eq A)
          (eP : Transportable P)
@@ -768,12 +768,12 @@ Hint Extern 100 ((forall x:_ , _) ≃ (forall y:_, _)) => erefine (Equiv_forall 
 Hint Unfold ur. 
 Typeclasses Transparent ur.
 Hint Transparent ur. 
-
-Instance Transportable_cst A B : Transportable (fun _ : A => B).
-Proof.
-  unshelve econstructor. cbn; intros. apply (@ur_refl_ _ _ _ _ URType_Refl B).
-  reflexivity.
-Defined.
+ 
+Instance Transportable_cst A B : Transportable (fun _ : A => B) :=
+  {|
+    transportable := fun (x y : A) _ => Equiv_id B;
+    transportable_refl := fun x : A => eq_refl
+  |}.
 
 Definition Equiv_Arrow (A A' B B': Type)
            (eA: A ≈ A') (e' : B ≈ B') :
