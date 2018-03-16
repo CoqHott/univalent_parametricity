@@ -3,7 +3,7 @@ Univalent Parametricity for Effective Transport
 
 The repository contains the companion code of the publication
 "Equivalences for Free!
-Univalent Parametricity for Effective Transport" (submitted to CPP' 18).
+Univalent Parametricity for Effective Transport" (submitted to ICFP' 18).
 
 ## Structure
 
@@ -15,13 +15,13 @@ Univalent Parametricity for Effective Transport" (submitted to CPP' 18).
 
 ## Compilation
 
-You need Coq 8.6 to compile the main directory 
+You need Coq 8.7 to compile the main directory 
 and the hoqc compiler from https://github.com/HoTT/ to compile
 files in the translation/ directory. 
 
 To compile in the main directory:
 
-   set $COQBIN to the path where coqc is, or have Coq 8.6 in your path.
+   set $COQBIN to the path where coqc is, or have Coq 8.7 in your path.
 
    # make
 

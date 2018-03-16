@@ -420,8 +420,6 @@ Instance Equiv_vector_list (A B:Type) {H: A ≃ B} (n n':nat) (en : n ≈ n')
   : Vector.t A n ≃ {l : list B & length l ≈ n'}
     := BuildEquiv _ _ _ (IsEquiv_vector_list A B H n n' en).
 
-Axiom admit : forall A, A. 
-
 Definition Equiv_Vector_id A n :Equiv_Vector A A (Equiv_id A) n n  eq_refl = Equiv_id (t A n).
 apply path_Equiv, funext. intro v.
 induction v. reflexivity. cbn. apply ap. exact IHv. 
@@ -433,46 +431,13 @@ apply Equiv_Vector. apply Equiv_id. auto.
 apply Equiv_Vector_id. 
 Defined.
 
-Definition URForall_Type_sym A A' {HA : UR A A'}  (P : A -> Type) (Q : A' -> Type)
-           (HP :Transportable P)
-           : @URForall_Type_class A' A {| ur := fun x y => ur y x |} Q P -> URForall_Type_class A A' P Q. 
-Proof.
-  destruct 1. econstructor; auto.
-  intros. apply UR_Type_Inverse. apply ur_type; auto.
-Defined. 
-
-Inductive UR_vect_list {A B} (R : A -> B -> Type) : forall n m,
-    Vector.t A n -> {l : list B & length l ≈ m} -> Type :=
-  UR_vect_list_nil : UR_vect_list R 0 0 (nil _) (FP.nil;eq_refl)
-| UR_vect_list_cons : forall {a b n m v l},
-    (R a b) -> (UR_vect_list R n m v l) ->
-    UR_vect_list R (S n) (S m) (cons _ a n v) (b::l.1;ap S l.2).
-
 Definition Equiv_vector_list_
   : Vector.t ≈ (fun A n => {l : list A & length l ≈ n}).
-  intros A B e. cbn in e. cbn. split. typeclasses eauto. 
-  intros n n' en.
-  unshelve eexists.
-  - econstructor. apply (UR_vect_list ur). 
-    (* eapply UR_Equiv'. apply Equiv_vector_list; typeclasses eauto. *)
-    (* unshelve eapply URSigma. apply UR_list_. apply UR_gen. *)
-    (* intros. cbn. *)
-    (* refine (Ur (ur_type (FP_eq nat nat FP_nat _ _ _) _ _ _ )). *)
-    (* unfold length. refine (FP_List_rect B B (ur_refl B) _ _ {| transport_ := _; ur_type := _|} _ _ _ _ _ _ x y H); typeclasses eauto. *)
-    (* typeclasses eauto. *)
-  - econstructor. intros v v'. cbn. 
-    unshelve econstructor.
-    destruct 1. destruct en. induction v; econstructor; auto.
-    exact (ur_coh _ _ eq_refl).
-    (* unshelve refine (isequiv_adjointify _ _ _ _). *)
-    (* induction 1. *)
-    (* assert (forall n (e:n = 0) (v':t A n), en # v' = nil). *)
-    (* destruct v'.  *)
-    (* generalize intros v.  *)
-    (* intros  *)
-    (* eapply (equiv_compose (B := UR_list (eq B) (vector_to_list A B (equiv e) n n' en v) .1 *)
-    (*    (vector_to_list A B (equiv e) n n' en v') .1)). *)
-    apply admit.
+  intros A B e. econstructor. tc. intros n n' en. unshelve econstructor. 
+  - econstructor.
+    intros v l. exact ((vector_to_list A B (equiv e) n n' en v) = l).
+  - econstructor. intros v v'. cbn.
+    apply (@isequiv_ap _ _ (Equiv_vector_list _ _ _ _ _)). 
   - apply Canonical_eq_gen.
   - apply Canonical_eq_gen.
 Defined. 
@@ -719,32 +684,6 @@ Hint Extern 0 => progress (unfold index_Expr) : typeclass_instances.
 
 Hint Extern 0 (UR_Type Set Set) => exact FP_Type : typeclass_instances. 
 
-Definition FP_Expr_sigma (A B:Set) (e:A ≈ B): {E : Expr_p & index_Expr E A} ≈ {E : Expr_p & index_Expr E B}.
-  erefine (ur_type (@FP_Sigma _ _ _) _ _ _).
-  exact FP_Expr_p. cbn; intros.
-  (* this instance of transportable is on Type, we can only use the default one*)
-  cbn. split; [apply Transportable_default | ].
-  unfold index_Expr. intros. 
-  destruct H.
-  (* match goal with | |- (Expr_p_rect ?P ?x1 ?x2 ?x3 ?x4 ?x5 ?X _ ⋈ Expr_p_rect ?P' ?x1' ?x2' ?x3' ?x4' ?x5' ?X' _) =>   *)
-  (*                   apply (fun E1 E2 E3 E4 E5 => FP_Expr_p_rect P P' *)
-  (*                                        (_, fun _ _ _ =>  ( snd (FP_forall _ _ FP_Type) _ _ (_,fun _ _ _ => FP_Type))) _ *)
-  (*                                                               x1 x1' E1 x2 x2' E2 x3 x3' E3 x4 x4' E4 x5 x5' E5 X X' eq_refl A B e) end; typeclasses eauto. *)
-  apply admit. 
-Defined.
-
-Definition FP_Expr'@{i j' k k'} :
-  forall x y : Set,
-  UR_Type@{Set Set Set} x y ->
-  UR_Type@{i i i} (Expr@{i} x) (Expr@{i} y).
-Proof.
-  intros A B e. cbn in *.
-  refine (@UR_Type_Equiv'@{i i i k} _ _ _ (Expr_Expr_p@{i j'} A) _).
-  refine (@UR_Type_Equiv@{i i i k} _ _ _ (Expr_Expr_p@{i j'} B) _)
-  .
-  (* exact (FP_Expr_sigma@{k i i k i k' k' j'} _ _ e). *)
-  apply admit. 
-Defined.
 
 (* nat ⋈ N *)
 
