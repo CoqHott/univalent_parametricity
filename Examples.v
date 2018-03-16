@@ -26,11 +26,11 @@ Opaque vector_to_list list_to_vector.
 Record Lib (C : Type -> nat -> Type) :=
   { head : forall {A : Type} {n : nat}, C A (S n) -> A;
     map : forall {A B} (f:A -> B) {n}, C A n -> C B n;
-    lib_prop : forall n A B (f : A -> B) (v : C A (S n)), head (map f v) = f (head v)}.
+    lib_prop : forall n A (f : A -> nat) (v : C A (S n)), head (map f v) = f (head v)}.
 
 Arguments map {_} _ {_ _} _ {_} _.
 Arguments head {_} _ {_ _} _.
-Arguments lib_prop {_} _ {_ _ _} _ _.
+Arguments lib_prop {_} _ {_ _} _ _.
 
 (*
 Definition FL_Lib_Noneff : Lib ≈ Lib.
@@ -51,35 +51,31 @@ Definition FL_Lib_Noneff : Lib ≈ Lib.
   specialize  (e1 (fun _ _ _ =>  ur_type (e _ _ _))). 
   destruct e1. apply Canonical_UR. apply Equiv_id.
 Defined.
-*)
-  
-Instance issig_lib_hd_map C :
-  {hd : forall {A : Type} {n : nat}, C A (S n) -> A  &
+ *)
+
+Definition Lib_sig C :=   {hd : forall {A : Type} {n : nat}, C A (S n) -> A  &
                       {map : forall {A B} (f:A -> B) {n},
   C A n -> C B n &
-  forall n A B (f : A -> B) (v : C A (S n)), hd _ _ (map _ _ f _ v) = f (hd _ _ v)}}
-  ≃ Lib C.
+  forall n A (f : A -> (nat:Type)) (v : C A (S n)), hd _ _ (map _ _ f _ v) = f (hd _ _ v) : Type}}.
+
+Instance issig_lib_hd_map C : Lib_sig C ≃ Lib C.
 Proof.
   issig (Build_Lib C) (@head C) (@map C) (@lib_prop C).
 Defined.
 
-Instance issig_lib_hd_map_inv C :
-  Lib C ≃
-  {hd : forall {A : Type} {n : nat}, C A (S n) -> A  &
-                      {map : forall {A B} (f:A -> B) {n},
-  C A n -> C B n &
-           forall n A B (f : A -> B) (v : C A (S n)), hd _ _ (map _ _ f _ v) = f (hd _ _ v)}} :=
+Instance issig_lib_hd_map_inv C : Lib C ≃ Lib_sig C :=
   Equiv_inverse _.
-  
+
+Hint Extern 0 => progress (unfold Lib_sig) :  typeclass_instances.
+
 Definition FP_Lib : Lib ≈ Lib.
-Proof.
-  univ_param_record.
+ univ_param_record.
 Defined.
 
 Hint Extern 0 (Lib _ ≃ Lib _) => erefine (ur_type FP_Lib _ _ _).(equiv); simpl
 :  typeclass_instances.
 
-Definition lib_vector_prop : forall (n : nat) (A B : Type) (f : A -> B) (v : t A (S n)),
+Definition lib_vector_prop : forall (n : nat) (A : Type) (f : A -> nat) (v : t A (S n)),
   Vector.hd (Vector.map f v) = f (Vector.hd v).
 Proof.
   intros.
@@ -93,7 +89,6 @@ Definition libvec : Lib Vector.t :=
      lib_prop := lib_vector_prop |}.
 
 Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑ libvec.
-
 
 Transparent vector_to_list list_to_vector.
 
@@ -130,6 +125,8 @@ Eval compute in (app_list [[1;2]] [[1;2]]).
 Eval compute in (app_list' [[1;2]] [[1;2]]).
 
 Eval compute in (lib_list.(map) S (app_list [[1;2]] [[5;6]])).
+
+Eval compute in (lib_list.(lib_prop) S (app_list [[1;2]] [[5;6]])).
 
 
 Record Monoid A :=
