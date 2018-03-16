@@ -444,7 +444,8 @@ Proof.
   unshelve eapply (fun_forall_iEq _ _ _ _ _ _ _ _ _); auto. 
   apply UR_Type_Inverse; auto. exact H. exact H0. 
   - intros. apply funext. intro P. apply funext. intro X.
-    unfold fun_forall_iEq. cbn. apply cheat. 
+    unfold fun_forall_iEq. cbn.
+    apply cheat. 
   - intros. apply funext. intro P. apply funext. intro X.
     unfold fun_forall_iEq. cbn. apply cheat. 
 Defined.
@@ -467,11 +468,15 @@ Definition foo_iEq : forall n:N, iEq _ n n :=
 
 Hint Extern 0 => progress (unfold iEq) :  typeclass_instances.
 
+Eval compute in foo_iEq 0.
+
+(* If you comment this line, then bar_iEq below does not compute *)
+(* because the canonical instance of FP_Forall does not exploit *)
+(* the fact that the type family P is always applied *)
+
 Hint Extern 0 (UR_Type (forall P:_ , P _ -> P _) (forall P:_, P _ -> P _)) =>
 erefine (ur_type (FP_forall_iEq N nat _ _ _ _) _ _ _); cbn in *; intros : typeclass_instances.
 
 Definition bar_iEq := ↑ foo_iEq : forall n,  iEq _ n n.
-
-Eval compute in foo_iEq 0.
 
 Eval compute in bar_iEq 0.
