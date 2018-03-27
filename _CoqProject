@@ -1,4 +1,8 @@
--arg "-w '-notation-overridden'" -R . UnivalentParametricity
+-arg "-w '-notation-overridden'"
+-R "." UnivalentParametricity
+-R "/Users/nicolastabareau/Softwares/exceptional-tt/theories/" Effects
+-I  "/Users/nicolastabareau/Softwares/exceptional-tt/src/"
+
 Vector.v
 HoTT.v
 URTactics.v
@@ -8,3 +12,4 @@ Record.v
 Transportable.v
 MoreInductive.v
 Examples.v
+

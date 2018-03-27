@@ -1,12 +1,20 @@
 Require Import HoTT Tactics UR URTactics FP Record MoreInductive Transportable.
 Require Import BinInt BinNat Nnat Vector.
+Require Import Effects.Effects.
 
 Set Universe Polymorphism.
+
+Axiom Univ : Univalence. 
+
+Definition univalent_transport {A B : Type} {e: Univalence -> A ≃ B} :
+  A -> B := e_fun (e Univ).  
+
+Notation "↑" := univalent_transport (at level 65, only parsing).
 
 Definition append_list {A:Type} {n p} {H : A ⋈ A} :
   {l : list A & length l = n} ->
   {l : list A & length l = p} ->
-  {l : list A & length l = n+p}   := ↑ Vector.append.
+  {l : list A & length l = n+p} := ↑ Vector.append.
 
 Eval compute in ((append_list ([1;2];eq_refl) ([4;5;6];eq_refl)).1).
 
@@ -68,8 +76,17 @@ Instance issig_lib_hd_map_inv C : Lib C ≃ Lib_sig C :=
 
 Hint Extern 0 => progress (unfold Lib_sig) :  typeclass_instances.
 
+(* 
+
 Definition FP_Lib : Lib ≈ Lib.
- univ_param_record.
+  cbn;   split ; [typeclasses eauto | ]; intros.
+  unshelve refine (UR_Type_Equiv_gen _ _ _ _ _ _ _ _).
+  erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros. 
+  typeclasses eauto with typeclass_instances. 
+  typeclasses eauto with typeclass_instances. 
+  erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros. 
+  pose FP_nat. Set Printing Universes. Set Printing All. 
+  univ_param_record.
 Defined.
 
 Hint Extern 0 (Lib _ ≃ Lib _) => erefine (ur_type FP_Lib _ _ _).(equiv); simpl
@@ -184,6 +201,7 @@ Fixpoint even (n:nat) := match n with
 
 Definition nat_pow : nat -> nat -> nat := ↑ N.pow.
  
+*)
 (* Those tests are commented at compilation time *)
 
 (* Time Eval vm_compute in let x := nat_pow 2 26 in 0. *)
@@ -195,6 +213,7 @@ Definition nat_pow : nat -> nat -> nat := ↑ N.pow.
 (* Time Eval vm_compute in let x := N.pow 2 26 in 0. *)
 (* 0.1u *)
 
+(*
 Fixpoint incrVector n : Vector.t nat n :=
   match n with
     0 => nil _
@@ -217,7 +236,7 @@ Fixpoint ConstantVector {A} (a:A) n : vector A n :=
   match n with 0 => nil _
           | S n => cons _ a _ (ConstantVector a n)
   end.
-
+*)
 Definition foo : forall f: nat -> nat, f = f:= fun f => eq_refl.
 
 Definition bar := ↑ foo : forall f: N -> N, f = f.
@@ -226,7 +245,26 @@ Definition bar := ↑ foo : forall f: N -> N, f = f.
 
 Eval compute in foo S.
 
-(* Eval compute in (bar N.succ). *)
+
+Effect Translate unit.
+Effect Translate positive.
+Effect Translate N.
+Effect Translate eq.
+Effect Translate ap.
+Effect Translate IsEquiv.
+Effect Translate Equiv.
+Effect Translate transport_eq.
+Effect Translate Equiv_id.
+Effect Translate eq_to_equiv.
+Effect Translate Equiv_id_P.
+Effect Translate eq_to_equiv_P.
+Effect Translate apD10.
+Effect Translate Univalence using unit.
+Effect Translate univalent_transport.
+
+Effect Translate bar using unit. 
+
+Eval compute in (bar N.succ).
 
 Definition foo' : forall f: nat -> nat, vector nat (f 0)
   := fun f => ConstantVector 1 (f 0).

@@ -22,34 +22,37 @@ Proof.
     + pose (inversion_cons e). specialize (IHn _ (fun n => P (a :: n)) (snd p)).
       cbn in IHn. eapply equiv_compose; try exact IHn. apply (HP (fun x => P (x :: m))).
       exact (fst p). 
-  - cbn. intro n; revert P; induction n; cbn; intro P. 
+  - cbn. intros HU n; revert P; induction n; cbn; intro P. 
     + reflexivity.
     + rewrite transportable_refl. rewrite (IHn (fun n => P (a :: n))).
       apply path_Equiv. reflexivity.
+      exact HU. 
 Defined. 
 
-Instance Transportable_Sigma (A:Type) B (P : A -> B -> Type)
+Instance Transportable_Sigma {HU: Univalence} (A:Type) B (P : A -> B -> Type)
          (HP: forall a, Transportable (P a))
          (HP_can : forall x y, Canonical_eq (P x y))
          (HP': forall x, Transportable (fun a => P a x)):
   Transportable (fun x => {a: A & P a x}).
 Proof.
   unshelve econstructor.
-  intros. erefine (@Equiv_Sigma _ _ (@ur_refl_ _ _ _ _ URType_Refl A) _ _ _).
+  intros. erefine (@Equiv_Sigma _ _ _ (@ur_refl_ _ _ _ _ URType_Refl A) _ _ _).
+  assumption. 
   cbn. split. typeclasses eauto.
   intros.
   { unshelve eexists.
-    - destruct H. typeclasses eauto.
     - destruct X, H. apply UR_gen.
+    - destruct H. typeclasses eauto.
     - constructor. destruct X, H. cbn. unfold univalent_transport.
       rewrite transportable_refl. cbn. intros;apply Equiv_id.
+      assumption. 
     - auto.
     - auto.
   }
   intros. unshelve refine (path_Equiv _). cbn.
   apply funext. intros. eapply path_sigma_uncurried.
   destruct x0. unshelve esplit. cbn.
-  unfold univalent_transport. exact (apD10 (ap e_fun (transportable_refl x)) p).
+  unfold univalent_transport. exact (apD10 (ap e_fun (transportable_refl _ x)) p).
 Defined.
 
 
@@ -64,16 +67,16 @@ Instance Transportable_compose A B C (g : B -> C) (P : C -> Type)
   Transportable (fun (f:A -> B) => P (g (f x))).
 Proof.
   refine (Build_Transportable _ _ (Transportable_compose_ A B C g P x) _).
-  intros. apply H.
+  intros. apply H. assumption. 
 Defined.
 
 Instance Transportable_apply B C (f : B -> C) (P : C -> Type) `{Transportable C P}:
   Transportable (fun (x:B) => P (f x)).
 Proof.
-  unshelve econstructor. intros. apply H.
+  unshelve econstructor. intros. apply H. assumption. 
 Defined.
 
-Instance Transportable_Arrow A (P Q: A -> Type)
+Instance Transportable_Arrow {HU: Univalence} A (P Q: A -> Type)
          (HP_can : forall x, Canonical_eq (P x))
          (HQ_can : forall x, Canonical_eq (Q x))
          (HP : Transportable P) (HQ : Transportable Q) : Transportable (fun a => P a -> Q a).
@@ -83,22 +86,22 @@ Proof.
   { unshelve eexists.
     - destruct e. apply UR_gen.
     - constructor. destruct e. cbn. unfold univalent_transport.
-      rewrite transportable_refl. cbn. intros;apply Equiv_id.
+      rewrite transportable_refl. cbn. intros;apply Equiv_id. assumption. 
     - auto.
     - auto.
   }
   { unshelve eexists.
     - destruct e. apply UR_gen.
     - constructor. destruct e. cbn. unfold univalent_transport.
-      rewrite transportable_refl. cbn. intros;apply Equiv_id.
+      rewrite transportable_refl. cbn. intros;apply Equiv_id. assumption. 
     - auto.
     - auto.
   }
-  intro a; cbn.
+  intros u a; cbn.
   unshelve refine (path_Equiv _).
   apply funext; intro f. apply funext; intro b. cbn.
-  rewrite (@transportable_refl _ _ HQ a). cbn. apply ap.
-  exact (apD10 (ap e_fun (ap Equiv_inverse (@transportable_refl _ _ HP a))) b).
+  rewrite (@transportable_refl _ _ HQ HU a). cbn. apply ap.
+  exact (apD10 (ap e_fun (ap Equiv_inverse (@transportable_refl _ _ HP HU a))) b).
 Defined.
 
 (* Instance Transportable_Applied_Family A (x y : A) *)
