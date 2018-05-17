@@ -65,7 +65,7 @@ Hint Extern 0 (IsEquiv _ ⋈ IsEquiv _) => refine (ur_type (FP_IsEquiv _ _ _ _ _
 
 Definition ur_hprop A A' (H : A ⋈ A') (HA: forall x y:A, x = y) (x:A) (y:A')
   : x ≈ y. 
-  intros. apply alt_ur_coh. apply HA. 
+  intros. apply (alt_ur_coh _ _ _ _ ). apply HA. 
 Defined.   
 
 Definition Isequiv_ur_hprop A A' B B' (H : A ⋈ A')(H' : B ⋈ B') (f:A->B) (g:A'->B')

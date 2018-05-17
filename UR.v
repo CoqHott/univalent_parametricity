@@ -176,13 +176,69 @@ Proof.
                      (Hiseq a a')).
 Defined.
 
-Definition alt_ur_coh {A B:Type} (H:A ⋈ B) (einv := Equiv_inverse (equiv H)):
-           forall (a:A) (b:B), (a ≈ b) ≃ (a = ↑ b).
+Definition alt_ur_coh {A B:Type} (e:A ≃ B) (H:UR A B) (HCoh : UR_Coh A B e H) (einv := Equiv_inverse e):
+  forall (a:A) (b:B), (a ≈ b) ≃ (a = ↑ b).
 Proof.
   intros a b. cbn. 
   refine (transport_eq (fun X => (a ≈ X) ≃ (a = univalent_transport b))
                        (e_sect _ b) _). apply Equiv_inverse. 
     unshelve refine (ur_coh _ _). 
+  (* intros a b. *)
+  (* unshelve econstructor. *)
+  (* - intro E. pose (transport_eq (fun X => a ≈ X) (e_retr _ b)^ E). exact (e_inv (ur_coh _ _) u). *)
+  (* - unshelve refine (isequiv_adjointify _ _ _ _). *)
+  (*   + intro E; pose (ur_coh _ _ E). exact (transport_eq (fun X => a ≈ X) (e_retr _ b) u).  *)
+  (*   + intro E. cbn. rewrite (e_retr' (ur_coh a (einv b))). rewrite <- transport_pp. *)
+  (*     rewrite inv_inv. reflexivity.  *)
+  (*   + intro E. cbn. rewrite <- transport_pp. rewrite inv_inv'. apply (e_sect' (ur_coh a (einv b))).  *)
+Defined.
+
+Definition alt_ur_coh_inv {A B:Type}  (e:A ≃ B) (H:UR A B) (einv := Equiv_inverse e)
+           (HCoh : forall (a:A) (b:B), (a ≈ b) ≃ (a = ↑ b)):
+  UR_Coh A B e H.
+Proof.
+  refine (Build_UR_Coh _ _ _ _ _). intros a a'.
+  apply Equiv_inverse. 
+  refine (transport_eq (fun X => (a ≈ univalent_transport a') ≃ (a = X))
+                       (e_sect _ a') _). 
+    unshelve refine (HCoh _ _). 
+Defined.
+
+Definition Equiv_inverse_inverse A B (e : A ≃ B) : Equiv_inverse (Equiv_inverse e) = e.
+  intros. apply path_Equiv. reflexivity.
+Defined. 
+
+Definition transport_e_fun' A B (P : A -> Type) a a' (e : a = a') (e' : B ≃ P a) x
+    :
+      transport_eq P e (e_fun e' x) =
+      e_fun (transport_eq (fun X => _ ≃ P X) e e') x.
+Proof.
+  destruct e. reflexivity.
+Defined.
+
+
+Definition is_equiv_alt_ur_coh_inv {A B:Type}  (e:A ≃ B) (H:UR A B) : IsEquiv (alt_ur_coh e H). 
+Proof.
+  unshelve refine (isequiv_adjointify _ _ _ _).
+  - intro. apply alt_ur_coh_inv. assumption.
+  - intros [f]. apply (ap (Build_UR_Coh _ _ _ _)).
+    apply funext. intro a. apply funext. intro a'. unfold alt_ur_coh, alt_ur_coh_inv.
+    apply path_Equiv. apply funext. intro E.
+    rewrite transport_inverse. rewrite <- transport_e_fun. cbn.
+    unfold univalent_transport. rewrite transport_paths_r. cbn.
+    change (Equiv_inverse (transport_eq (fun X : B => (a ≈ X) ≃ (a = e_inv e (e a'))) (e_retr e (e a')) (Equiv_inverse (f a (e_inv e (e a')))))
+    (E @ (e_sect e a')^) = (f a a') E).
+    rewrite transport_inverse'.
+    rewrite Equiv_inverse_inverse. 
+    rewrite e_adj. rewrite transport_ap. rewrite <- (transport_e_fun' _ _ (fun x => (a ≈ e x))). 
+    rewrite (transport_fun_eq A a (fun x : A => (a ≈ e x)) (fun a' => e_fun (f a a'))).
+    rewrite <- concat_p_pp. rewrite inv_inv. rewrite concat_refl. reflexivity.
+  - intros f. apply funext. intro a. apply funext. intro a'.
+    apply path_Equiv. apply funext. intro E. unfold alt_ur_coh, alt_ur_coh_inv. 
+    cbn. rewrite Equiv_inverse_inverse.
+    rewrite other_adj. rewrite transport_ap. unfold univalent_transport.
+    rewrite (transport_double _ (fun X X' => (a ≈ X) ≃ (a = e_inv e X'))).
+    reflexivity. 
 Defined.
 
 Definition ur_refl {A B: Type} {e : A ⋈ B} : forall a : A,  a ≈ ↑ a := fun a => 

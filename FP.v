@@ -483,7 +483,7 @@ Proof.
   eapply Equiv_inverse. eapply equiv_compose. 
   unshelve apply Equiv_UR_list.
   exact (fun a b => a = ↑ b).
-  intros. cbn. apply alt_ur_coh. 
+  intros. cbn. apply alt_ur_coh. apply H. 
   eapply equiv_compose. eapply UR_List_is_eq.
   refine (transport_eq (fun X => (l = X) ≃ _) (e_sect _ l')^ _). refine (Equiv_id _).
 Defined. 
@@ -688,15 +688,15 @@ Proof.
   apply Canonical_UR.  
   unshelve eapply Equiv_forall.
   apply Canonical_UR. 
-  pose (e_fun (alt_ur_coh eA _ _) e').
-  apply Equiv_inverse. eapply equiv_compose. apply alt_ur_coh.
+  pose (e_fun (alt_ur_coh (equiv eA) _ _ _ _) e').
+  apply Equiv_inverse. eapply equiv_compose. apply alt_ur_coh. apply eA. 
   eapply equiv_compose. apply isequiv_sym. destruct e.
   exact (transport_eq (fun X => (X = _) ≃ _) e0 (Equiv_id _)).
   cbn. split; [typeclasses eauto | ].
   intros X X' X''. destruct X. destruct e. 
   apply Canonical_UR.
   clear e' X''. 
-  pose (e_fun (alt_ur_coh eA _ _) X').
+  pose (e_fun (alt_ur_coh _ _ _ _ _) X').
   eapply equiv_compose. apply ur_coh. cbn. 
   unfold univalent_transport. cbn. 
   cbn in e. rewrite can_eq_eq. 
@@ -721,7 +721,7 @@ Proof.
   assert (X' =
   transport_eq (fun XX : A' => a' ≈ XX)
                (Move_equiv (equiv eA) a' b e) (ur_refl a')).
-  pose (e_sect' (alt_ur_coh _ _ _) X').
+  pose (e_sect' (alt_ur_coh _ _ _ _ _) X').
   apply inverse. etransitivity; try exact e0. 
   cbn. unfold Move_equiv, e, ur_refl, alt_ur_coh.
   rewrite e_sect.
@@ -988,8 +988,8 @@ Definition eq_map (A B:Type) (e: A ≈ B) (HB : Canonical_eq B)
            (x' : A) (y' : B) (e2 : x' ≈ y'): (x = x') -> (y = y').
 Proof.
   pose (e_i := Equiv_inverse (equiv e)).
-  pose (e_fun (alt_ur_coh e _ _) e1).
-  pose (e_fun (alt_ur_coh e _ _) e2).
+  pose (e_fun (alt_ur_coh _ _ _ _ _) e1).
+  pose (e_fun (alt_ur_coh _ _ _ _ _) e2).
   intro ex. 
   exact (HB.(can_eq) _ _ ((e_retr _ y)^ @ ap _ (e0^ @ ex  @ e3) @ e_retr _ y')).
 Defined.
@@ -1000,8 +1000,8 @@ Definition eq_map_inv (A B:Type) (e: A ≈ B) (HA : Canonical_eq A)
 Proof.
   unfold univalent_transport in *.
   pose (e_i := Equiv_inverse (equiv e)).
-  pose (e_fun (alt_ur_coh e _ _) e1).
-  pose (e_fun (alt_ur_coh e _ _) e2).
+  pose (e_fun (alt_ur_coh _ _ _ _ _) e1).
+  pose (e_fun (alt_ur_coh _ _ _ _ _) e2).
   intro ey. 
   exact (HA.(can_eq) _ _ (e0 @ ap _ ey @ e3^)). 
 Defined.
@@ -1060,7 +1060,7 @@ Definition alt_ur_coh' {A B:Type} (H:A ⋈ B) :
            forall (a:A) (b:B), (a ≈ b) ≃ (↑a = b).
 Proof.
   intros a b. cbn.
-  eapply equiv_compose. apply alt_ur_coh. unfold univalent_transport. 
+  eapply equiv_compose. apply alt_ur_coh. apply H. unfold univalent_transport. 
   eapply equiv_compose. apply isequiv_ap. 
   unshelve refine (transport_eq (fun X => (_ = X) ≃ (_ = _))
                        (e_retr _ b)^ _). apply Equiv_id. 
@@ -1083,14 +1083,14 @@ Proof.
 Defined. 
 
 Definition alt_ur_coh_transport_r A B H (x1 x2 :A) (y:B) H1 (XX:x1=x2) :
-  (alt_ur_coh H x2 y) (transport_eq (fun X : A => X ≈ y) XX H1)
-  = XX^ @ alt_ur_coh H x1 y H1.
+  (alt_ur_coh _ _ _  x2 y) (transport_eq (fun X : A => X ≈ y) XX H1)
+  = XX^ @ alt_ur_coh _ _ _  x1 y H1.
 destruct XX; reflexivity.
 Defined. 
 
 Definition alt_ur_coh_transport_l A B H (x :A) (y1 y2:B) H1 (XX:y1=y2) :
-  (alt_ur_coh H x y2) (transport_eq (ur x) XX H1)
-  = alt_ur_coh H x y1 H1 @ ap _ XX.
+  (alt_ur_coh _ _ _ x y2) (transport_eq (ur x) XX H1)
+  = alt_ur_coh _ _ _ x y1 H1 @ ap _ XX.
 destruct XX. cbn. apply inverse, concat_refl.
 Defined. 
 
@@ -1103,13 +1103,13 @@ Definition FP_eq : @eq ≈ @eq.
     eapply equiv_compose. Focus 2. apply Equiv_inverse.
     apply UR_eq_equiv.
     eapply Equiv_inverse,  equiv_compose.
-    apply (@isequiv_ap _ _ (alt_ur_coh H x1 y1) (transport_eq (ur x1) (eq_map x y H _ x0 y0 H0 x1 y1 H1 e')
+    apply (@isequiv_ap _ _ (alt_ur_coh _ _ _ x1 y1) (transport_eq (ur x1) (eq_map x y H _ x0 y0 H0 x1 y1 H1 e')
      (transport_eq (fun X : x => X ≈ y0) e H0)) H1).
     rewrite alt_ur_coh_transport_l.
     rewrite alt_ur_coh_transport_r. cbn. 
     unfold eq_map. repeat rewrite can_eq_eq. repeat rewrite ap_pp. 
-    set ((alt_ur_coh H x0 y0) H0).
-    set ((alt_ur_coh H x1 y1) H1).
+    set ((alt_ur_coh _ _ _ x0 y0) H0).
+    set ((alt_ur_coh _ _ _ x1 y1) H1).
     change ( ((e^ @ e0) @
    ((ap (e_inv (equiv H)) (e_retr (equiv H) y0)^ @
      ((ap (e_inv (equiv H)) (ap (equiv H) e0^) @

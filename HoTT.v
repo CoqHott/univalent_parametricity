@@ -857,6 +857,12 @@ Proof.
     apply concat_refl.
 Defined.
 
+Definition Move_equiv_equiv {A B} (e : A ≃ B) x y : (x = e_inv' e y) ≃ (e_fun e x = y).
+Proof.
+  apply (transport_eq (fun X =>  (x = e_inv' e y) ≃ (e x = X)) (e_retr _ y)).
+  apply isequiv_ap.
+Defined.
+
 Definition isequiv_sym (A:Type) (a a':A) :
   (a = a') ≃ (a' = a).
 Proof.
@@ -892,4 +898,23 @@ Instance isequiv_moveR_M1 {A : Type} {x y : A} (p q : x = y)
 : IsEquiv (moveR_M1 p q).
 Proof.
   destruct p. apply (@e_isequiv _ _ (Equiv_id _)).
+Defined.
+
+
+Definition transport_inverse A B (a b : A) (c : B) P (EE : a = b) (XX : Type) (XXX : XX ≃ (P c a)):
+      Equiv_inverse (transport_eq (fun X : A => XX ≃ (P c X)) EE XXX) =
+      transport_eq (fun X : A => (P c X) ≃ XX) EE (Equiv_inverse XXX).
+  destruct EE; reflexivity.
+Defined. 
+
+Definition transport_inverse' A B (a b : A) (c:B) P (EE : a = b) (XX : Type) (XXX : (P c a) ≃ XX):
+      Equiv_inverse (transport_eq (fun X : A => (P c X) ≃ XX) EE XXX) =
+      transport_eq (fun X : A => XX ≃ (P c X)) EE (Equiv_inverse XXX).
+  destruct EE; reflexivity.
+Defined. 
+
+Definition transport_fun_eq A (a:A) P (f : forall a', a = a' -> P a') b c (e : b = c) (e' : a = b):
+  transport_eq P e (f b e') = f c (e' @ e).
+Proof.
+  destruct e. cbn. rewrite concat_refl. reflexivity.
 Defined.
