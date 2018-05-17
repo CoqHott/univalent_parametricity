@@ -682,6 +682,15 @@ Proof.
   destruct e. reflexivity.
 Defined.
 
+Definition transport_e_fun' A B (P : A -> Type) a a' (e : a = a') (e' : B ≃ P a) x
+    :
+      transport_eq P e (e_fun e' x) =
+      e_fun (transport_eq (fun X => _ ≃ P X) e e') x.
+Proof.
+  destruct e. reflexivity.
+Defined.
+
+
 Definition ap_inv_equiv {A B} (f : A -> B) `{IsEquiv _ _ f} x y : f x = f y -> x = y.
 Proof.
   intro X. exact ((e_sect f x)^@ ap (e_inv f) X @ e_sect f y).
@@ -918,3 +927,8 @@ Definition transport_fun_eq A (a:A) P (f : forall a', a = a' -> P a') b c (e : b
 Proof.
   destruct e. cbn. rewrite concat_refl. reflexivity.
 Defined.
+
+
+Definition Equiv_inverse_inverse A B (e : A ≃ B) : Equiv_inverse (Equiv_inverse e) = e.
+  intros. apply path_Equiv. reflexivity.
+Defined. 

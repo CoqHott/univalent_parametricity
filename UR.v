@@ -204,18 +204,6 @@ Proof.
     unshelve refine (HCoh _ _). 
 Defined.
 
-Definition Equiv_inverse_inverse A B (e : A ≃ B) : Equiv_inverse (Equiv_inverse e) = e.
-  intros. apply path_Equiv. reflexivity.
-Defined. 
-
-Definition transport_e_fun' A B (P : A -> Type) a a' (e : a = a') (e' : B ≃ P a) x
-    :
-      transport_eq P e (e_fun e' x) =
-      e_fun (transport_eq (fun X => _ ≃ P X) e e') x.
-Proof.
-  destruct e. reflexivity.
-Defined.
-
 
 Instance is_equiv_alt_ur_coh_inv {A B:Type}  (e:A ≃ B) (H:UR A B) : IsEquiv (alt_ur_coh e H). 
 Proof.
