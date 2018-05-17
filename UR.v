@@ -183,14 +183,6 @@ Proof.
   refine (transport_eq (fun X => (a ≈ X) ≃ (a = univalent_transport b))
                        (e_sect _ b) _). apply Equiv_inverse. 
     unshelve refine (ur_coh _ _). 
-  (* intros a b. *)
-  (* unshelve econstructor. *)
-  (* - intro E. pose (transport_eq (fun X => a ≈ X) (e_retr _ b)^ E). exact (e_inv (ur_coh _ _) u). *)
-  (* - unshelve refine (isequiv_adjointify _ _ _ _). *)
-  (*   + intro E; pose (ur_coh _ _ E). exact (transport_eq (fun X => a ≈ X) (e_retr _ b) u).  *)
-  (*   + intro E. cbn. rewrite (e_retr' (ur_coh a (einv b))). rewrite <- transport_pp. *)
-  (*     rewrite inv_inv. reflexivity.  *)
-  (*   + intro E. cbn. rewrite <- transport_pp. rewrite inv_inv'. apply (e_sect' (ur_coh a (einv b))).  *)
 Defined.
 
 Definition alt_ur_coh_inv {A B:Type}  (e:A ≃ B) (H:UR A B) (einv := Equiv_inverse e)
