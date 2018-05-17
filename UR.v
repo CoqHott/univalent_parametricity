@@ -217,7 +217,7 @@ Proof.
 Defined.
 
 
-Definition is_equiv_alt_ur_coh_inv {A B:Type}  (e:A ≃ B) (H:UR A B) : IsEquiv (alt_ur_coh e H). 
+Instance is_equiv_alt_ur_coh_inv {A B:Type}  (e:A ≃ B) (H:UR A B) : IsEquiv (alt_ur_coh e H). 
 Proof.
   unshelve refine (isequiv_adjointify _ _ _ _).
   - intro. apply alt_ur_coh_inv. assumption.
@@ -240,6 +240,11 @@ Proof.
     rewrite (transport_double _ (fun X X' => (a ≈ X) ≃ (a = e_inv e X'))).
     reflexivity. 
 Defined.
+
+
+Definition ur_coh_equiv {A B:Type} (e:A ≃ B) (H:UR A B) (einv := Equiv_inverse e):
+  UR_Coh A B e H ≃ forall (a:A) (b:B), (a ≈ b) ≃ (a = ↑ b)
+  := BuildEquiv _ _ (alt_ur_coh e H) _.
 
 Definition ur_refl {A B: Type} {e : A ⋈ B} : forall a : A,  a ≈ ↑ a := fun a => 
   e_fun (ur_coh a a) eq_refl. 
