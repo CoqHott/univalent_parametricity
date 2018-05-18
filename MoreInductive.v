@@ -2,8 +2,6 @@ Require Import HoTT HoTT_axioms UR URTactics FP Record.
 
 Set Universe Polymorphism.
   
-(* Set Typeclasses Debug Verbosity 2.  *)
-
 Ltac tc := typeclasses eauto with typeclass_instances.
 
 Instance issig_isequiv {A B : Type} (f : A -> B):
@@ -146,14 +144,6 @@ Goal forall n m, n + m = m + n.
 Definition absurd : neg = id -> False.
   intro e. pose (apD10 e true). inversion e0.
 Defined.
-
-(* Goal univalence ≈ univalence -> False. *)
-(*   intro e. *)
-(*   Opaque FP_Equiv. *)
-(*   pose ((e bool bool neg_ur bool bool (ur_refl bool)).1 (BuildEquiv _ _ neg neg_isequiv) (Equiv_id bool)). clearbody u; clear e.  *)
-(*   match goal with | H : forall _ : ?X , _ |- _ => assert X end.  *)
-(*   unshelve eexists. cbn; intros. rewrite H. destruct y; reflexivity. *)
-(* Abort. *)
 
 Definition UR_Type_equiv (A A' : Type) (eA : A ⋈ A') (eA': A ≃ A')
   (e  : equiv eA = eA') : 
