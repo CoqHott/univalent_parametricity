@@ -16,6 +16,30 @@ Axiom funext : Funext.
 
 Instance funext_isequiv A P (f g : forall x : A, P x) : IsEquiv (@apD10 _ _ f g) := funext _ _ _ _.
 
+
+
+Definition transport_apD10 A B (f g : forall x:A, B x)
+           (P : forall x:A, B x -> Type)
+           (e : f = g) x v: transport_eq (fun X => P x (X x))
+                                                       e v
+                                          = transport_eq (fun X => P x X)
+                                                (apD10 e x) v.
+  destruct e. reflexivity.
+Defined. 
+
+
+Definition transport_funext {A B} {f g : forall x:A, B x}
+           (P : forall x:A, B x -> Type) x 
+           (v : P x (f x)) (e : forall x, f x = g x)
+            : transport_eq (fun X => P x (X x))
+                                                       (e_inv apD10 e) v
+                                          = transport_eq (fun X => P x X)
+                                                (e x) v.
+Proof.
+  rewrite transport_apD10. rewrite e_retr. reflexivity.
+Defined.
+
+
 (* for minor differences between Prop and Type (coming from impredicativity)  *)
 (* we need to state again univalence for Prop, even if in principle Prop is  *)
 (* a subtype iof Type *)

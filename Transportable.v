@@ -1,4 +1,4 @@
-Require Import HoTT HoTT_axioms URTactics UR FP Record MoreInductive.
+Require Import HoTT HoTT_axioms UR URTactics FP Record MoreInductive.
 Require Import BinInt BinNat Nnat Vector.
 
 Set Universe Polymorphism.
@@ -100,33 +100,6 @@ Proof.
   rewrite (@transportable_refl _ _ HQ a). cbn. apply ap.
   exact (apD10 (ap e_fun (ap Equiv_inverse (@transportable_refl _ _ HP a))) b).
 Defined.
-
-(* Instance Transportable_Applied_Family A (x y : A) *)
-(*          (HP : forall (P:A -> Type), Transportable (fun x => P x)): Transportable (fun P => P x -> P y). *)
-(* Proof. *)
-(*   unshelve econstructor. intros P Q e.  *)
-(*   eapply Equiv_Arrow.  *)
-(*   { unshelve eexists. *)
-(*     - apply HP. transportable.  *)
-(*     - destruct e. apply UR_gen. *)
-(*     - constructor. destruct e. cbn. unfold univalent_transport. *)
-(*       rewrite transportable_refl. cbn. intros;apply Equiv_id. *)
-(*     - apply Canonical_eq_gen.  *)
-(*     - apply Canonical_eq_gen.  *)
-(*   } *)
-(*   { unshelve eexists. *)
-(*     - destruct e. apply UR_gen. *)
-(*     - constructor. destruct e. cbn. unfold univalent_transport. *)
-(*       rewrite transportable_refl. cbn. intros;apply Equiv_id. *)
-(*     - apply Canonical_eq_gen.  *)
-(*     - apply Canonical_eq_gen.  *)
-(*   } *)
-(*   intro a; cbn. *)
-(*   unshelve refine (path_Equiv _). *)
-(*   apply funext; intro f. apply funext; intro b. cbn. *)
-(*   rewrite (@transportable_refl _ _ HQ a). cbn. apply ap. *)
-(*   exact (apD10 (ap e_fun (ap Equiv_inverse (@transportable_refl _ _ HP a))) b). *)
-(* Defined. *)
 
 
 Hint Extern 0 (URForall_Type_class ?A ?B ?F ?G) =>

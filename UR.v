@@ -31,79 +31,6 @@ Definition Canonical_eq_gen A : Canonical_eq A :=
 Arguments can_eq {_} _.
 Arguments can_eq_refl {_}.
 
-Definition can_eq_eq {A} (e :Canonical_eq A) : e.(can_eq) = fun x y e => e.
-Proof.
-  apply funext; intros x. apply funext; intros y. apply funext; intro E.
-  destruct E. apply can_eq_refl. 
-Defined. 
-
-Definition transport_apD10 A B (f g : forall x:A, B x)
-           (P : forall x:A, B x -> Type)
-           (e : f = g) x v: transport_eq (fun X => P x (X x))
-                                                       e v
-                                          = transport_eq (fun X => P x X)
-                                                (apD10 e x) v.
-  destruct e. reflexivity.
-Defined. 
-
-
-Definition transport_funext {A B} {f g : forall x:A, B x}
-           (P : forall x:A, B x -> Type) x 
-           (v : P x (f x)) (e : forall x, f x = g x)
-            : transport_eq (fun X => P x (X x))
-                                                       (e_inv apD10 e) v
-                                          = transport_eq (fun X => P x X)
-                                                (e x) v.
-Proof.
-  rewrite transport_apD10. rewrite e_retr. reflexivity.
-Defined.
-
-Definition Canonical_eq_eq A (e e':Canonical_eq A)
-           (H : e.(can_eq) = e'.(can_eq)) :
-  (transport_eq (fun X => X = _) H  (can_eq_eq e) = (can_eq_eq e')) ->
-  e = e'.
-Proof.
-  destruct e, e'. cbn in *. destruct H. cbn.
-  unfold can_eq_eq.
-  intros H. apply ap_inv_equiv' in H. cbn in H. 
-  assert (can_eq_refl0  = can_eq_refl1).
-  apply funext. intro x. 
-  pose (H' := apD10 H x). apply ap_inv_equiv' in H'.
-  pose (H'' := apD10 H' x). apply ap_inv_equiv' in H''.
-  exact (apD10 H'' eq_refl). 
-  destruct X. reflexivity.
-Defined. 
-
-Definition Canonical_contr A (e :Canonical_eq A) : e = Canonical_eq_gen A.
-Proof.
-  unshelve eapply Canonical_eq_eq.
-  apply can_eq_eq.
-  cbn. rewrite transport_paths_l. rewrite inv_inv.
-  unfold can_eq_eq. cbn. apply inverse. 
-  pose (@e_sect _ _ _ (funext _ _  (fun (x y : A) (e0 : eq A x y) => e0) (fun (x y : A) (e0 : eq A x y) => e0)) eq_refl).
-  etransitivity; try exact e0. clear e0. apply ap. apply funext. intros. cbn.
-  pose (@e_sect _ _ _ (funext _ _  (fun (y : A) (e0 : eq A x y) => e0) (fun (y : A) (e0 : eq A x y) => e0)) eq_refl).
-  etransitivity ; try apply e0. clear e0. apply ap. apply funext. intros y. cbn.
-  pose (@e_sect _ _ _ (funext _ _  (fun (e0 : eq A x y) => e0) (fun (e0 : eq A x y) => e0)) eq_refl). 
-  etransitivity; try apply e0. clear e0. apply ap. apply funext. intros e0. cbn.
-  destruct e0. reflexivity.                  
-Defined. 
-
-Definition Canonical_eq_decidable_ A (Hdec : forall x y : A, (x=y) + ((x = y) -> False)) :
-  forall x y:A , x = y -> x = y :=
-  fun x y e => match (Hdec x y) with
-               | inl e0 => e0
-               | inr n => match (n e) with end
-               end. 
-
-Definition Canonical_eq_decidable A (Hdec:forall x y : A, (x=y) + ((x = y) -> False)) : Canonical_eq A.
-Proof. 
-  refine {| can_eq := Canonical_eq_decidable_ A Hdec |}.
-  - unfold Canonical_eq_decidable_. intro x. cbn. destruct (Hdec x x); cbn.
-    assert (e = eq_refl) by (eapply is_hset).
-    rewrite X. reflexivity.
-    destruct (f eq_refl).
-Defined.
 
 Class UR_Type A B :=
   { equiv :> A ≃ B;
@@ -133,6 +60,12 @@ Class URRefl@{i j k} A B (e : Equiv@{i j} A B) (H: UR@{i j k} A B) := {
 
 Arguments ur_refl_ {_ _ _ _ _} _.
 
+Definition ur_refl {A B: Type} {e : A ⋈ B} : forall a : A,  a ≈ ↑ a := fun a => 
+  e_fun (ur_coh a a) eq_refl. 
+
+Hint Extern 0 (_ ≈ _) => unshelve notypeclasses refine  (ur_refl _): typeclass_instances.
+
+
 Definition URIsEq@{i j k} A B (e : A ≃ B) (H: UR A B) (H:URRefl@{i j k} A B e H)
   :=  forall (a a':A), @IsEquiv (a = a') (a ≈ (↑ a'))
                                 (fun e => transport_eq (fun X => a ≈ (↑ X)) e (ur_refl_ a)).
@@ -148,6 +81,9 @@ Proof.
   exact (BuildEquiv _ _ (fun e => transport_eq (fun X => a ≈ (↑ X)) e (ur_refl_ a))
                      (Hiseq a a')).
 Defined.
+
+(* The definition of Ur_coh given in the ICFP'18 paper is equivalent to *)
+(* the definition given here, but technically, this one is more convenient to use *)
 
 Definition alt_ur_coh {A B:Type} (e:A ≃ B) (H:UR A B) (HCoh : UR_Coh A B e H) (einv := Equiv_inverse e):
   forall (a:A) (b:B), (a ≈ b) ≃ (a = ↑ b).
@@ -198,12 +134,6 @@ Defined.
 Definition ur_coh_equiv {A B:Type} (e:A ≃ B) (H:UR A B) (einv := Equiv_inverse e):
   UR_Coh A B e H ≃ forall (a:A) (b:B), (a ≈ b) ≃ (a = ↑ b)
   := BuildEquiv _ _ (alt_ur_coh e H) _.
-
-Definition ur_refl {A B: Type} {e : A ⋈ B} : forall a : A,  a ≈ ↑ a := fun a => 
-  e_fun (ur_coh a a) eq_refl. 
-
-Hint Extern 0 (_ ≈ _) => unshelve notypeclasses refine  (ur_refl _): typeclass_instances.
-
 
 (* Definition of univalent relation for basic type constructors *)
 
@@ -299,3 +229,58 @@ Instance UR_nat : UR nat nat := UR_gen nat.
 Instance UR_bool : UR bool bool := UR_gen bool. 
 
 
+(* Lemmas about canonical equality *)
+
+Definition can_eq_eq {A} (e :Canonical_eq A) : e.(can_eq) = fun x y e => e.
+Proof.
+  apply funext; intros x. apply funext; intros y. apply funext; intro E.
+  destruct E. apply can_eq_refl. 
+Defined. 
+
+
+Definition Canonical_eq_eq A (e e':Canonical_eq A)
+           (H : e.(can_eq) = e'.(can_eq)) :
+  (transport_eq (fun X => X = _) H  (can_eq_eq e) = (can_eq_eq e')) ->
+  e = e'.
+Proof.
+  destruct e, e'. cbn in *. destruct H. cbn.
+  unfold can_eq_eq.
+  intros H. apply ap_inv_equiv' in H. cbn in H. 
+  assert (can_eq_refl0  = can_eq_refl1).
+  apply funext. intro x. 
+  pose (H' := apD10 H x). apply ap_inv_equiv' in H'.
+  pose (H'' := apD10 H' x). apply ap_inv_equiv' in H''.
+  exact (apD10 H'' eq_refl). 
+  destruct X. reflexivity.
+Defined. 
+
+Definition Canonical_contr A (e :Canonical_eq A) : e = Canonical_eq_gen A.
+Proof.
+  unshelve eapply Canonical_eq_eq.
+  apply can_eq_eq.
+  cbn. rewrite transport_paths_l. rewrite inv_inv.
+  unfold can_eq_eq. cbn. apply inverse. 
+  pose (@e_sect _ _ _ (funext _ _  (fun (x y : A) (e0 : eq A x y) => e0) (fun (x y : A) (e0 : eq A x y) => e0)) eq_refl).
+  etransitivity; try exact e0. clear e0. apply ap. apply funext. intros. cbn.
+  pose (@e_sect _ _ _ (funext _ _  (fun (y : A) (e0 : eq A x y) => e0) (fun (y : A) (e0 : eq A x y) => e0)) eq_refl).
+  etransitivity ; try apply e0. clear e0. apply ap. apply funext. intros y. cbn.
+  pose (@e_sect _ _ _ (funext _ _  (fun (e0 : eq A x y) => e0) (fun (e0 : eq A x y) => e0)) eq_refl). 
+  etransitivity; try apply e0. clear e0. apply ap. apply funext. intros e0. cbn.
+  destruct e0. reflexivity.                  
+Defined. 
+
+Definition Canonical_eq_decidable_ A (Hdec : forall x y : A, (x=y) + ((x = y) -> False)) :
+  forall x y:A , x = y -> x = y :=
+  fun x y e => match (Hdec x y) with
+               | inl e0 => e0
+               | inr n => match (n e) with end
+               end. 
+
+Definition Canonical_eq_decidable A (Hdec:forall x y : A, (x=y) + ((x = y) -> False)) : Canonical_eq A.
+Proof. 
+  refine {| can_eq := Canonical_eq_decidable_ A Hdec |}.
+  - unfold Canonical_eq_decidable_. intro x. cbn. destruct (Hdec x x); cbn.
+    assert (e = eq_refl) by (eapply is_hset).
+    rewrite X. reflexivity.
+    destruct (f eq_refl).
+Defined.

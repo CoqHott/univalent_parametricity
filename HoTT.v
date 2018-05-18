@@ -932,3 +932,5 @@ Defined.
 Definition Equiv_inverse_inverse A B (e : A ≃ B) : Equiv_inverse (Equiv_inverse e) = e.
   intros. apply path_Equiv. reflexivity.
 Defined. 
+
+
