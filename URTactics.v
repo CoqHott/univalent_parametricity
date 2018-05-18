@@ -1,4 +1,4 @@
-Require Import HoTT UR.
+Require Import HoTT.
 
 Set Universe Polymorphism.
 Set Primitive Projections.
@@ -213,3 +213,6 @@ Ltac equiv_elim :=
 Hint Extern 0 => progress (cbn in *): typeclass_instances. 
 
 Hint Extern 0 => eassumption : typeclass_instances. 
+
+Tactic Notation "erefine" uconstr(c) := unshelve notypeclasses refine c.
+

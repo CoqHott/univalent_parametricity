@@ -3,36 +3,10 @@
 (* This file introduces the univalent logical relation   *)
 (************************************************************************)
 
-Require Import HoTT Tactics String.
+Require Import HoTT HoTT_axioms URTactics String.
 
 Set Universe Polymorphism.
 Set Primitive Projections.
-
-Tactic Notation "erefine" uconstr(c) := unshelve notypeclasses refine c.
-
-Definition eq_to_equiv A B : A = B -> A ≃ B :=
-  fun e => e # (Equiv_id A).
-
-Definition Funext := forall (A : Type) (P : A -> Type) f g, IsEquiv (@apD10 A P f g).
-
-(* The frawework relies on the univalence axiom and functional extensionality *)
-
-Axiom univalence : forall A B, IsEquiv (eq_to_equiv A B).
-Axiom funext : Funext. 
-
-Instance funext_isequiv A P (f g : forall x : A, P x) : IsEquiv (@apD10 _ _ f g) := funext _ _ _ _.
-
-(* for minor differences between Prop and Type (coming from impredicativity)  *)
-(* we need to state again univalence for Prop, even if in principle Prop is  *)
-(* a subtype iof Type *)
-
-Definition Equiv_id_P (A:Prop) : A ≃ A := 
-  BuildEquiv _ _ id (BuildIsEquiv _ _ _ id (fun _ => eq_refl) (fun _ => eq_refl) (fun _ => eq_refl)).
-
-Definition eq_to_equiv_P (A B:Prop) : A = B -> A ≃ B :=
-  fun e => @transport_eq Prop (fun X => A ≃ X) A B e (Equiv_id_P A).
-             
-Axiom univalence_P : forall (A B:Prop), IsEquiv (eq_to_equiv_P A B).
 
 
 Class UR A B := {
@@ -107,11 +81,11 @@ Proof.
   cbn. rewrite transport_paths_l. rewrite inv_inv.
   unfold can_eq_eq. cbn. apply inverse. 
   pose (@e_sect _ _ _ (funext _ _  (fun (x y : A) (e0 : eq A x y) => e0) (fun (x y : A) (e0 : eq A x y) => e0)) eq_refl).
-  eapply concat; try apply e0. clear e0. apply ap. apply funext. intros. cbn.
+  etransitivity; try exact e0. clear e0. apply ap. apply funext. intros. cbn.
   pose (@e_sect _ _ _ (funext _ _  (fun (y : A) (e0 : eq A x y) => e0) (fun (y : A) (e0 : eq A x y) => e0)) eq_refl).
-  eapply concat; try apply e0. clear e0. apply ap. apply funext. intros y. cbn.
+  etransitivity ; try apply e0. clear e0. apply ap. apply funext. intros y. cbn.
   pose (@e_sect _ _ _ (funext _ _  (fun (e0 : eq A x y) => e0) (fun (e0 : eq A x y) => e0)) eq_refl). 
-  eapply concat; try apply e0. clear e0. apply ap. apply funext. intros e0. cbn.
+  etransitivity; try apply e0. clear e0. apply ap. apply funext. intros e0. cbn.
   destruct e0. reflexivity.                  
 Defined. 
 
@@ -123,13 +97,12 @@ Definition Canonical_eq_decidable_ A (Hdec : forall x y : A, (x=y) + ((x = y) ->
                end. 
 
 Definition Canonical_eq_decidable A (Hdec:forall x y : A, (x=y) + ((x = y) -> False)) : Canonical_eq A.
-  unshelve econstructor.
-  - apply Canonical_eq_decidable_; auto. 
+Proof. 
+  refine {| can_eq := Canonical_eq_decidable_ A Hdec |}.
   - unfold Canonical_eq_decidable_. intro x. cbn. destruct (Hdec x x); cbn.
     assert (e = eq_refl) by (eapply is_hset).
     rewrite X. reflexivity.
     destruct (f eq_refl).
-    Unshelve. apply Hedberg. auto.
 Defined.
 
 Class UR_Type A B :=
@@ -270,7 +243,6 @@ Proof.
     assert (e = eq_refl) by (eapply is_hset).
     rewrite X. reflexivity.
     destruct (f eq_refl).
-    Unshelve. apply Hedberg. auto.
 Defined. 
 
 Definition Transportable_default {A} (P:A -> Type) : Transportable P.

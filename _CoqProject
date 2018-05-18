@@ -1,6 +1,7 @@
 -arg "-w '-notation-overridden'" -R . UnivalentParametricity
 Vector.v
 HoTT.v
+HoTT_axioms.v
 URTactics.v
 UR.v
 FP.v

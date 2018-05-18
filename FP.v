@@ -4,7 +4,7 @@
 
 Set Universe Polymorphism.
 
-Require Import HoTT URTactics String UR.
+Require Import HoTT HoTT_axioms URTactics String UR.
 
 (*! Establishing FP for Type !*)
 
