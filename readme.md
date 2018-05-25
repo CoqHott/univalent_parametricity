@@ -40,6 +40,9 @@ HoTT.v contains several definitions from the HoTT library; the point of this fil
 
 Note that HoTT.v contains one admit that corresponds to a standard result in the HoTT library, but whose proof was too laborious to add independently to this distribution.
 
+* HoTT_axioms.v contains the definition of the univalence axiom and
+  functional extensionality.
+
 * UR.v contains the definition of the univalent logical relation using type classes.
 
 * FP.v contains the proof that constructors of Coq enjoy the fundamental property of the univalent logical relation.
