@@ -40,7 +40,10 @@ The structure of the files follows more or less the structure of the paper.
 
 * HoTT.v contains several definitions from the HoTT library; the point of this file is so that our development is independent from hoqc (the HoTT version of Coq provided by the HoTT Library), hence avoiding a separate compiler installation.
 
-Note that HoTT.v contains one admit ([hprop_isequiv](https://github.com/CoqHott/univalent_parametricity/blob/master/theories/HoTT.v#L649-L650)) that corresponds to a standard result in the HoTT library, but whose proof was too laborious to add independently to this distribution.
+Note that HoTT.v contains one admit
+([hprop_isequiv](https://github.com/CoqHott/univalent_parametricity/blob/master/theories/HoTT.v#L649-L650))
+that corresponds to a standard result in the HoTT library, but whose
+proof was too laborious to be added independently to this distribution.
 
 * HoTT_axioms.v contains the definition of the univalence axiom and
   functional extensionality.
