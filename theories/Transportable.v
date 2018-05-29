@@ -1,5 +1,4 @@
-Require Import HoTT HoTT_axioms UR URTactics FP Record MoreInductive.
-Require Import BinInt BinNat Nnat Vector.
+Require Import HoTT HoTT_axioms UR URTactics FP.
 
 Set Universe Polymorphism.
 

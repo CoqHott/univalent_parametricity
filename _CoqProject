@@ -1,11 +1,11 @@
 -arg "-w '-notation-overridden'" -R . UnivalentParametricity
-Vector.v
-HoTT.v
-HoTT_axioms.v
-URTactics.v
-UR.v
-FP.v
-Record.v
-Transportable.v
-MoreInductive.v
-Examples.v
+theories/HoTT.v
+theories/HoTT_axioms.v
+theories/URTactics.v
+theories/UR.v
+theories/FP.v
+theories/Record.v
+theories/Transportable.v
+examples/Vector.v
+examples/MoreInductive.v
+examples/Examples.v
