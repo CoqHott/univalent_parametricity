@@ -3,7 +3,7 @@ Univalent Parametricity for Effective Transport
 
 The repository contains the companion code of the publication
 "Equivalences for Free!
-Univalent Parametricity for Effective Transport" (submitted to ICFP' 18).
+Univalent Parametricity for Effective Transport" (accepted at ICFP' 18).
 
 ## Structure
 
