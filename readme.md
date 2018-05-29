@@ -26,11 +26,11 @@ To compile in the main development:
 
    set $COQBIN to the path where coqc is, or have Coq 8.7 in your path.
 
-   # make
+     make
 
 To compile in translation/:
 
-   # hoqc translation.v
+     hoqc translation.v
 
 ## directory ./theories
 
