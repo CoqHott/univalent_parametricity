@@ -2,6 +2,7 @@
 theories/HoTT.v
 theories/HoTT_axioms.v
 theories/URTactics.v
+theories/ADT.v
 theories/UR.v
 theories/FP.v
 theories/Record.v
