@@ -18,20 +18,20 @@ Univalent Parametricity for Effective Transport" (accepted at ICFP' 18).
 
 ## Compilation
 
-You need Coq 8.7 to compile the main directory 
+You need Coq 8.7 to compile the main developpment
 and the hoqc compiler from https://github.com/HoTT/ to compile
-files in the translation/ directory. 
+the file in the translation/ directory.
 
-To compile in the main development:
+To compile the main development:
 
-   set $COQBIN to the path where coqc is, or have Coq 8.7 in your
-   path. Then, in the / directory, run:
+   set `$COQBIN` to the path where coqc is (`export COQBIN=/.../bin/`),
+   or have Coq 8.7 in your path. Then, in the / directory, run:
 
-     make
+	make
 
-To compile in translation/:
+To compile translation/ run (require hoqc):
 
-     hoqc translation.v
+	/.../hoqc translation/Translation.v
 
 ## directory ./theories
 
@@ -75,6 +75,6 @@ univalent.
 * Examples.v presents examples, most of them are also in the paper.
 
 
-## directory ./translation/
+## directory ./translation
 
 * Translation.v is a file showing the correctness of the univalent parametricity translation (Fig 3) using a deep embedding
