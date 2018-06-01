@@ -3,6 +3,28 @@ Require Import BinInt BinNat Nnat Vector.
 
 Set Universe Polymorphism.
 
+Definition append_list {A:Type} {n p} {H : A ⋈ A} :
+  {l : list A & length l = n} ->
+  {l : list A & length l = p} ->
+  {l : list A & length l = n+p}   := ↑ Vector.append.
+
+Eval compute in ((append_list ([1;2];eq_refl) ([4;5;6];eq_refl)).1).
+
+Definition map_list {A B} (e : A ≃ B)
+           {HA : ur A A} {HB : ur B B}
+           (f:A -> B) {n} :
+  {l : list A & length l = n} ->
+  {l : list B & length l = n}
+  := ↑ (Vector.map f).
+
+Typeclasses Transparent map_list.
+
+Typeclasses Opaque vector_to_list list_to_vector.
+
+Opaque vector_to_list list_to_vector.
+
+
+
 Fixpoint incrVector n : Vector.t nat n :=
   match n with
     0 => nil _

@@ -3,25 +3,8 @@ Require Import BinInt BinNat Nnat Vector.
 
 Set Universe Polymorphism.
 
-Definition append_list {A:Type} {n p} {H : A ⋈ A} :
-  {l : list A & length l = n} ->
-  {l : list A & length l = p} ->
-  {l : list A & length l = n+p}   := ↑ Vector.append.
 
-Eval compute in ((append_list ([1;2];eq_refl) ([4;5;6];eq_refl)).1).
-
-Definition map_list {A B} (e : A ≃ B)
-           {HA : ur A A} {HB : ur B B}
-           (f:A -> B) {n} :
-  {l : list A & length l = n} ->
-  {l : list B & length l = n}
-  := ↑ (Vector.map f).
-
-Typeclasses Transparent map_list.
-
-Typeclasses Opaque vector_to_list list_to_vector.
-
-Opaque vector_to_list list_to_vector.
+(* we start with the Lib example of the paper *)
 
 Record Lib (C : Type -> nat -> Type) :=
   { head : forall {A : Type} {n : nat}, C A (S n) -> A;
@@ -31,6 +14,9 @@ Record Lib (C : Type -> nat -> Type) :=
 Arguments map {_} _ {_ _} _ {_} _.
 Arguments head {_} _ {_ _} _.
 Arguments lib_prop {_} _ {_ _} _ _.
+
+(* the proof that Lib is a univalent type constructor requires to 
+   use an equivalent representation with dependent sums *)
 
 Definition Lib_sig C :=   {hd : forall {A : Type} {n : nat}, C A (S n) -> A  &
                       {map : forall {A B} (f:A -> B) {n},
@@ -47,12 +33,16 @@ Instance issig_lib_hd_map_inv C : Lib C ≃ Lib_sig C :=
 
 Hint Extern 0 => progress (unfold Lib_sig) :  typeclass_instances.
 
+(* the proof is automatic using the univ_param_record tactic *)
+
 Definition FP_Lib : Lib ≈ Lib.
  univ_param_record.
 Defined.
 
 Hint Extern 0 (Lib _ ≃ Lib _) => erefine (ur_type FP_Lib _ _ _).(equiv); simpl
 :  typeclass_instances.
+
+(* we now define an instance of Lib for vectors *)
 
 Definition lib_vector_prop : forall (n : nat) (A : Type) (f : A -> nat) (v : t A (S n)),
   Vector.hd (Vector.map f v) = f (Vector.hd v).
@@ -67,6 +57,10 @@ Definition libvec : Lib Vector.t :=
      map := fun A B f n => Vector.map f;
      lib_prop := lib_vector_prop |}.
 
+(* using the equivalence between vectors and sized lists
+   we can automatically infer the Lib structure on sized lists. 
+*)
+
 Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑ libvec.
 
 Transparent vector_to_list list_to_vector.
@@ -75,7 +69,11 @@ Notation "[[ ]]" := ([ ]; eq_refl).
 Notation "[[ x ]]" := ([x]; eq_refl).
 Notation "[[ x ; y ; .. ; z ]]" := ((FP.cons x (FP.cons y .. (FP.cons z FP.nil) ..)) ;eq_refl).
 
+(* the induced lib_list.(map) function behaves as map on sized lists. *)
+
 Time Eval compute in lib_list.(map) S [[1;2]].
+
+(* Some more tests using the append function *)
 
 Definition app {A} : list A -> list A -> list A :=
   fix app l m :=
@@ -108,6 +106,8 @@ Eval compute in (lib_list.(map) S (app_list [[1;2]] [[5;6]])).
 Eval compute in (lib_list.(lib_prop) S (app_list [[1;2]] [[5;6]])).
 
 
+(* we now turn to a similar example, the record for Monoid *)
+
 Record Monoid A :=
   Build_Monoid {
       mon_e : A;
@@ -116,6 +116,9 @@ Record Monoid A :=
       mon_unitR : forall x, mon_m mon_e x = x;
       mon_assoc : forall x y z, mon_m x (mon_m y z) = mon_m (mon_m x y) z
     }.
+
+(* Again, the fact that it is univalent can be almost automatically inferred
+   using its equivalent presentation with dependent sums *)
 
 Instance issig_monoid {A : Type} :
   { e:A & {m:A -> A -> A & {uL : forall x, m x e = x & { uR : forall x, m e x = x &
@@ -141,6 +144,8 @@ Hint Extern 0 (Monoid ≈ Monoid) => exact (ur_type FP_Monoid) : typeclass_insta
 
 Hint Extern 0 (Monoid _ ≃ Monoid _) => unshelve refine (equiv (ur_type FP_Monoid _ _ _)) : typeclass_instances. 
 
+(* we define the monoid structure on N *)
+
 Definition N_mon : Monoid N.
 Proof.
   unshelve refine (Build_Monoid _ _ _ _ _ _).
@@ -151,17 +156,17 @@ Proof.
   - intros. cbn. apply logic_eq_is_eq. exact (N.add_assoc x y z).  
 Defined.
 
+(* Then we can deduce automatically a monoid structure on nat *)
+
 Definition n_mon : Monoid nat := ↑ N_mon.
 
-Notation "a ++ b" := (n_mon.(mult) a b).
 
-Fixpoint even (n:nat) := match n with
-                             0 => true
-                           | 1 => false
-                           | S (S n) => even n
-                           end. 
 
-Definition nat_pow : nat -> nat -> nat := ↑ N.pow.
+(* we use const0 to avoid let binder optimization in newer version of Coq *)
+
+Definition const0 {A} : A -> nat := fun _ => 0. 
+
+Definition nat_pow : nat -> nat -> nat := Eval compute in ↑ N.pow.
 
 
 (* Observe the evolution of time as the exponent increases, 
@@ -170,13 +175,13 @@ Definition nat_pow : nat -> nat -> nat := ↑ N.pow.
    compilation time - just uncomment and eval to test.)
 *)
 
-(* Time Eval vm_compute in let x := Nat.pow 2 26 in 0. *)
+(* Time Eval vm_compute in let x := Nat.pow 2 26 in const0 x. *)
 (* 26: 8.221u *)
 (* 27: 28.715u *)
 (* 28: 83.669u *)
 
 
-(* Time Eval vm_compute in let x := nat_pow 2 26 in 0. *)
+(* Time Eval vm_compute in let x := nat_pow 2 26 in const0 x. *)
 (* 26: 13.994u *)
 (* 27: 24.465u *)
 (* 28: 60.975u *)
@@ -199,8 +204,6 @@ Definition diff' : nat -> nat -> nat -> nat := Eval compute in ↑ diffN.
 (* In the following, the computed value is 0 (so converting back 
    in the lifted version costs nothing). *)
 
-Definition const0 {A} : A -> nat := fun _ => 0. 
-
 (* Time Eval vm_compute in let x := diff 2 2 25 in const0 x. *)
 (* 8.322u *)
 
@@ -211,19 +214,8 @@ Definition const0 {A} : A -> nat := fun _ => 0.
    as in the first example, so the difference in favor 
    of the lifted version is quite clear *)
 
-(* Time Eval vm_compute in let x := diff 3 2 17 in 0. *)
+(* Time Eval vm_compute in let x := diff 3 2 17 in const0 x. *)
 (* 22.591u *)
 
-(* Time Eval vm_compute in let x := diff' 3 2 17 in 0. *)
+(* Time Eval vm_compute in let x := diff' 3 2 17 in const0 x. *)
 (* 8.478u *)
-
-
-(* Time Eval vm_compute in let x := nat_pow 2 26 in (const0 x). *)
-(* 18.725u *)
-
-(* Time Eval vm_compute in let x := Nat.pow 2 26 in (const0 x). *)
-(* 36.493u *)
-
-(* Time Eval vm_compute in let x := N.pow 2 26 in (const0 x). *)
-(* 0.1u *)
-
