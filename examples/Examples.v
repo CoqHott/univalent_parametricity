@@ -3,8 +3,11 @@ Require Import BinInt BinNat Nnat Vector.
 
 Set Universe Polymorphism.
 
+(* This file contains 3 examples: Lib, Monoid, and pow. 
+   Lib and pow are mentioned in the paper. Monoid is not. *)
 
-(* we start with the Lib example of the paper *)
+(*****************************)
+(* we start with the Lib example (Section 1) *)
 
 Record Lib (C : Type -> nat -> Type) :=
   { head : forall {A : Type} {n : nat}, C A (S n) -> A;
@@ -103,9 +106,16 @@ Eval compute in (app_list' [[1;2]] [[1;2]]).
 
 Eval compute in (lib_list.(map) S (app_list [[1;2]] [[5;6]])).
 
+(* the lib_prop theorem has been lifted as expected. *)
+
+Check lib_list.(lib_prop).
+
+(* and can be effectively used *)
+
 Eval compute in (lib_list.(lib_prop) S (app_list [[1;2]] [[5;6]])).
 
 
+(*****************************)
 (* we now turn to a similar example, the record for Monoid *)
 
 Record Monoid A :=
@@ -161,36 +171,49 @@ Defined.
 Definition n_mon : Monoid nat := ↑ N_mon.
 
 
+(*****************************)
 
-(* we use const0 to avoid let binder optimization in newer version of Coq *)
-
-Definition const0 {A} : A -> nat := fun _ => 0. 
+(* As mentioned in Sections 1 and 6, we can lift functions on 
+   binary nats to operate on normal nats, sometimes considerably
+   improving performance. *)
 
 Definition nat_pow : nat -> nat -> nat := Eval compute in ↑ N.pow.
 
+(* (the use of [Eval compute] in the definition above is to 
+   force reduction of some noise produced by the lifting.) *)
+
+(* In the timing experiments below, we use const0 to avoid 
+   let binder optimization in newer versions of Coq. *)
+Definition const0 {A} : A -> nat := fun _ => 0. 
 
 (* Observe the evolution of time as the exponent increases, 
    in first the standard nat version, and in the lifted N version. 
    (all Time Eval commands are commented in order to not affect
    compilation time - just uncomment and eval to test.)
+
+   Also, times commented below were produced on an iMac with 
+   3.5 GHz Intel Core i5 -- results on your machine would certainly 
+   differ, but the relative results is what matter.
 *)
 
+(* with the standard nat function: *)
 (* Time Eval vm_compute in let x := Nat.pow 2 26 in const0 x. *)
-(* 26: 8.221u *)
+(* 26:  8.221u *)
 (* 27: 28.715u *)
 (* 28: 83.669u *)
 
-
+(* with the lifted function *)
 (* Time Eval vm_compute in let x := nat_pow 2 26 in const0 x. *)
-(* 26: 13.994u *)
-(* 27: 24.465u *)
-(* 28: 60.975u *)
+(* 26:  5.086u *)
+(* 27: 12.173u *)
+(* 28: 37.205u *)
 
-(* a non-neglibible part of the cost here is the conversion of 
-   the result binary number to a nat. *)
+(* The results are much better than with the standard nat function,
+   but in fact, ALL the cost here in the lifted case is the conversion of 
+   the resulting binary number back to a nat! (the power itself takes 0.u) *)
 
-(* Consider another function that also uses pow, but does 
-   not always such big numbers: *)
+(* To illustrate, consider another function that also uses pow, but does 
+   not necessarily produce big numbers: *)
 
 (* a- the N version *)
 Definition diffN x y n := N.sub (N.pow x n) (N.pow y n).
@@ -204,18 +227,14 @@ Definition diff' : nat -> nat -> nat -> nat := Eval compute in ↑ diffN.
 (* In the following, the computed value is 0 (so converting back 
    in the lifted version costs nothing). *)
 
+(* the standard nat function is expectedly slow *)
 (* Time Eval vm_compute in let x := diff 2 2 25 in const0 x. *)
-(* 8.322u *)
+(* 25:  8.322u *)
+(* 26: 21.105u *)
 
+(* the lifted function is blazzing fast! *)
 (* Time Eval vm_compute in let x := diff' 2 2 25 in const0 x. *)
-(* 0u *)
-
-(* In the following the computed value is still large, but not as large
-   as in the first example, so the difference in favor 
-   of the lifted version is quite clear *)
-
-(* Time Eval vm_compute in let x := diff 3 2 17 in const0 x. *)
-(* 22.591u *)
-
-(* Time Eval vm_compute in let x := diff' 3 2 17 in const0 x. *)
-(* 8.478u *)
+(* 25: 0.u *)
+(* 26: 0.u *)
+(* 27: 0.u *)
+(* 28: 0.u *)
