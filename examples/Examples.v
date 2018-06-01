@@ -183,17 +183,58 @@ Fixpoint even (n:nat) := match n with
                            end. 
 
 Definition nat_pow : nat -> nat -> nat := ↑ N.pow.
- 
-(* Those tests are commented at compilation time *)
 
-(* Time Eval vm_compute in let x := nat_pow 2 26 in 0. *)
-(* 18.725u *)
+(* Observe the evolution of time as the exponent increases, 
+   in first the standard nat version, and in the lifted N version. 
+   (all Time Eval commands are commented in order to not affect
+   compilation time - just uncomment and eval to test.)
+*)
 
 (* Time Eval vm_compute in let x := Nat.pow 2 26 in 0. *)
-(* 36.493u *)
+(* 26: 8.221u *)
+(* 27: 28.715u *)
+(* 28: 83.669u *)
 
-(* Time Eval vm_compute in let x := N.pow 2 26 in 0. *)
-(* 0.1u *)
+
+(* Time Eval vm_compute in let x := nat_pow 2 26 in 0. *)
+(* 26: 13.994u *)
+(* 27: 24.465u *)
+(* 28: 60.975u *)
+
+(* a non-neglibible part of the cost here is the conversion of 
+   the result binary number to a nat. *)
+
+(* Consider another function that also uses pow, but does 
+   not always such big numbers: *)
+
+(* a- the N version *)
+Definition diffN x y n := N.sub (N.pow x n) (N.pow y n).
+
+(* b- the nat version *)
+Definition diff x y n := (Nat.pow x n) - (Nat.pow y n).
+
+(* c- the nat version obtained by lifting the N version *)
+Definition diff' : nat -> nat -> nat -> nat := ↑ diffN.
+
+(* In the following, the computed value is 0 (so converting back 
+   in the lifted version costs nothing). *)
+
+(* Time Eval vm_compute in let x := diff 2 2 25 in 0. *)
+(* 8.322u *)
+
+(* Time Eval vm_compute in let x := diff' 2 2 25 in 0. *)
+(* 3.369u *)
+
+(* In the following the computed value is still large, but not as large
+   as in the first example, so the difference in favor 
+   of the lifted version is quite clear *)
+
+(* Time Eval vm_compute in let x := diff 3 2 17 in 0. *)
+(* 22.591u *)
+
+(* Time Eval vm_compute in let x := diff' 3 2 17 in 0. *)
+(* 8.478u *)
+
 
 Fixpoint incrVector n : Vector.t nat n :=
   match n with
