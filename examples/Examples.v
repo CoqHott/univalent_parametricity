@@ -184,6 +184,33 @@ Fixpoint even (n:nat) := match n with
 
 Definition nat_pow : nat -> nat -> nat := ↑ N.pow.
 
+(* Nico: Experiment *) 
+
+Definition fake_N_pow x n :=
+  let val := N.pow x n in
+  0.
+
+Definition fake_nat_pow x n :=
+  let val := Nat.pow x n in
+  0.
+
+Definition fake_nat_pow' : nat -> nat -> nat  := ↑ fake_N_pow.
+
+Time Eval vm_compute in let x := fake_nat_pow 2 28 in 0.
+(* 26: 8.72u *)
+(* 27: 24.77u *)
+(* 28: 78.81u *)
+
+Time Eval vm_compute in let x := fake_nat_pow' 2 26 in 0.
+(* 26: 6.7u *)
+(* 27: 13.3u *)
+(* 28: 26.637u *)
+
+(* not so bad - though I don't understand why it degrades so fast, considering that the underlying N computation is essentially 0s. Do you understand? *)
+
+(* End Experiment *)
+
+
 (* Observe the evolution of time as the exponent increases, 
    in first the standard nat version, and in the lifted N version. 
    (all Time Eval commands are commented in order to not affect
