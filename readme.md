@@ -18,9 +18,9 @@ Univalent Parametricity for Effective Transport" (accepted at ICFP' 18).
 
 ## Compilation
 
-You need Coq 8.7.1 to compile the main developpment
-and the hoqc compiler from https://github.com/HoTT/HoTT to compile
-the file in the translation/ directory.
+Hereafter, "the main development" denotes the directories theories/ and examples/.
+
+You need Coq 8.7.1 to compile the main development. To compile the file in the translation/ directory, you need the hoqc compiler (the HoTT version of Coq provided by the HoTT Library -- available at https://github.com/HoTT/HoTT).
 
 To compile the main development:
 
@@ -29,24 +29,24 @@ To compile the main development:
 
 	make
 
-To compile translation/ run (require hoqc):
+To compile translation/ run (requires hoqc):
 
-	/.../hoqc translation/Translation.v
+    hoqc translation/Translation.v
 
 ## directory ./theories
 
-This is the formalization discussed in Section 4. 
+This is the core development with type classes described in Section 5. 
 The structure of the files follows more or less the structure of the paper.
 
-* HoTT.v contains several definitions from the HoTT library; the point of this file is so that our development is independent from hoqc (the HoTT version of Coq provided by the HoTT Library), hence avoiding a separate compiler installation.
+* HoTT.v contains several definitions from the HoTT library; the point of this file is so that the main development is independent from hoqc.
 
 Note that HoTT.v contains one admit
-([hprop_isequiv](https://github.com/CoqHott/univalent_parametricity/blob/master/theories/HoTT.v#L649-L650))
-that corresponds to a standard result in the HoTT library, but whose
+([hprop_isequiv](https://github.com/CoqHott/univalent_parametricity/blob/master/theories/HoTT.v#L649-L650)),
+which corresponds to a standard result in the HoTT library, but whose
 proof was too laborious to be added independently to this distribution.
 
-* HoTT_axioms.v contains the definition of the univalence axiom and
-  functional extensionality.
+* HoTT_axioms.v contains the definition of the univalence and
+  functional extensionality axioms.
 
 * UR.v contains the definition of the univalent logical relation using type classes.
 
@@ -67,12 +67,12 @@ univalent.
 
 ## directory ./examples
 
-* Vector.v is a copy and paste from Coq's standard library with the
+* Vector.v is a copy-paste from Coq's standard library with the
   only modification that it uses universe polymorphism.
 
-* MoreInductive.v deals with more examples of inductive types.
+* Examples.v presents examples, most of them in the paper.
 
-* Examples.v presents examples, most of them are also in the paper.
+* MoreInductive.v deals with more examples of inductive types.
 
 
 ## directory ./translation
