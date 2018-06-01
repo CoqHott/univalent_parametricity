@@ -25,7 +25,7 @@ the file in the translation/ directory.
 To compile the main development:
 
    set `$COQBIN` to the path where coqc is (`export COQBIN=/.../bin/`),
-   or have Coq 8.7 in your path. Then, in the / directory, run:
+   or have Coq 8.7.1 in your path. Then, in the / directory, run:
 
 	make
 
