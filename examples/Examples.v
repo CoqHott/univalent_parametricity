@@ -32,27 +32,6 @@ Arguments map {_} _ {_ _} _ {_} _.
 Arguments head {_} _ {_ _} _.
 Arguments lib_prop {_} _ {_ _} _ _.
 
-(*
-Definition FL_Lib_Noneff : Lib ≈ Lib.
-  split; [apply Transportable_default | ].
-  
-  intros C C' e.
-  pose (@URForall Type Type (fun _ : Type => forall _ : nat, Type)
-       (fun _ : Type => forall _ : nat, Type) UR_Type_def
-       (fun (x y : Type) (_ : @ur Type Type UR_Type_def x y) =>
-        @URForall nat nat (fun _ : nat => Type) (fun _ : nat => Type)
-	          (UR_gen nat) (fun (x0 y0 : nat) (_ : eq nat x0 y0) => UR_Type_def))).
-  pose (@ur_coh _ _ _ u). cbn in e0.
-  pose (@Ur_Coh (Type -> nat -> Type) (Type -> nat -> Type) _). cbn in u0.
-  unfold u in *. clear u. 
-  unfold Equiv_Arrow in e0.
-  pose (e_inv (e0 u0 C C')).
-  cbn in e.
-  specialize  (e1 (fun _ _ _ =>  ur_type (e _ _ _))). 
-  destruct e1. apply Canonical_UR. apply Equiv_id.
-Defined.
- *)
-
 Definition Lib_sig C :=   {hd : forall {A : Type} {n : nat}, C A (S n) -> A  &
                       {map : forall {A B} (f:A -> B) {n},
   C A n -> C B n &
@@ -246,11 +225,24 @@ Definition diff' : nat -> nat -> nat -> nat := ↑ diffN.
 (* In the following, the computed value is 0 (so converting back 
    in the lifted version costs nothing). *)
 
-(* Time Eval vm_compute in let x := diff 2 2 25 in 0. *)
+Definition const0 {A} : A -> nat := fun _ => 0. 
+
+(* Time Eval vm_compute in let x := diff 2 2 25 in const0 x. *)
 (* 8.322u *)
 
-(* Time Eval vm_compute in let x := diff' 2 2 25 in 0. *)
+(* Time Eval vm_compute in let x := diff' 2 2 25 in const0 x. *)
 (* 3.369u *)
+
+(* diff' still take some times, but it is due to the time taken 
+   to evaluate the additional noize added by th framework 
+   If if first take the (lazy) normal form of the function, 
+   it works in 0u, as 
+*)
+
+Definition diff'' := Eval compute in diff'.
+
+Time Eval vm_compute in let x := diff'' 2 2 25 in const0 x.
+(* 0.01u *)
 
 (* In the following the computed value is still large, but not as large
    as in the first example, so the difference in favor 
@@ -262,6 +254,16 @@ Definition diff' : nat -> nat -> nat -> nat := ↑ diffN.
 (* Time Eval vm_compute in let x := diff' 3 2 17 in 0. *)
 (* 8.478u *)
 
+
+(* Time Eval vm_compute in let x := nat_pow 2 26 in (const0 x). *)
+(* 18.725u *)
+
+(* Time Eval vm_compute in let x := Nat.pow 2 26 in (const0 x). *)
+(* 36.493u *)
+
+(* Time Eval vm_compute in let x := N.pow 2 26 in (const0 x). *)
+(* 0.1u *)
+>>>>>>> Stashed changes
 
 Fixpoint incrVector n : Vector.t nat n :=
   match n with
