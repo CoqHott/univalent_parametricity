@@ -20,7 +20,7 @@ Univalent Parametricity for Effective Transport" (accepted at ICFP' 18).
 
 Hereafter, "the main development" denotes the directories theories/ and examples/.
 
-You need Coq 8.7.1 to compile the main development. To compile the file in the translation/ directory, you need the hoqc compiler (the HoTT version of Coq provided by the HoTT Library -- available at https://github.com/HoTT/HoTT).
+You need Coq 8.8.0 to compile the main development. To compile the file in the translation/ directory, you need the hoqc compiler (the HoTT version of Coq provided by the HoTT Library -- available at https://github.com/HoTT/HoTT).
 
 To compile the main development:
 

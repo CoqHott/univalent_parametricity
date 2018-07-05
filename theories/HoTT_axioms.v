@@ -16,7 +16,7 @@ Axiom funext : Funext.
 
 Instance funext_isequiv A P (f g : forall x : A, P x) : IsEquiv (@apD10 _ _ f g) := funext _ _ _ _.
 
-
+Instance univalence_isequiv A B : IsEquiv (eq_to_equiv A B) := univalence _ _.
 
 Definition transport_apD10 A B (f g : forall x:A, B x)
            (P : forall x:A, B x -> Type)

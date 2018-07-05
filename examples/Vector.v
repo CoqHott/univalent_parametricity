@@ -64,7 +64,7 @@ match v with
   |_ => fun devil => False_ind (@IDProp) devil (* subterm !!! *)
 end.
 
-(** A vector of length [S _] is [cons] *)
+(** A vector of length [ S _] is [cons] *)
 Definition caseS {A} (P : forall {n}, t A (S n) -> Type)
   (H : forall h {n} t, @P n (h :: t)) {n} (v: t A (S n)) : P v :=
 match v with
@@ -301,12 +301,12 @@ End VECTORLIST.
 Module VectorNotations.
 Delimit Scope vector_scope with vector.
 Notation "[ ]" := [] (format "[ ]") : vector_scope.
-Notation "[]" := [] (compat "8.5") : vector_scope.
+Notation "[]" := [] (compat "8.6") : vector_scope.
 Notation "h :: t" := (h :: t) (at level 60, right associativity)
   : vector_scope.
 Notation "[ x ]" := (x :: []) : vector_scope.
 Notation "[ x ; y ; .. ; z ]" := (cons _ x _ (cons _ y _ .. (cons _ z _ (nil _)) ..)) : vector_scope.
-Notation "[ x ; .. ; y ]" := (cons _ x _ .. (cons _ y _ (nil _)) ..) (compat "8.4") : vector_scope.
+Notation "[ x ; .. ; y ]" := (cons _ x _ .. (cons _ y _ (nil _)) ..) (compat "8.6") : vector_scope.
 Notation "v [@ p ]" := (nth v p) (at level 1, format "v [@ p ]") : vector_scope.
 Open Scope vector_scope.
 End VectorNotations.

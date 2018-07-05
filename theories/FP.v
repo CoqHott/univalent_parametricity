@@ -398,7 +398,7 @@ Arguments cons {_} _ _.
 Notation "[ ]" := nil (format "[ ]").
 Notation "[ x ]" := (cons x nil).
 Notation "[ x ; y ; .. ; z ]" := (cons x (cons y .. (cons z nil) ..)).
-Notation "[ x ; .. ; y ]" := (cons x .. (cons y nil) ..) (compat "8.4").
+Notation "[ x ; .. ; y ]" := (cons x .. (cons y nil) ..) (compat "8.6").
 
 Infix "::" := cons (at level 60, right associativity). 
 

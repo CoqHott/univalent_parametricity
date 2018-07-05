@@ -138,8 +138,6 @@ Definition neg_ur : bool ≈ bool.
   unshelve econstructor. intros. destruct a, a'; apply Equiv_id.  
 Defined. 
 
-Goal forall n m, n + m = m + n.
-  refine (fun n m => _).
 
 Definition absurd : neg = id -> False.
   intro e. pose (apD10 e true). inversion e0.
@@ -603,6 +601,7 @@ Proof.
 Defined. 
 End Expr'. 
 
+(*
 Definition Expr_Expr_p_fun@{i j} (A:Set) (E:Expr@{i} A) :
   Expr'@{i j} A :=
   Expr_rect (fun A _ => Expr'@{i j} A)
@@ -610,7 +609,7 @@ Definition Expr_Expr_p_fun@{i j} (A:Set) (E:Expr@{i} A) :
             (fun b => B' b)
             (fun _ e _ e' => Add' e e')
             (fun _ e _ e' => Mul' e e')
-            (fun _ e _ e' => Eq' e e') _ E.
+            (fun _ e _ e' => Eq' e e') A E.
 
 Definition Expr_Expr_p_inv@{i j} (A:Set) (E:Expr'@{i j} A) :
   Expr@{i} A :=
@@ -672,8 +671,10 @@ erefine (FP_Expr_p_rect P P' _ x1 x1' _ x2 x2' _ x3 x3' _ x4 x4' _ x5 x5' _ X X'
 
 Hint Extern 0 => progress (unfold index_Expr) : typeclass_instances.
 
-Hint Extern 0 (UR_Type Set Set) => exact FP_Type : typeclass_instances. 
 
+*)
+
+Hint Extern 0 (UR_Type Set Set) => exact FP_Type : typeclass_instances. 
 
 (* nat ⋈ N *)
 
