@@ -25,7 +25,7 @@ You need Coq 8.8.0 to compile the main development. To compile the file in the t
 To compile the main development:
 
    set `$COQBIN` to the path where coqc is (`export COQBIN=/.../bin/`),
-   or have Coq 8.7.1 in your path. Then, in the / directory, run:
+   or have Coq 8.8.0 in your path. Then, in the / directory, run:
 
 	make
 
