@@ -12,7 +12,7 @@ Set Universe Polymorphism.
 Record Lib (C : Type -> nat -> Type) :=
   { head : forall {A : Type} {n : nat}, C A (S n) -> A;
     map : forall {A B} (f:A -> B) {n}, C A n -> C B n;
-    lib_prop : forall n A (f : A -> nat) (v : C A (S n)), head (map f v) = f (head v)}.
+    lib_prop : forall n A (f : A -> nat) (v : C A (S n)), head (map f v) = f (head v) }.
 
 Arguments map {_} _ {_ _} _ {_} _.
 Arguments head {_} _ {_ _} _.
@@ -177,7 +177,18 @@ Definition n_mon : Monoid nat := ↑ N_mon.
    binary nats to operate on normal nats, sometimes considerably
    improving performance. *)
 
+Definition nat_pow_ : nat -> nat -> nat := ↑ N.pow.
+
 Definition nat_pow : nat -> nat -> nat := Eval compute in ↑ N.pow.
+
+Print Assumptions nat_pow_.
+Print Assumptions nat_pow.
+
+Definition lib_map_eff := Eval lazy in lib_list.(@map _).
+Definition lib_map_noeff := lib_list.(@map _).
+
+Print Assumptions lib_map_eff.
+Print Assumptions lib_map_noeff.
 
 (* (the use of [Eval compute] in the definition above is to 
    force reduction of some noise produced by the lifting.) *)
