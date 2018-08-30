@@ -1,4 +1,4 @@
-Require Import HoTT Tactics UR URTactics FP Record MoreInductive Transportable.
+Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable .
 Require Import BinInt BinNat Nnat Vector.
 
 Set Universe Polymorphism.
@@ -270,19 +270,16 @@ Definition nat_sub : nat -> nat -> nat := ↑ N.sub.
 (* d- the combined version *)
 Definition diff_comb x y n := nat_sub (nat_pow_ x n) (nat_pow_ y n).
 
-Tactic Notation "optimize" constr(f) constr(g) constr(equiv) :=
-  eexists; intros;
+Tactic Notation "optimize" constr(function) "with" constr(f) constr(g) constr(equiv) :=
+  let X := fresh "X" in
+  assert (X : { opt : _ & function = opt});
+  [eexists; repeat (apply funext ; intros) ;
   compute - [f g];
   repeat rewrite (e_sect' equiv);
   repeat rewrite (e_retr' equiv);
-  reflexivity.
+  reflexivity | exact X.1].
 
-Definition diff'_opt_ : { diff'_opt : nat -> nat -> nat -> nat  &
-                         forall a b c, diff_comb a b c = diff'_opt a b c}.
-  optimize N.of_nat N.to_nat Equiv_N_nat.
-Defined.
-
-Definition diff'_opt := diff'_opt_.1. 
+Definition diff'_opt := ltac: (optimize diff_comb with N.of_nat N.to_nat Equiv_N_nat).
 
 Definition diff_comb_ := Eval compute in diff_comb.
 
