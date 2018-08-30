@@ -181,17 +181,32 @@ Definition nat_pow_ : nat -> nat -> nat := ↑ N.pow.
 
 Definition nat_pow : nat -> nat -> nat := Eval compute in ↑ N.pow.
 
+
+(* (the use of [Eval compute] in the definition above is to 
+   force reduction of some noise produced by the lifting.) *)
+
 Print Assumptions nat_pow_.
 Print Assumptions nat_pow.
 
-Definition lib_map_eff := Eval lazy in lib_list.(@map _).
+Definition lib_map_eff := Eval compute in lib_list.(@map _).
 Definition lib_map_noeff := lib_list.(@map _).
 
 Print Assumptions lib_map_eff.
 Print Assumptions lib_map_noeff.
 
-(* (the use of [Eval compute] in the definition above is to 
-   force reduction of some noise produced by the lifting.) *)
+(* Eval compute in lib_list.  *)
+
+Goal { lib_prop_opt : forall (n : nat) (A : Set)
+                  (f : A -> nat) (v : {l : list A & length l = S n}),
+       head lib_list (map lib_list f v) = f (head lib_list v) & lib_list.(@lib_prop _) = lib_prop_opt }.
+  Opaque lib_list. 
+  refine (existT _ _ _).
+  Transparent lib_list.
+
+  reflexivity.
+Abort.
+
+Definition lib_prop_eff := Eval compute in lib_list.(lib_prop) S [[5;6]].
 
 (* In the timing experiments below, we use const0 to avoid 
    let binder optimization in newer versions of Coq. *)
@@ -249,3 +264,28 @@ Definition diff' : nat -> nat -> nat -> nat := Eval compute in ↑ diffN.
 (* 26: 0.u *)
 (* 27: 0.u *)
 (* 28: 0.u *)
+
+Definition nat_sub : nat -> nat -> nat := ↑ N.sub.
+
+(* d- the combined version *)
+Definition diff_comb x y n := nat_sub (nat_pow_ x n) (nat_pow_ y n).
+
+Tactic Notation "optimize" constr(f) constr(g) constr(equiv) :=
+  eexists; intros;
+  compute - [f g];
+  repeat rewrite (e_sect' equiv);
+  repeat rewrite (e_retr' equiv);
+  reflexivity.
+
+Definition diff'_opt_ : { diff'_opt : nat -> nat -> nat -> nat  &
+                         forall a b c, diff_comb a b c = diff'_opt a b c}.
+  optimize N.of_nat N.to_nat Equiv_N_nat.
+Defined.
+
+Definition diff'_opt := diff'_opt_.1. 
+
+Definition diff_comb_ := Eval compute in diff_comb.
+
+(* Time Eval vm_compute in let x := diff_comb_ 2 2 25 in const0 x. *)
+
+Time Eval vm_compute in let x := diff'_opt 2 2 25 in const0 x.
