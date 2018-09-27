@@ -13,7 +13,11 @@ Ltac resolve_eq := intros;
                    try repeat eapply ap; 
                    try repeat eapply ap2)).
 
-Hint Extern 0 (_ = _) => resolve_eq : typeclass_instances.
+Hint Extern 100 (_ = _) => resolve_eq : typeclass_instances.
+
+Hint Extern 10 (?e ?x = _ ) => eapply (ap e) : typeclass_instances.
+
+Hint Extern 10 (?e ?x ?y = _ ) => eapply (ap2 e) : typeclass_instances.
 
 Ltac clear_eq := cbn in *; repeat match goal with | [e: ?A = ?B |- _] => destruct e end.
 

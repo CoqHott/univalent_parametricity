@@ -257,11 +257,14 @@ Defined.
 
 Check eq_refl : N_square_unopt.1 = ↑ square. 
 
-Definition N_square_opt : { f : N -> N & f ≈ square}.
-  eexists. tc.
-Defined.
+Tactic Notation "convert" constr(function) ":" constr(T) :=
+  let X := fresh "X" in
+  assert (X : { opt : T & function ≈ opt});
+  [eexists; tc | exact X.1].
 
-Check eq_refl : N_square_opt.1 = (fun x:N => (x * x)%N).
+Definition N_square_opt := ltac: (convert square : (N -> N)).
+
+Check eq_refl : N_square_opt = (fun x:N => (x * x)%N).
 
 Definition lib_prop_eff := Eval compute in lib_list.(lib_prop) S [[5;6]].
 
@@ -327,16 +330,9 @@ Definition nat_sub : nat -> nat -> nat := ↑ N.sub.
 (* d- the combined version *)
 Definition diff_comb x y n := nat_sub (nat_pow_ x n) (nat_pow_ y n).
 
-Tactic Notation "optimize" constr(function) "with" constr(f) constr(g) constr(equiv) :=
-  let X := fresh "X" in
-  assert (X : { opt : _ & function = opt});
-  [eexists; repeat (apply funext ; intros) ;
-  compute - [f g];
-  repeat rewrite (e_sect' equiv);
-  repeat rewrite (e_retr' equiv);
-  reflexivity | exact X.1].
+Ltac optimize f := let T := type of f in convert f : T. 
 
-Definition diff'_opt := ltac: (optimize diff_comb with N.of_nat N.to_nat Equiv_N_nat).
+Definition diff'_opt := ltac: (optimize diff_comb).
 
 Definition diff_comb_ := Eval compute in diff_comb.
 
