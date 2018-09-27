@@ -66,11 +66,27 @@ Definition libvec : Lib Vector.t :=
 
 Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑ libvec.
 
+Notation vect_to_list := (vector_to_list _ _ (Equiv_id _) _ _ _).
+Notation list_to_vect := (list_to_vector _ _ (Equiv_id _) _ _ _).
+
+Definition lib_list' : Lib (fun A n => {l: list A & length l = n}) :=
+  {|
+    head := fun A n l => hd (list_to_vect l);
+    map := fun A B f n l => vect_to_list (Vector.map f (list_to_vect l));
+    lib_prop := fun n A f (l : {l : list A & length l = S n}) =>
+                  transport_eq (fun l => hd (Vector.map f l) = f (hd l))
+                               (e_sect _ _) 
+                               (lib_vector_prop n A f _) |}.
+
+
 Transparent vector_to_list list_to_vector.
 
 Notation "[[ ]]" := ([ ]; eq_refl).
 Notation "[[ x ]]" := ([x]; eq_refl).
 Notation "[[ x ; y ; .. ; z ]]" := ((FP.cons x (FP.cons y .. (FP.cons z FP.nil) ..)) ;eq_refl).
+
+Eval compute in (lib_list'.(lib_prop)).
+Eval compute in (lib_list'.(lib_prop) S [[1; 2; 3 ; 4 ; 5 ; 6]]).
 
 (* the induced lib_list.(map) function behaves as map on sized lists. *)
 
@@ -112,7 +128,7 @@ Check lib_list.(lib_prop).
 
 (* and can be effectively used *)
 
-Eval compute in (lib_list.(lib_prop) S (app_list [[1;2]] [[5;6]])).
+Eval compute in (lib_list.(lib_prop) S [[1; 2; 3]]).
 
 
 (*****************************)
@@ -196,15 +212,56 @@ Print Assumptions lib_map_noeff.
 
 (* Eval compute in lib_list.  *)
 
-Goal { lib_prop_opt : forall (n : nat) (A : Set)
-                  (f : A -> nat) (v : {l : list A & length l = S n}),
-       head lib_list (map lib_list f v) = f (head lib_list v) & lib_list.(@lib_prop _) = lib_prop_opt }.
-  Opaque lib_list. 
-  refine (existT _ _ _).
-  Transparent lib_list.
+(* Example doing change of representation à la CoqEAL *)
 
-  reflexivity.
-Abort.
+Require Import Arith.Plus.
+
+Definition compat_add : plus ≈ N.add.
+Admitted.
+
+Hint Extern 0 (_ = N.to_nat _) => apply compat_add :  typeclass_instances.
+
+Definition compat_mul : mult ≈ N.mul.
+Admitted. 
+
+Hint Extern 0 (_ = N.to_nat _) => apply compat_mul :  typeclass_instances.
+
+Definition compat_add' : N.add ≈ plus.
+Admitted.
+
+Hint Extern 0 (_ = N.of_nat _) => apply compat_add' :  typeclass_instances.
+
+Definition compat_mul' : N.mul ≈ mult.
+Admitted. 
+
+Hint Extern 0 (_ = N.of_nat _) => apply compat_mul' :  typeclass_instances.
+
+Lemma nat_distrib : forall (c a b: nat), c * (a + b) = c * a + c * b.
+Proof.
+  induction c; intros; cbn.
+  - reflexivity.
+  - rewrite IHc. repeat rewrite <- plus_assoc.
+    rewrite (plus_assoc b). rewrite (plus_comm b).
+    repeat rewrite <- plus_assoc. reflexivity.
+Defined.
+
+Definition N_distrib : forall (c a b: N), (c * (a + b) = c * a + c * b)%N :=
+  ↑ nat_distrib. 
+
+Definition square : forall (n : nat), nat := fun n => n * n.  
+
+Definition N_square_unopt : { f : N -> N & f ≈ square}.
+  exists (fun x => ↑ (square (↑ x))).
+  cbn. tc.
+Defined. 
+
+Check eq_refl : N_square_unopt.1 = ↑ square. 
+
+Definition N_square_opt : { f : N -> N & f ≈ square}.
+  eexists. tc.
+Defined.
+
+Check eq_refl : N_square_opt.1 = (fun x:N => (x * x)%N).
 
 Definition lib_prop_eff := Eval compute in lib_list.(lib_prop) S [[5;6]].
 
@@ -223,7 +280,7 @@ Definition const0 {A} : A -> nat := fun _ => 0.
 *)
 
 (* with the standard nat function: *)
-(* Time Eval vm_compute in let x := Nat.pow 2 26 in const0 x. *)
+(* Time Eval vm_compute in let x := Nat.pow 3 18 in const0 x. *)
 (* 26:  8.221u *)
 (* 27: 28.715u *)
 (* 28: 83.669u *)
