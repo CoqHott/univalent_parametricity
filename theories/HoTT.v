@@ -22,12 +22,10 @@ Notation "( x , y , .. , z )" := (pair .. (pair x y) .. z): type_scope.
 Section projections.
   Context {A : Type} {B : Type}.
 
-  Definition fst (p:prod A B) := match p with
-                                | (x, y) => x
-                              end.
-  Definition snd (p:prod A B) := match p with
-                                | (x, y) => y
-                              end.
+  Definition fst (p:prod A B) := prod_rect _ _ (fun _ => A) (fun x y => x) p.
+
+  Definition snd (p:prod A B) := prod_rect _ _ (fun _ => B) (fun x y => y) p.
+
 End projections.
 
 Inductive eq@{i} (A:Type@{i}) (x:A) : A -> Type@{i} :=
@@ -39,14 +37,11 @@ Notation "x = y" := (x = y :>_) : type_scope.
 
 Arguments eq_refl {_ _}. 
 
-Definition projT1 {A} {P:A -> Type} (x:sigT P) : A := match x with
-                                      | existT _ a _ => a
-                                      end.
+Definition projT1 {A} {P:A -> Type} (p:sigT P) : A :=
+  sigT_rect _ _ (fun _ => A) (fun x y => x) p.
 
-Definition projT2  {A} {P:A -> Type} (x:sigT P) : P (projT1 x) :=
-  match x return P (projT1 x) with
-  | existT _ _ h => h
-  end.
+Definition projT2  {A} {P:A -> Type} (p:sigT P) : P (projT1 p) :=
+  sigT_rect _ _ (fun x => P (projT1 x)) (fun x y => y) p.
 
 Notation id := (fun x => x). 
 
@@ -491,7 +486,7 @@ Proof.
   repeat rewrite <- ap_compose. 
   cbn. symmetry. eapply concat. refine (ap_pp ((f ∘ g) ∘f) _ _)^.
                                 rewrite inv_inv. reflexivity.
-Defined.
+Qed.
 
 Definition isequiv_adjointify {A B : Type} (f : A -> B) (g : B -> A)
            (issect : g∘ f == id) (isretr : f  ∘ g == id)  : IsEquiv f
@@ -636,7 +631,7 @@ Proof.
     rewrite <- ap_compose.
     rewrite (concat_pA1_p (e_sect f) _).
     rewrite concat_pV_p; apply concat_Vp.
-Defined.
+Qed.
 
 Definition isequiv_inverse : IsEquiv (e_inv f) 
     := BuildIsEquiv _ _ (e_inv f) f (e_retr f) (e_sect f) other_adj.

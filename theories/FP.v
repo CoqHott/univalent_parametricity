@@ -981,6 +981,18 @@ Proof.
   destruct x0, y0, H3. apply H0. 
 Defined. 
 
+Hint Extern 0 (sigT_rect ?A ?P ?Q ?f ?s ≈ sigT_rect ?A' ?P' ?Q' ?f' ?s')
+               => unshelve refine (FP_sigT_rect A A' _ P P' _ Q Q'
+                     {| transport_ := _; ur_type := _ |} f f' _ s s' _): typeclass_instances.
+
+Hint Extern 0 (sigT_rect ?A ?P ?Q ?f ?s ≈ _)
+               => unshelve refine (FP_sigT_rect A _ _ P _ _ Q _
+                     {| transport_ := _; ur_type := _ |} f _ _ s _ _) ; try eassumption : typeclass_instances.
+
+Hint Extern 0 (_ ≈ sigT_rect ?A ?P ?Q ?f ?s)
+               => unshelve refine (FP_sigT_rect _ A _ _ P _ _ Q
+                     {| transport_ := _; ur_type := _ |} _ f _ _ s _ ) ; try eassumption : typeclass_instances.
+
 (*! FP for the identity types !*)
 
 Definition eq_map (A B:Type) (e: A ≈ B) (HB : Canonical_eq B)

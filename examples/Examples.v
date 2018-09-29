@@ -1,7 +1,16 @@
 Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable .
-Require Import BinInt BinNat Nnat Vector.
+Require Import BinInt BinNat Nnat Vector Arith.Plus Omega.
 
 Set Universe Polymorphism.
+
+
+Tactic Notation "convert" constr(function) ":" constr(T) :=
+  let X := fresh "X" in
+  assert (X : { opt : T & function ≈ opt});
+  [eexists; tc | exact X].
+
+Ltac optimize f := let T := type of f in convert f : T. 
+
 
 (* This file contains 3 examples: Lib, Monoid, and pow. 
    Lib and pow are mentioned in the paper. Monoid is not. *)
@@ -210,31 +219,48 @@ Definition lib_map_noeff := lib_list.(@map _).
 Print Assumptions lib_map_eff.
 Print Assumptions lib_map_noeff.
 
+
+Definition lib_prop_eff := Eval compute in lib_list.(lib_prop) S [[5;6]].
+
 (* Eval compute in lib_list.  *)
 
 (* Example doing change of representation à la CoqEAL *)
 
-Require Import Arith.Plus.
+(* correspondance between libraries over nat and N *)
 
-Definition compat_add : plus ≈ N.add.
-Admitted.
+Definition compat_add : plus ≈ N.add. Admitted.
 
-Hint Extern 0 (_ = N.to_nat _) => apply compat_add :  typeclass_instances.
+Hint Extern 0 (_ = _) => eapply compat_add : typeclass_instances.
 
-Definition compat_mul : mult ≈ N.mul.
-Admitted. 
+Definition compat_mul : mult ≈ N.mul. Admitted. 
 
-Hint Extern 0 (_ = N.to_nat _) => apply compat_mul :  typeclass_instances.
+Hint Extern 0 (_ = _) => eapply compat_mul : typeclass_instances.
 
-Definition compat_add' : N.add ≈ plus.
-Admitted.
+Definition compat_add' : N.add ≈ plus. Admitted.
 
-Hint Extern 0 (_ = N.of_nat _) => apply compat_add' :  typeclass_instances.
+Hint Extern 0 (_ = _) => eapply compat_add' : typeclass_instances.
 
-Definition compat_mul' : N.mul ≈ mult.
-Admitted. 
+Definition compat_mul' : N.mul ≈ mult. Admitted. 
 
-Hint Extern 0 (_ = N.of_nat _) => apply compat_mul' :  typeclass_instances.
+Hint Extern 0 (_ = _) => eapply compat_mul' : typeclass_instances.
+
+Definition compat_div : Nat.div ≈ N.div. Admitted. 
+
+Hint Extern 0 (_ = _) => eapply compat_div : typeclass_instances.
+
+Definition compat_div' : N.div ≈ Nat.div. Admitted. 
+
+Hint Extern 0 (_ = _) => eapply compat_div' : typeclass_instances.
+
+Definition compat_lt : lt ≈ N.lt. Admitted.
+
+Hint Extern 0 (_ ⋈ _) => eapply compat_lt : typeclass_instances. 
+
+Definition compat_lt' : N.lt ≈ lt. Admitted.
+
+Hint Extern 0 (_ ⋈ _) => eapply compat_lt' : typeclass_instances. 
+
+(* we can lift properties up to the correspondance table *)
 
 Lemma nat_distrib : forall (c a b: nat), c * (a + b) = c * a + c * b.
 Proof.
@@ -246,27 +272,55 @@ Proof.
 Defined.
 
 Definition N_distrib : forall (c a b: N), (c * (a + b) = c * a + c * b)%N :=
-  ↑ nat_distrib. 
+  ↑ nat_distrib.
 
-Definition square : forall (n : nat), nat := fun n => n * n.  
+(* we can also convert functions from one setting to another *)
 
-Definition N_square_unopt : { f : N -> N & f ≈ square}.
-  exists (fun x => ↑ (square (↑ x))).
-  cbn. tc.
+Definition square : nat -> nat := fun n => n * n.  
+
+Definition N_square := ltac: (convert square : (N -> N)).
+
+Check eq_refl : N_square.1 = (fun x => (x * x)%N).
+
+Lemma nat_distrib' : forall (c a b: nat), (a + b) * c = a * c + b * c.
+Proof.
+  intros. rewrite mult_comm. rewrite nat_distrib.
+  rewrite mult_comm. rewrite (mult_comm c b). reflexivity. 
+Defined.
+
+(* And after adding the relation in the correspondance table, 
+   we can convert proofs over converted functions *)
+
+Hint Extern 0 (N_square.1 _ ≈ square _) => eapply N_square.2 : typeclass_instances. 
+
+Definition square_prop : forall n, square (2 * n) = 4 * square n.
+  intro n. cbn. repeat rewrite plus_0_r. repeat rewrite nat_distrib.
+  repeat rewrite nat_distrib'. repeat rewrite plus_assoc. reflexivity.
 Defined. 
 
-Check eq_refl : N_square_unopt.1 = ↑ square. 
+Opaque N.mul mult.
 
-Tactic Notation "convert" constr(function) ":" constr(T) :=
-  let X := fresh "X" in
-  assert (X : { opt : T & function ≈ opt});
-  [eexists; tc | exact X.1].
+Definition N_square_prop : forall n, (N_square.1 (2 * n) = 4 * N_square.1 n)%N :=
+  ↑ square_prop. 
 
-Definition N_square_opt := ltac: (convert square : (N -> N)).
+Transparent N.mul mult.
 
-Check eq_refl : N_square_opt = (fun x:N => (x * x)%N).
+(* not that a direct lifting does not using the correspondance table *)
 
-Definition lib_prop_eff := Eval compute in lib_list.(lib_prop) S [[5;6]].
+Fail Check eq_refl : ↑ square = (fun x:N => (x * x)%N).
+
+(* we can even convert dependent functions *)
+
+Definition divide n (m : {m : nat & 0 < m }) : nat := n / m.1.
+
+Hint Extern 0 => progress (unfold projT1) :  typeclass_instances.
+  
+Definition N_divide :=
+  ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), N)).
+
+Check eq_refl : N_divide.1 = (fun x y => (x / y.1)%N).
+
+
 
 (* In the timing experiments below, we use const0 to avoid 
    let binder optimization in newer versions of Coq. *)
@@ -330,12 +384,17 @@ Definition nat_sub : nat -> nat -> nat := ↑ N.sub.
 (* d- the combined version *)
 Definition diff_comb x y n := nat_sub (nat_pow_ x n) (nat_pow_ y n).
 
-Ltac optimize f := let T := type of f in convert f : T. 
 
-Definition diff'_opt := ltac: (optimize diff_comb).
+Definition diff_opt := ltac: (optimize diff_comb).
 
 Definition diff_comb_ := Eval compute in diff_comb.
 
 (* Time Eval vm_compute in let x := diff_comb_ 2 2 25 in const0 x. *)
 
-Time Eval vm_compute in let x := diff'_opt 2 2 25 in const0 x.
+Check eq_refl : diff_opt.1 =
+                fun x y n => ↑(N.pow (↑x) (↑n) - N.pow (↑y) (↑n))%N.
+
+Fail Check eq_refl : diff_comb_ =
+                (fun (x y n : nat) => ↑(N.pow (↑x) (↑n) - N.pow (↑y) (↑n))%N).
+
+Time Eval vm_compute in let x := diff_opt.1 2 2 25 in const0 x.
