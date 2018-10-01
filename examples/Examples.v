@@ -346,10 +346,10 @@ Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n}.
       apply Nat.mul_le_mono_r. apply le_n_S. apply Nat.le_0_l.
 Defined.
 
-(* this one does not terminate! *)
-(* Definition N_divide_def := *)
-(*   ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), *)
-(*                               {res:N & (res <= n)%N})). *)
+(* this one does not work *)
+Definition N_divide_dep_def :=
+  ltac: (convert divide_dep : (forall (n:N) (m : {m : N & (0 < m)%N}),
+                              {res:N & (res <= n)%N})).
 
 
 
