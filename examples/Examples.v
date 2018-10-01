@@ -260,6 +260,15 @@ Definition compat_lt' : N.lt ≈ lt. Admitted.
 
 Hint Extern 0 (_ ⋈ _) => eapply compat_lt' : typeclass_instances. 
 
+Definition compat_le : le ≈ N.le. Admitted.
+
+Hint Extern 0 (_ ⋈ _) => eapply compat_le : typeclass_instances. 
+
+Definition compat_le' : N.le ≈ le. Admitted.
+
+Hint Extern 0 (_ ⋈ _) => eapply compat_le' : typeclass_instances. 
+
+
 (* we can lift properties up to the correspondance table *)
 
 Lemma nat_distrib : forall (c a b: nat), c * (a + b) = c * a + c * b.
@@ -278,9 +287,11 @@ Definition N_distrib : forall (c a b: N), (c * (a + b) = c * a + c * b)%N :=
 
 Definition square : nat -> nat := fun n => n * n.  
 
-Definition N_square := ltac: (convert square : (N -> N)).
+Definition N_square_def := ltac: (convert square : (N -> N)).
 
-Check eq_refl : N_square.1 = (fun x => (x * x)%N).
+Definition N_square := N_square_def.1.
+
+Check eq_refl : N_square = (fun x => (x * x)%N).
 
 Lemma nat_distrib' : forall (c a b: nat), (a + b) * c = a * c + b * c.
 Proof.
@@ -291,7 +302,7 @@ Defined.
 (* And after adding the relation in the correspondance table, 
    we can convert proofs over converted functions *)
 
-Hint Extern 0 (N_square.1 _ ≈ square _) => eapply N_square.2 : typeclass_instances. 
+Hint Extern 0 (N_square_def.1 _ ≈ square _) => eapply N_square_def.2 : typeclass_instances. 
 
 Definition square_prop : forall n, square (2 * n) = 4 * square n.
   intro n. cbn. repeat rewrite plus_0_r. repeat rewrite nat_distrib.
@@ -300,7 +311,7 @@ Defined.
 
 Opaque N.mul mult.
 
-Definition N_square_prop : forall n, (N_square.1 (2 * n) = 4 * N_square.1 n)%N :=
+Definition N_square_prop : forall n, (N_square (2 * n) = 4 * N_square n)%N :=
   ↑ square_prop. 
 
 Transparent N.mul mult.
@@ -314,11 +325,32 @@ Fail Check eq_refl : ↑ square = (fun x:N => (x * x)%N).
 Definition divide n (m : {m : nat & 0 < m }) : nat := n / m.1.
 
 Hint Extern 0 => progress (unfold projT1) :  typeclass_instances.
-  
-Definition N_divide :=
+
+Definition N_divide_def :=
   ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), N)).
 
-Check eq_refl : N_divide.1 = (fun x y => (x / y.1)%N).
+Definition N_divide := N_divide_def.1.
+
+Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
+ 
+
+(* more dependent version... *)
+Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n}.
+  apply (existT _) with (x:=(n / m.1)).
+  destruct m as [m Hm]; simpl.
+  destruct m.
+  - inversion Hm.
+  - apply Nat.div_le_upper_bound.
+    + apply Nat.neq_succ_0.
+    + rewrite <- Nat.mul_1_l at 1.
+      apply Nat.mul_le_mono_r. apply le_n_S. apply Nat.le_0_l.
+Defined.
+
+(* this one does not terminate! *)
+(* Definition N_divide_def := *)
+(*   ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), *)
+(*                               {res:N & (res <= n)%N})). *)
+
 
 
 
