@@ -801,6 +801,65 @@ Defined.
 Instance compat_nat_N : nat ⋈ N := UR_Type_Inverse _ _ compat_N_nat.
 
 
+Definition le_rect : forall (n : nat) (P : forall n0 : nat, le n n0 -> Prop),
+       P n (le_n n) ->
+       (forall (m : nat) (l : le n m), P m l -> P (S m) (le_S n m l)) -> forall (n0 : nat) (l : le n n0), P n0 l := 
+fun (n : nat) (P : forall n0 : nat, le n n0 -> Prop) (f : P n (le_n n))
+  (f0 : forall (m : nat) (l : le n m), P m l -> P (S m) (le_S n m l)) =>
+fix F (n0 : nat) (l : le n n0) {struct l} : P n0 l :=
+  match l as l0 in (le _ n1) return (P n1 l0) with
+  | le_n _ => f
+  | le_S _ m l0 => f0 m l0 (F m l0)
+  end.
+
+Definition inv_eq m : Logic.eq (S m) m -> False.
+  induction m.
+  - inversion 1.
+  - intro e. assert (Logic.eq (S m) m). inversion e. exact e. auto.
+Defined. 
+
+Fixpoint apply_S_n (n:nat) m : nat :=
+  match n with 0 => S m
+          | S n => S (apply_S_n n m)
+  end. 
+
+Definition apply_prop n m : Logic.eq (apply_S_n n (S m)) (S (apply_S_n n m)).
+Proof.
+  induction n. reflexivity. cbn. f_equal; auto.
+Defined. 
+
+Definition inv_eq_gen m : forall n, Logic.eq (apply_S_n n m) m -> False.
+Proof.
+  induction m. destruct n; cbn; intro; inversion H. 
+  - intros. rewrite apply_prop in H. inversion H. apply (IHm _ H1).
+Defined. 
+  
+Definition inv_leq m : forall n, apply_S_n n m <= m -> False.
+  induction m.
+  - destruct n; cbn; intro; inversion H.
+  - intros n e. rewrite apply_prop in e. inversion e.
+    + apply (inv_eq_gen _ _ H0).
+    + apply (IHm (S n) H0).
+Defined.
+
+Instance Decidable_leq n m : Decidable (n <= m).
+constructor. revert m n. intros n m.  
+assert (forall n n'
+(e : n = n'), forall (le_mn1 : m <= n) (le_mn2 : m <= n'), Logic.eq (e # le_mn1) le_mn2).
+clear.
+intros. revert n' e le_mn2.
+induction le_mn1 using le_rect; intros. 
+- destruct le_mn2 using le_rect.
+  + assert (e = eq_refl). apply is_hset. rewrite X. reflexivity.
+  + assert False. clear - e le_mn2. rewrite e in le_mn2. apply (inv_leq _ 0 le_mn2). destruct H.
+- destruct le_mn2 using le_rect; try clear IHle_mn2.
+  + assert False. clear - e le_mn1. rewrite <- e in le_mn1. apply (inv_leq _ 0 le_mn1). destruct H. 
+  + assert (m0 = m1). clear - e. inversion e. reflexivity.
+    specialize (IHle_mn1 _ X le_mn2). rewrite <- IHle_mn1.
+    assert (e = ap S X). apply is_hset. rewrite X0 in *. clear e X0.
+    destruct X. reflexivity. 
+- intros a b; apply inl. destruct (H _ _ eq_refl a b). reflexivity. 
+Defined. 
 
 
   

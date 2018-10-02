@@ -289,6 +289,7 @@ Hint Extern 0 (_ = _) => eapply compat_add : typeclass_instances.
 Hint Extern 0 (_ = _) => eapply compat_mul : typeclass_instances.
 Hint Extern 0 (_ = _) => eapply compat_div : typeclass_instances.
 Hint Extern 0 (_ ⋈ _) => eapply compat_le : typeclass_instances. 
+Hint Extern 0 (_ ≃ _) => eapply compat_le : typeclass_instances. 
 
 Definition compat_add' : N.add ≈ plus := compat_inverse2 compat_add.
 Definition compat_mul' : N.mul ≈ mult := compat_inverse2 compat_mul.
@@ -301,6 +302,7 @@ Hint Extern 0 (_ = _) => eapply compat_add' : typeclass_instances.
 Hint Extern 0 (_ = _) => eapply compat_mul' : typeclass_instances.
 Hint Extern 0 (_ = _) => eapply compat_div' : typeclass_instances.
 Hint Extern 0 (_ ⋈ _) => eapply compat_le' : typeclass_instances. 
+Hint Extern 0 (_ ≃ _) => eapply compat_le' : typeclass_instances. 
 
 
 (* we can lift properties up to the correspondance table *)
@@ -382,9 +384,11 @@ Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
  
 Hint Extern 0 (N_divide _ _ ≈ divide _ _) => eapply N_divide_def.2 : typeclass_instances.
 
-Instance Decidable_leq n m : Decidable (n <= m). Admitted.   
-
-Instance Decidable_leq_N n m : Decidable (n <= m)%N := Decidable_equiv _ _ _.
+Instance Decidable_leq_N n m : Decidable (n <= m)%N.
+apply (Decidable_equiv (↑n <= ↑m) (n <= m)%N).
+apply compat_le; cbn; apply inverse. refine (e_retr N.of_nat n). refine (e_retr N.of_nat m).
+tc. 
+Defined.
 
 (* more dependent version... *)
 Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n}.
