@@ -312,19 +312,19 @@ Proof.
   - apply HA.    
 Defined.
 
-Definition URType_Refl_decidable A (Hdec:forall x y : A, (x=y) + ((x = y) -> False))
+Instance URType_Refl_decidable A (dec:Decidable A)
   : A ⋈ A :=
-  URType_Refl_can A (Canonical_eq_decidable  _ Hdec).
+  URType_Refl_can A (@Canonical_eq_decidable  _ dec).
 
 (* Definition UR_Type_gen (A:Type) : ur A A := @Canonical_UR _ _ (Equiv_id A).  *)
 
-(*! FP for nat, canonical !*)
+(* (*! FP for nat, canonical !*) *)
 
-Instance FP_nat : nat ⋈ nat := URType_Refl_decidable nat Decidable_eq_nat.
+(* Instance FP_nat : nat ⋈ nat := _ URType_Refl_decidable nat Decidable_eq_nat. *)
 
-(*! FP for bool, canonical !*)
+(* (*! FP for bool, canonical !*) *)
 
-Instance FP_bool : bool ⋈ bool := URType_Refl_decidable bool Decidable_eq_bool.
+(* Instance FP_bool : bool ⋈ bool := URType_Refl_decidable bool Decidable_eq_bool. *)
 
 (*! FP for Product !*)
 
@@ -604,6 +604,9 @@ Proof.
   unshelve econstructor.
   - intros x y e.
     unshelve refine (BuildEquiv _ _ _ _).
+    unshelve eapply functor_forall. exact id.
+    intros b. exact (transportable _ _ e).
+    typeclasses eauto. 
   - intro a. cbn. 
     unshelve refine (path_Equiv _).
     apply funext; intro f. apply funext; intro b. cbn. 
@@ -869,7 +872,7 @@ Definition Equiv_Sigma (A A':Type) (e: A ≈ A')
             transport_eq (fun x1 : A => x1 ≈ e_fun (equiv e) x1) XX
                          (ur_refl (e_inv (e_fun (equiv e)) (e_fun (equiv e) a)))).
     destruct XX. reflexivity.
-    etransitivity; try exact (X (e_sect (e_fun (equiv e)) a)).
+    eapply HoTT.concat; try exact (X (e_sect (e_fun (equiv e)) a)).
     generalize dependent (e_sect (e_fun (equiv e)) a). simpl. destruct e0. reflexivity.
   - intro E. unfold univalent_transport. 
     rewrite sigma_map_compose. 
@@ -905,17 +908,6 @@ Definition Equiv_Sigma (A A':Type) (e: A ≈ A')
 Defined. 
 
 Hint Extern 0 (sigT _ ≃ sigT _) => erefine (@Equiv_Sigma _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
-
-Definition pr1_path {A} `{P : A -> Type} {u v : sigT P} (p : u = v) : u.1 = v.1 := ap projT1 p.
-
-Notation "p ..1" := (pr1_path p) (at level 50).
-
-Definition pr2_path {A} `{P : A -> Type} {u v : sigT P} (p : u = v)
-  : u.2 = p..1^ # v.2.
-  destruct p. reflexivity. 
-Defined.
-    
-Notation "p ..2" := (pr2_path p) (at level 50). 
 
 
 Instance isequiv_path_sigma {A : Type} {B:A-> Type} {z z' : sigT B}

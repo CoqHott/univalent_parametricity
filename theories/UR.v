@@ -159,17 +159,17 @@ Defined.
 
 Class Transportable {A} (P:A -> Type) :=
   {
-    transportable :> forall x y, x = y -> P x ≃ P y;
+    transportable : forall x y, x = y -> P x ≃ P y;
     transportable_refl : forall x, transportable x x eq_refl = Equiv_id _
   }.
 
-Definition Transportable_decidable {A} (P:A -> Type) (Hdec:forall x y : A, (x=y) + ((x = y) -> False)): Transportable P.
+Instance Transportable_decidable {A} (P:A -> Type) `{Decidable A} : Transportable P.
 Proof.
   unshelve econstructor.
-  - intros x y e. destruct (Hdec x y) as [e0 | n0].
+  - intros x y e. destruct (dec_paths x y) as [e0 | n0].
     destruct e0. apply Equiv_id.
     destruct (n0 e).
-  - intro x. cbn. destruct (Hdec x x); cbn.
+  - intro x. cbn. destruct (dec_paths x x); cbn.
     assert (e = eq_refl) by (eapply is_hset).
     rewrite X. reflexivity.
     destruct (f eq_refl).
@@ -269,17 +269,17 @@ Proof.
   destruct e0. reflexivity.                  
 Defined. 
 
-Definition Canonical_eq_decidable_ A (Hdec : forall x y : A, (x=y) + ((x = y) -> False)) :
+Definition Canonical_eq_decidable_ A `{Decidable A} :
   forall x y:A , x = y -> x = y :=
-  fun x y e => match (Hdec x y) with
+  fun x y e => match (dec_paths x y) with
                | inl e0 => e0
                | inr n => match (n e) with end
                end. 
 
-Definition Canonical_eq_decidable A (Hdec:forall x y : A, (x=y) + ((x = y) -> False)) : Canonical_eq A.
+Instance Canonical_eq_decidable A `{Decidable A} : Canonical_eq A.
 Proof. 
-  refine {| can_eq := Canonical_eq_decidable_ A Hdec |}.
-  - unfold Canonical_eq_decidable_. intro x. cbn. destruct (Hdec x x); cbn.
+  refine {| can_eq := @Canonical_eq_decidable_ A H |}.
+  - unfold Canonical_eq_decidable_. intro x. cbn. destruct (dec_paths x x); cbn.
     assert (e = eq_refl) by (eapply is_hset).
     rewrite X. reflexivity.
     destruct (f eq_refl).

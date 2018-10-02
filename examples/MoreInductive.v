@@ -383,18 +383,17 @@ Proof.
     destruct en. induction n.
     + intro rl. simpl. destruct rl as [l Hl].
       destruct l; try inversion Hl. 
-      apply path_sigma_uncurried. unshelve eexists. 
-      apply nat_Hset. 
+      apply path_sigma_uncurried. unshelve eexists. apply is_hset. 
     + intro rl. destruct rl as [l Hl].
       destruct l. inversion Hl.  
       apply path_sigma_uncurried. unshelve eexists. 
       simpl. simpl in Hl.
       assert (length l = n). inversion Hl. reflexivity. 
-      assert (Hl = ap S X). apply nat_Hset.
+      assert (Hl = ap S X). apply is_hset.
       rewrite X0. unfold list_to_vector; simpl. apply ap2.
       exact (e_retr e b). 
       specialize (IHn (l;X)).
-      destruct X. simpl. cbn. exact (IHn..1). apply nat_Hset.
+      destruct X. simpl. cbn. exact (IHn..1). apply is_hset.
 Defined.
 
 Typeclasses Opaque vector_to_list list_to_vector.
@@ -764,14 +763,15 @@ Proof.
  induction n; simpl; try reflexivity. apply id_succ'.
 Defined. 
 
-Instance Equiv_N_nat : Equiv nat N.
+Instance IsEquiv_N_nat : IsEquiv N.of_nat.
 Proof.
-  unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)).
-  - exact N.of_nat. 
+  unshelve refine (isequiv_adjointify _ _ _ _).
   - exact N.to_nat. 
   - cbn; intro. exact (Nat2N_id _).
   - cbn; intro. exact (N2Nat_id _).
 Defined. 
+
+Instance Equiv_N_nat : Equiv nat N := BuildEquiv _ _ N.of_nat _. 
 
 Instance Equiv_nat_N : Equiv N nat := Equiv_inverse _. 
 
@@ -784,16 +784,7 @@ Defined.
 
 Instance UR_N : UR N N := UR_gen N. 
 
-Definition Decidable_eq_N : forall (x y : N),  (x = y) + (x = y -> False).
-  intros. destruct (Decidable_eq_nat (N.to_nat x) (N.to_nat y)). 
-  - left. apply (@isequiv_ap _ _ Equiv_nat_N). exact e.
-  - right. intro e. apply f. exact (ap _ e).
-Defined. 
-
-Instance FP_N : N ⋈ N := URType_Refl_decidable N Decidable_eq_N.
-
-Instance Transportable_nat (P: N -> Type) : Transportable P :=
-  Transportable_decidable P Decidable_eq_N.
+Instance Decidable_eq_N : Decidable N := Decidable_equiv nat N _.
 
 Hint Extern 0 (?f ?x = ?y ) => erefine (Move_equiv Equiv_nat_N x y _)
                                : typeclass_instances.
@@ -819,3 +810,8 @@ Instance compat_nat_N : nat ⋈ N.
   econstructor. intros. cbn.
   rewrite (Nat2N_id _). apply Equiv_id.
 Defined.
+
+
+
+
+  

@@ -60,6 +60,10 @@ etransitivity ; [unshelve notypeclasses refine (e_sect f n) | idtac ] : equiv.
 Hint Extern 0 (?f (?g ?n) = _ ) =>
 etransitivity ; [unshelve notypeclasses refine (e_retr f n) | idtac ] : equiv.
 
+Hint Extern 0 (_ = ?g (?f ?n)) => exact (e_sect f n)^ : equiv.
+
+Hint Extern 0 (_ = ?f (?g ?n)) => exact (e_retr f n)^ : equiv.
+
 Typeclasses Transparent e_inv'  univalent_transport. 
 Hint Transparent e_inv'  univalent_transport. 
 Hint Unfold e_inv'  univalent_transport. 

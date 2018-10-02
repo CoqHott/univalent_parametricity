@@ -240,6 +240,19 @@ Proof.
   simpl in q; destruct q; reflexivity.
 Defined.
 
+Definition pr1_path {A} `{P : A -> Type} {u v : sigT P} (p : u = v) : u.1 = v.1 := ap projT1 p.
+
+Notation "p ..1" := (pr1_path p) (at level 50).
+
+Definition pr2_path {A} `{P : A -> Type} {u v : sigT P} (p : u = v)
+  : u.2 = p..1^ # v.2.
+  destruct p. reflexivity. 
+Defined.
+    
+Notation "p ..2" := (pr2_path p) (at level 50). 
+
+
+
 Definition path_prod_uncurried {A B : Type} (u v : A * B)
            (pq : (fst u = fst v) * (snd u = snd v))
 : u = v.
@@ -470,7 +483,8 @@ Proof.
   apply moveL_M1.
   repeat rewrite ap_pp. rewrite <- concat_p_pp; rewrite <- ap_compose.
   pose  (concat_pA1 (fun b => (isretr b)^) (ap f (issect a))).
-  eapply concat. Focus 2. apply ap2. reflexivity. exact e. cbn. clear e. 
+  eapply concat. 2: { apply ap2. reflexivity. exact e. }
+  cbn. clear e. 
   pose (concat_pA1 (fun b => (isretr b)^) (isretr (f a))).
   rewrite <- concat_p_pp.
   pose (concat_A1p (fun b => (isretr b)) (isretr (f a))).
@@ -478,14 +492,15 @@ Proof.
   rewrite <- concat_p_pp in e0. rewrite inv_inv' in e0.
   rewrite concat_refl in e0.
   rewrite ap_compose in e0.
-  eapply concat. Focus 2. apply ap2. reflexivity.
-  rewrite concat_p_pp. eapply concat. Focus 2.
-  apply ap2. eapply concat. Focus 2.
-  apply ap2. symmetry. apply e0. reflexivity.
-  symmetry. apply inv_inv'. reflexivity. reflexivity.
+  eapply concat.
+  2: { apply ap2. reflexivity. rewrite concat_p_pp. eapply concat. 
+       2: { apply ap2. eapply concat.
+            2:{ apply ap2. symmetry. apply e0. reflexivity. }
+              symmetry. apply inv_inv'. reflexivity. }
+              reflexivity. }
   repeat rewrite <- ap_compose. 
   cbn. symmetry. eapply concat. refine (ap_pp ((f ∘ g) ∘f) _ _)^.
-                                rewrite inv_inv. reflexivity.
+  rewrite inv_inv. reflexivity.
 Qed.
 
 Definition isequiv_adjointify {A B : Type} (f : A -> B) (g : B -> A)
@@ -781,26 +796,26 @@ Defined.
 (**
 
 Hedberg theorem is a standard theorem of HoTT: it states that if a
-type [A] has decidable equality, then it is a hSet, i.e. its equality
+type [A] has decle equality, then it is a hSet, i.e. its equality
 is proof-irrelevant. See the proof at [https://github.com/HoTT] in
 [HoTT/theories/Basics/Decidable.v] *)
 
+Class Decidable A := { dec_paths : forall a b : A, (a = b) + (a = b -> False)}.
 
 Class HSet A := {is_hset : forall (x y : A) (e e' : x = y), e = e'}.
 
-Instance Hedberg A (dec_paths_ : forall a b : A, ((a = b) + (a = b -> False))%type)
-  : HSet A.
+Instance Hedberg A `{Decidable A} : HSet A.
 Proof.
   econstructor. 
   intros a b.
   assert (lemma: forall p: a = b,  
-             match dec_paths_ a a, dec_paths_ a b with
+             match dec_paths a a, dec_paths a b with
              | inl r, inl s => p = r^ @ s
              | _, _ => False
              end).
   {
     destruct p.
-    destruct (dec_paths_ a a) as [pr | f].
+    destruct (dec_paths a a) as [pr | f].
     - apply inverse_left_inverse.
     - exact (f eq_refl).
   }
@@ -808,8 +823,8 @@ Proof.
   intros p q.
   assert (p_given_by_dec := lemma p).
   assert (q_given_by_dec := lemma q).
-  destruct (dec_paths_ a b); try contradiction.
-  destruct (dec_paths_ a a); try contradiction.
+  destruct (dec_paths a b); try contradiction.
+  destruct (dec_paths a a); try contradiction.
   apply (p_given_by_dec @ q_given_by_dec ^).
 Defined.
 
@@ -818,7 +833,8 @@ Proof.
   destruct 1. reflexivity.
 Defined. 
  
-Definition Decidable_eq_nat : forall (x y : nat),  (x = y) + (x = y -> False).
+Instance Decidable_eq_nat : Decidable nat.
+constructor. intros x y; revert y. 
 induction x.
 - destruct y.
  + left ;reflexivity.
@@ -829,8 +845,8 @@ induction x.
     intro H; right. intro e. inversion e. apply (H (logic_eq_is_eq H1)).
 Defined.
 
-Definition Decidable_eq_bool : forall (x y : bool),  (x = y) + (x = y -> False).
-induction x.
+Instance Decidable_eq_bool : Decidable bool.
+constructor. intros x y; revert y. induction x.
 - destruct y.
  + left ;reflexivity.
  + right; intro H; inversion H.
@@ -838,9 +854,6 @@ induction x.
  + right; intro H; inversion H.
  + left ;reflexivity.
 Defined.
-
-Instance nat_Hset : HSet nat := Hedberg nat Decidable_eq_nat.
-
 
 Definition isequiv_ap (A B:Type) {H : A ≃ B} a a' :
   (a= a') ≃ (e_fun H a = e_fun H a').
@@ -861,6 +874,27 @@ Proof.
     apply concat_refl.
 Defined.
 
+Definition Decidable_equiv A B (eB : A ≃ B) `{Decidable A} : Decidable B. 
+Proof.
+  constructor. pose (eB' := Equiv_inverse eB).
+  intros x y. destruct (dec_paths (↑ x) (↑ y)). 
+  - left. apply (@isequiv_ap _ _ eB'). exact e.
+  - right. intro e. apply f. exact (ap _ e).
+Defined. 
+
+
+Instance Decidable_Sigma A (B : A -> Type) `{Decidable A} `{forall a, Decidable (B a)} :
+  Decidable {a : A & B a}.
+Proof.
+  constructor. intros [a b] [a' b' ].
+  destruct (dec_paths a a').
+  - destruct e. destruct (dec_paths b b').
+    + apply inl. apply path_sigma_uncurried. exists eq_refl. exact e.
+    + apply inr; intro Hf; apply f. pose (Hf..2).
+      assert (Hf..1 = eq_refl). apply is_hset. rewrite X in e. exact e.
+  - apply inr; intro Hf; apply f. exact (Hf..1).
+Defined.
+                
 Definition Move_equiv_equiv {A B} (e : A ≃ B) x y : (x = e_inv' e y) ≃ (e_fun e x = y).
 Proof.
   apply (transport_eq (fun X =>  (x = e_inv' e y) ≃ (e x = X)) (e_retr _ y)).

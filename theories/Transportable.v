@@ -1,9 +1,6 @@
 Require Import HoTT HoTT_axioms UR URTactics FP.
-
+ 
 Set Universe Polymorphism.
-
-Instance Transportable_nat (P: nat -> Type) : Transportable P :=
-  Transportable_decidable P Decidable_eq_nat.
 
 Definition inversion_cons {A} {l l':list A} {a a'} : a :: l = a' :: l' -> (a = a') * (l = l').
   inversion 1. split; reflexivity.
@@ -38,7 +35,7 @@ Proof.
   cbn. split. typeclasses eauto.
   intros.
   { unshelve eexists.
-    - destruct H. typeclasses eauto.
+    - destruct H. apply transportable; auto. 
     - destruct X, H. apply UR_gen.
     - constructor. destruct X, H. cbn. unfold univalent_transport.
       rewrite transportable_refl. cbn. intros;apply Equiv_id.
@@ -69,7 +66,8 @@ Defined.
 Instance Transportable_apply B C (f : B -> C) (P : C -> Type) `{Transportable C P}:
   Transportable (fun (x:B) => P (f x)).
 Proof.
-  unshelve econstructor. intros. apply H.
+  unshelve econstructor. intros. apply transportable. typeclasses eauto.
+  cbn; intros. apply transportable_refl. 
 Defined.
 
 Instance Transportable_Arrow A (P Q: A -> Type)
@@ -80,6 +78,7 @@ Proof.
   unshelve econstructor. intros x y e. pose (inverse e).
   eapply Equiv_Arrow.
   { unshelve eexists.
+    - apply transportable; auto. 
     - destruct e. apply UR_gen.
     - constructor. destruct e. cbn. unfold univalent_transport.
       rewrite transportable_refl. cbn. intros;apply Equiv_id.
@@ -87,6 +86,7 @@ Proof.
     - auto.
   }
   { unshelve eexists.
+    - apply transportable; auto.     
     - destruct e. apply UR_gen.
     - constructor. destruct e. cbn. unfold univalent_transport.
       rewrite transportable_refl. cbn. intros;apply Equiv_id.

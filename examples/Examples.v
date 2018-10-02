@@ -115,14 +115,14 @@ Definition lib_list' : Lib_sig (fun A n => {l: list A & length l = n}) := ↑ li
 Notation vect_to_list := (vector_to_list _ _ (Equiv_id _) _ _ _).
 Notation list_to_vect := (list_to_vector _ _ (Equiv_id _) _ _ _).
 
-Definition lib_list'' : Lib (fun A n => {l: list A & length l = n}) :=
-  {|
-    head := fun A n l => hd (list_to_vect l);
-    map := fun A B f n l => vect_to_list (Vector.map f (list_to_vect l));
-    lib_prop := fun n A B f (l : {l : list A & length l = S n}) =>
-                  transport_eq (fun l => hd (Vector.map f l) = f (hd l))
-                               (e_sect _ _) 
-                               (lib_vector_prop n A B f _) |}.
+(* Definition lib_list'' : Lib (fun A n => {l: list A & length l = n}) := *)
+(*   {| *)
+(*     head := fun A n l => hd (list_to_vect l); *)
+(*     map := fun A B f n l => vect_to_list (Vector.map f (list_to_vect l)); *)
+(*     lib_prop := fun n A B f (l : {l : list A & length l = S n}) => *)
+(*                   transport_eq (fun l => hd (Vector.map f l) = f (hd l)) *)
+(*                                (e_sect _ _)  *)
+(*                                (lib_vector_prop n A B f _) |}. *)
 
 Transparent vector_to_list list_to_vector.
 
@@ -290,14 +290,6 @@ Definition compat_div' : N.div ≈ Nat.div. Admitted.
 
 Hint Extern 0 (_ = _) => eapply compat_div' : typeclass_instances.
 
-Definition compat_lt : lt ≈ N.lt. Admitted.
-
-Hint Extern 0 (_ ⋈ _) => eapply compat_lt : typeclass_instances. 
-
-Definition compat_lt' : N.lt ≈ lt. Admitted.
-
-Hint Extern 0 (_ ⋈ _) => eapply compat_lt' : typeclass_instances. 
-
 Definition compat_le : le ≈ N.le. Admitted.
 
 Hint Extern 0 (_ ⋈ _) => eapply compat_le : typeclass_instances. 
@@ -306,6 +298,8 @@ Definition compat_le' : N.le ≈ le. Admitted.
 
 Hint Extern 0 (_ ⋈ _) => eapply compat_le' : typeclass_instances. 
 
+Hint Extern 0 ((_ <= _) ≃ _) => eapply compat_le : typeclass_instances. 
+Hint Extern 0 ((_ <= _)%N ≃ _) => eapply compat_le' : typeclass_instances. 
 
 (* we can lift properties up to the correspondance table *)
 
@@ -367,6 +361,16 @@ Definition divide n (m : {m : nat & 0 < m }) : nat := n / m.1.
 
 Hint Extern 0 => progress (unfold projT1) :  typeclass_instances.
 
+Hint Extern 0 => progress (unfold lt) :  typeclass_instances.
+
+(* the original definition of N.lt is using compare and is more compicated to deal with *)
+
+Definition lt_N (n m : N) := (N.succ n <= m)%N. 
+Notation "n < m" := (lt_N n m) : N_scope.
+Hint Extern 0 => progress (unfold lt_N) :  typeclass_instances.
+
+(* Set Typeclasses Debug Verbosity 2.  *)
+
 Definition N_divide_def :=
   ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), N)).
 
@@ -374,21 +378,11 @@ Definition N_divide := N_divide_def.1.
 
 Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
  
-Hint Extern 0 (N_divide_def.1 _ _ ≈ divide _ _) => eapply N_divide_def.2 : typeclass_instances. 
+Hint Extern 0 (N_divide _ _ ≈ divide _ _) => eapply N_divide_def.2 : typeclass_instances.
 
+Instance Decidable_leq n m : Decidable (n <= m). Admitted.   
 
-Definition Decidable_eq_N_leq k : forall (x y : {m : N & (k < m)%N}),  (x = y) + (x = y -> False).
-Admitted.
-
-Instance Transportable_N_leq k (P: {m : N & (k < m)%N} -> Type) : Transportable P :=
-  Transportable_decidable P (Decidable_eq_N_leq k).
-
-Definition Decidable_eq_nat_leq k : forall (x y : {m : nat & (k < m)}),  (x = y) + (x = y -> False).
-Admitted.
-
-Instance Transportable_nat_leq k (P: {m : nat & (k < m)} -> Type) : Transportable P :=
-  Transportable_decidable P (Decidable_eq_nat_leq k).
-  
+Instance Decidable_leq_N n m : Decidable (n <= m)%N := Decidable_equiv _ _ _.
 
 (* more dependent version... *)
 Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n}.
