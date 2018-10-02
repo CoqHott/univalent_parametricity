@@ -374,7 +374,7 @@ Definition N_divide := N_divide_def.1.
 
 Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
  
-Hint Extern 0 (N_divide.1 _ _ ≈ divide _ _) => eapply N_divide.2 : typeclass_instances. 
+Hint Extern 0 (N_divide_def.1 _ _ ≈ divide _ _) => eapply N_divide_def.2 : typeclass_instances. 
 
 
 Definition Decidable_eq_N_leq k : forall (x y : {m : N & (k < m)%N}),  (x = y) + (x = y -> False).
