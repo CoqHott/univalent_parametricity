@@ -266,40 +266,42 @@ Print Assumptions lib_map_noeff.
 
 (* correspondance between libraries over nat and N *)
 
+Definition compat_inverse (A A' B B':Type) (eA: A ≈ A') (eB: B ≈ B') (eA' := UR_Type_Inverse _ _ eA)
+           (eB' := UR_Type_Inverse _ _ eB) (f : A -> B) (g : A' -> B') :
+  f ≈ g -> g ≈ f.
+  tc. 
+Defined.
+
+Definition compat_inverse2 {A A' B B' C C' :Type} {eA: A ≈ A'} (eA' := UR_Type_Inverse _ _ eA)
+           {eB: B ≈ B'} (eB' := UR_Type_Inverse _ _ eB)
+           {eC: C ≈ C'} (eC' := UR_Type_Inverse _ _ eC)
+           {f : A -> B -> C} {g : A' -> B' -> C'} :
+  f ≈ g -> g ≈ f.
+  tc. 
+Defined.
+
 Definition compat_add : plus ≈ N.add. Admitted.
-
-Hint Extern 0 (_ = _) => eapply compat_add : typeclass_instances.
-
 Definition compat_mul : mult ≈ N.mul. Admitted. 
-
-Hint Extern 0 (_ = _) => eapply compat_mul : typeclass_instances.
-
-Definition compat_add' : N.add ≈ plus. Admitted.
-
-Hint Extern 0 (_ = _) => eapply compat_add' : typeclass_instances.
-
-Definition compat_mul' : N.mul ≈ mult. Admitted. 
-
-Hint Extern 0 (_ = _) => eapply compat_mul' : typeclass_instances.
-
 Definition compat_div : Nat.div ≈ N.div. Admitted. 
-
-Hint Extern 0 (_ = _) => eapply compat_div : typeclass_instances.
-
-Definition compat_div' : N.div ≈ Nat.div. Admitted. 
-
-Hint Extern 0 (_ = _) => eapply compat_div' : typeclass_instances.
-
 Definition compat_le : le ≈ N.le. Admitted.
 
+Hint Extern 0 (_ = _) => eapply compat_add : typeclass_instances.
+Hint Extern 0 (_ = _) => eapply compat_mul : typeclass_instances.
+Hint Extern 0 (_ = _) => eapply compat_div : typeclass_instances.
 Hint Extern 0 (_ ⋈ _) => eapply compat_le : typeclass_instances. 
 
-Definition compat_le' : N.le ≈ le. Admitted.
+Definition compat_add' : N.add ≈ plus := compat_inverse2 compat_add.
+Definition compat_mul' : N.mul ≈ mult := compat_inverse2 compat_mul.
+Definition compat_div' : N.div ≈ Nat.div := compat_inverse2 compat_div. 
+Definition compat_le' : N.le ≈ le.
+  cbn; intros. apply UR_Type_Inverse. tc. 
+Defined.
 
+Hint Extern 0 (_ = _) => eapply compat_add' : typeclass_instances.
+Hint Extern 0 (_ = _) => eapply compat_mul' : typeclass_instances.
+Hint Extern 0 (_ = _) => eapply compat_div' : typeclass_instances.
 Hint Extern 0 (_ ⋈ _) => eapply compat_le' : typeclass_instances. 
 
-Hint Extern 0 ((_ <= _) ≃ _) => eapply compat_le : typeclass_instances. 
-Hint Extern 0 ((_ <= _)%N ≃ _) => eapply compat_le' : typeclass_instances. 
 
 (* we can lift properties up to the correspondance table *)
 

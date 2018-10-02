@@ -773,14 +773,7 @@ Defined.
 
 Instance Equiv_N_nat : Equiv nat N := BuildEquiv _ _ N.of_nat _. 
 
-Instance Equiv_nat_N : Equiv N nat := Equiv_inverse _. 
-
-Instance UR_nat_N : UR nat N | 0. 
-eapply UR_Equiv.
-typeclasses eauto.
-typeclasses eauto.
-Defined. 
-
+Instance Equiv_nat_N : Equiv N nat := Equiv_inverse _.
 
 Instance UR_N : UR N N := UR_gen N. 
 
@@ -792,11 +785,11 @@ Hint Extern 0 (?f ?x = ?y ) => erefine (Move_equiv Equiv_nat_N x y _)
 Hint Extern 0 (?f ?x = ?y ) => erefine (Move_equiv Equiv_N_nat x y _)
                                : typeclass_instances.
 
-Instance UR_N_nat : UR N nat | 0. 
+Instance UR_N_nat : UR N nat | 0.
 eapply UR_Equiv.
 typeclasses eauto.
 typeclasses eauto.
-Defined. 
+Defined.
 
 Instance compat_N_nat : N ⋈ nat.
 Proof.
@@ -805,11 +798,7 @@ Proof.
   rewrite (N2Nat_id _). apply Equiv_id.
 Defined. 
 
-Instance compat_nat_N : nat ⋈ N.
-  unshelve eexists; try tc. 
-  econstructor. intros. cbn.
-  rewrite (Nat2N_id _). apply Equiv_id.
-Defined.
+Instance compat_nat_N : nat ⋈ N := UR_Type_Inverse _ _ compat_N_nat.
 
 
 
