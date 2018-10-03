@@ -332,16 +332,21 @@ Definition N_square := N_square_def.1.
 
 Check eq_refl : N_square = (fun x => (x * x)%N).
 
+Hint Extern 0 (N_square_def.1 _ ≈ square _) => eapply N_square_def.2 : typeclass_instances. 
+
+(* not that a direct lifting does not using the correspondance table *)
+
+Fail Check eq_refl : ↑ square = (fun x:N => (x * x)%N).
+
+(* And after adding the relation in the correspondance table, 
+   we can convert proofs over converted functions *)
+
 Lemma nat_distrib' : forall (c a b: nat), (a + b) * c = a * c + b * c.
 Proof.
   intros. rewrite mult_comm. rewrite nat_distrib.
   rewrite mult_comm. rewrite (mult_comm c b). reflexivity. 
 Defined.
 
-(* And after adding the relation in the correspondance table, 
-   we can convert proofs over converted functions *)
-
-Hint Extern 0 (N_square_def.1 _ ≈ square _) => eapply N_square_def.2 : typeclass_instances. 
 
 Definition square_prop : forall n, square (2 * n) = 4 * square n.
   intro n. cbn. repeat rewrite plus_0_r. repeat rewrite nat_distrib.
@@ -354,10 +359,6 @@ Definition N_square_prop : forall n, (N_square (2 * n) = 4 * N_square n)%N :=
   ↑ square_prop. 
 
 Transparent N.mul mult.
-
-(* not that a direct lifting does not using the correspondance table *)
-
-Fail Check eq_refl : ↑ square = (fun x:N => (x * x)%N).
 
 (* we can even convert dependent functions *)
 
@@ -391,10 +392,9 @@ tc.
 Defined.
 
 (* more dependent version... *)
-Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n}.
-  apply (existT _) with (x:=divide n m).
-  unfold divide. destruct m as [m Hm]. cbn.  
-  destruct m.
+
+Definition divide_dep_prop n (m : {m : nat & 0 < m }) : divide n m <= n.
+  destruct m as [m Hm]. destruct m.
   - inversion Hm.
   - apply Nat.div_le_upper_bound.
     + apply Nat.neq_succ_0.
@@ -402,6 +402,10 @@ Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n}.
       apply Nat.mul_le_mono_r. apply le_n_S. apply Nat.le_0_l.
 Defined.
 
+Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n}.
+  apply (existT _) with (x:=divide n m).
+  apply divide_dep_prop. 
+Defined.
 
 (* we need to do it in two steps, as the first projection is a conversion 
    while the second is a lifting *)
@@ -412,6 +416,32 @@ Definition N_divide_dep : forall (n:N) (m : {m : N & (0 < m)%N}),
 Definition N_divide_dep_def : forall (n:N) (m : {m : N & (0 < m)%N}),
     {res:N & (res <= n)%N} :=
   fun n m => (N_divide n m ; N_divide_dep n m).
+
+(* attempt to do it more automatically, certainly too ad-hoc *)
+
+Tactic Notation "convert_lift" constr(function) :=
+  let opt := fresh "opt" in
+  match goal with | |-
+    forall x:?A, forall y : ?B , @sigT ?T1 ?P =>
+      unshelve refine (let opt : { opt : forall x:A, forall y : B, T1 & (fun a b => (function a b).1) ≈ opt} := _ in _) ;
+      [ convert (fun a b => (function a b).1) : (forall x:A, forall y : B, T1) |
+        intros a b; 
+        exact (opt.1 a b ; (↑ (fun n  m => (function n m).2) : forall x:A, forall y : B,
+                               P (opt.1 x y) ) a b)]
+   | |- forall x:?A, @sigT ?T1 ?P =>
+      unshelve refine (let opt : { opt : forall x:A, T1 & (fun a => (function a).1) ≈ opt} := _ in _) ;
+      [ convert (fun a => (function a).1) : (forall x:A, T1) |
+        intros a; 
+        exact (opt.1 a ; (↑ (fun n => (function n).2) : forall (x:A),
+                               P (opt.1 x) ) a)] 
+  end.
+
+Definition N_divide_dep_def_alt : forall (n:N) (m : {m : N & (0 < m)%N}),
+      {res:N & (res <= n)%N}.
+  convert_lift divide_dep.
+Defined. 
+
+
 
 
 (* In the timing experiments below, we use const0 to avoid 
