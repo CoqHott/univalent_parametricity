@@ -282,7 +282,82 @@ Defined.
 
 Definition compat_add : plus ≈ N.add. Admitted.
 Definition compat_mul : mult ≈ N.mul. Admitted. 
-Definition compat_div : Nat.div ≈ N.div. Admitted. 
+Definition compat_div : Nat.div ≈ N.div. Admitted.
+
+(* alternative possible version *)
+
+Section Alt_LE.
+
+Fixpoint alt_le (n m : nat) : Prop :=
+  match n,m with
+    0 , _ => True
+  | S n, S m => alt_le n m
+  | _ , _ => False
+  end.
+
+Instance Decidable_alt_le n m : Decidable (alt_le n m).
+constructor. revert m. induction n.
+- cbn. intros _ [] []. exact (inl eq_refl).
+- destruct m.
+   + destruct a. 
+   + cbn. apply IHn.
+Defined. 
+
+Fixpoint ne_comp (A B : comparison) : Prop :=
+  match A,B with
+    Datatypes.Eq, Datatypes.Eq => False
+  | Lt, Lt => False
+  | Gt, Gt => False                
+  | _ , _ => True
+  end.
+
+Definition le_N x y := ne_comp (x ?= y)%N Gt.
+(* Notation "n <= m" := (le_N n m) : N_scope. *)
+
+Local Open Scope positive_scope.
+
+Definition comp_succ_inj a b :
+  (forall r, Pos.compare_cont r a b = Pos.compare_cont r (Pos.succ a) (Pos.succ b)) *
+  (Pos.compare_cont Gt a b = Pos.compare_cont Lt (Pos.succ a) b) *
+  (Pos.compare_cont Lt a b = Pos.compare_cont Gt a (Pos.succ b)).
+revert b. induction a; destruct b; cbn; split; try split; try reflexivity. 
+- exact (fun r => fst (fst (IHa _)) r).
+- exact (snd (fst (IHa _))).
+- exact (snd (IHa _)).
+- intros _. exact (snd (fst (IHa _))).
+- exact (snd (fst (IHa _))).
+- destruct a; cbn; reflexivity.
+- destruct a; cbn; reflexivity.
+- intros _. exact (snd (IHa _)).
+- exact (snd (IHa _)).
+- destruct a; cbn; reflexivity.
+- destruct a; cbn; reflexivity.
+- destruct b; cbn; reflexivity.
+- destruct b; cbn; reflexivity.
+- destruct b; cbn; reflexivity.
+- destruct b; cbn; reflexivity.
+Defined. 
+  
+Definition comp_S_inj a b :
+  (N.of_nat a ?= N.of_nat b)%N = (Pos.of_succ_nat a ?= Pos.of_succ_nat b)%positive.
+  destruct a, b; cbn; try reflexivity.
+  - destruct b. reflexivity.
+    cbn. generalize (Pos.of_succ_nat b). clear. induction p; cbn; try reflexivity.
+  - destruct a. reflexivity.
+    cbn. generalize (Pos.of_succ_nat a). clear. induction p; cbn; try reflexivity.
+  - exact (fst (fst (comp_succ_inj _ _)) _). 
+Defined. 
+
+
+Definition compat_alt_le : alt_le ≈ le_N.
+  cbn; intros. rewrite H, H0. clear.
+  revert x0; induction x; intro n; destruct n; cbn.
+  all: try apply URType_Refl.
+  unfold le_N in *. rewrite <- comp_S_inj. apply IHx. 
+Defined.
+
+End Alt_LE. 
+
 Definition compat_le : le ≈ N.le. Admitted.
 
 Hint Extern 0 (_ = _) => eapply compat_add : typeclass_instances.
@@ -295,7 +370,7 @@ Definition compat_add' : N.add ≈ plus := compat_inverse2 compat_add.
 Definition compat_mul' : N.mul ≈ mult := compat_inverse2 compat_mul.
 Definition compat_div' : N.div ≈ Nat.div := compat_inverse2 compat_div. 
 Definition compat_le' : N.le ≈ le.
-  cbn; intros. apply UR_Type_Inverse. tc. 
+  cbn; intros. intros. apply UR_Type_Inverse. tc. 
 Defined.
 
 Hint Extern 0 (_ = _) => eapply compat_add' : typeclass_instances.
@@ -306,6 +381,8 @@ Hint Extern 0 (_ ≃ _) => eapply compat_le' : typeclass_instances.
 
 
 (* we can lift properties up to the correspondance table *)
+
+Local Open Scope nat_scope.
 
 Lemma nat_distrib : forall (c a b: nat), c * (a + b) = c * a + c * b.
 Proof.
@@ -362,19 +439,21 @@ Transparent N.mul mult.
 
 (* we can even convert dependent functions *)
 
+Notation "n <= m" := (le n m) : nat_scope.
+
+Definition lt (n m : nat) := (S n <= m)%nat. 
+Notation "n < m" := (lt n m) : nat_scope.
+Hint Extern 0 => progress (unfold lt) :  typeclass_instances.
+
 Definition divide n (m : {m : nat & 0 < m }) : nat := n / m.1.
 
 Hint Extern 0 => progress (unfold projT1) :  typeclass_instances.
-
-Hint Extern 0 => progress (unfold lt) :  typeclass_instances.
 
 (* the original definition of N.lt is using compare and is more compicated to deal with *)
 
 Definition lt_N (n m : N) := (N.succ n <= m)%N. 
 Notation "n < m" := (lt_N n m) : N_scope.
 Hint Extern 0 => progress (unfold lt_N) :  typeclass_instances.
-
-(* Set Typeclasses Debug Verbosity 2.  *)
 
 Definition N_divide_def :=
   ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), N)).
@@ -383,7 +462,7 @@ Definition N_divide := N_divide_def.1.
 
 Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
  
-Hint Extern 0 (N_divide _ _ ≈ divide _ _) => eapply N_divide_def.2 : typeclass_instances.
+Hint Extern 0 (_ = _) => eapply N_divide_def.2 : typeclass_instances.
 
 Instance Decidable_leq_N n m : Decidable (n <= m)%N.
 apply (Decidable_equiv (↑n <= ↑m) (n <= m)%N).
@@ -410,12 +489,29 @@ Defined.
 (* we need to do it in two steps, as the first projection is a conversion 
    while the second is a lifting *)
 
-Definition N_divide_dep : forall (n:N) (m : {m : N & (0 < m)%N}),
-    (N_divide n m <= n)%N := ↑ (fun n  m => (divide_dep n m).2).
+Tactic Notation "lift" constr(function) ":" constr(T) :=
+  let X := fresh "X" in
+  let e := fresh "e" in
+  assert (X : { opt : T & function ≈ opt});
+  [exists (↑ function); intros;
+          match goal with | |- @ur ?A ?B _ _ _ =>
+                            unshelve refine (let e : A ≈ B := _ in _);
+                            [tc | exact (ur_refl (e:=e) _)] end
+          | exact X].
 
-Definition N_divide_dep_def : forall (n:N) (m : {m : N & (0 < m)%N}),
-    {res:N & (res <= n)%N} :=
-  fun n m => (N_divide n m ; N_divide_dep n m).
+Definition N_divide_dep_all := 
+  ltac: (lift (fun n  m => (divide_dep n m).2) :
+           (forall (n:N) (m : {m : N & (0 < m)%N}),
+               (N_divide n m <= n)%N)).
+
+Definition N_divide_dep : forall (n:N) (m : {m : N & (0 < m)%N}),
+    (N_divide n m <= n)%N := N_divide_dep_all.1.
+
+Definition N_divide_dep_def : {function : forall (n:N) (m : {m : N & (0 < m)%N}),
+                                  {res:N & (res <= n)%N} & divide_dep ≈ function}.
+  exists (fun n m => (N_divide n m ; N_divide_dep n m)).
+  intros. unshelve eexists. cbn; tc. apply N_divide_dep_all.2.
+Defined. 
 
 (* attempt to do it more automatically, certainly too ad-hoc *)
 
@@ -436,7 +532,8 @@ Tactic Notation "convert_lift" constr(function) :=
                                P (opt.1 x) ) a)] 
   end.
 
-Definition N_divide_dep_def_alt : forall (n:N) (m : {m : N & (0 < m)%N}),
+Definition N_divide_dep_def_alt :
+  forall (n:N) (m : {m : N & (0 < m)%N}),
       {res:N & (res <= n)%N}.
   convert_lift divide_dep.
 Defined. 
