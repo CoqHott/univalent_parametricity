@@ -146,17 +146,6 @@ Instance UR_Type_def@{i j} : UR@{j j j} Type@{i} Type@{i} :=
 
 Hint Extern 0 (?x ≈ ?y) => eassumption : typeclass_instances.
 
-Instance URType_Refl : URRefl Type Type (Equiv_id _) _ :=
-  {| ur_refl_ := _ |}.
-Proof.
-  intro A. cbn. unshelve eexists.
-  - apply Equiv_id.
-  - apply UR_gen.
-  - constructor. intros;apply Equiv_id.
-  - apply Canonical_eq_gen.
-  - apply Canonical_eq_gen.    
-Defined.
-
 Class Transportable {A} (P:A -> Type) :=
   {
     transportable : forall x y, x = y -> P x ≃ P y;

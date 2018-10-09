@@ -171,8 +171,28 @@ Proof.
   eexists. apply univalence.
 Defined.
 
+Definition URType_Refl_can A (HA : Canonical_eq A) : A ⋈ A.
+Proof.
+  unshelve eexists.
+  - apply Equiv_id.
+  - apply UR_gen.
+  - constructor. intros;apply Equiv_id.
+  - apply HA.
+  - apply HA.    
+Defined.
+
+Instance URType_Refl_decidable A (dec:Decidable A)
+  : A ⋈ A :=
+  URType_Refl_can A (@Canonical_eq_decidable  _ dec).
+
+Definition URType_Refl : URRefl Type Type (Equiv_id _) _.
+Proof.
+  constructor; intro A.
+  apply URType_Refl_can. apply Canonical_eq_gen.
+Defined.
+
 (* this requires univalence *)
-Instance URType_IsEq : URIsEq Type Type (Equiv_id _) _ _.
+Instance URType_IsEq : URIsEq Type Type (Equiv_id _) _ URType_Refl.
 Proof.
   intros A B. 
   simpl.
@@ -211,7 +231,71 @@ Proof.
   econstructor; try typeclasses eauto.
 Defined.
 
-(*! Establishing FP for Type !*)
+(*! Establishing FP for Type with a decidable equality !*)
+
+Record DType@{i} :=
+  { carrier :> Type@{i} ;
+    dec :> Decidable@{i} carrier }.
+
+Instance DTypeDec (A : DType) : Decidable A.(carrier) := A.(dec). 
+
+(* Notation "∥ A ∥" := (A.(carrier)) : type_scope. *)
+
+Instance UR_DType_def@{i j} : UR@{j j j} DType@{i} DType@{i} :=
+  {| ur := fun A B => UR_Type@{i i i} A.(carrier) B.(carrier) |}.
+
+Definition URDType_Refl : URRefl DType DType (Equiv_id _) _.
+Proof.
+  constructor; typeclasses eauto. 
+Defined.
+
+Definition path_DType (A B : DType)
+           (pq : {p : A.(carrier) = B.(carrier) & A.(dec) = p^ # B.(dec)})
+: A = B.
+Proof.
+  destruct pq as [p q]. destruct A, B. simpl in *. destruct p.
+  simpl in q; destruct q; reflexivity.
+Defined.
+
+Definition path_Decidable A (dec dec': Decidable A) : dec.(@dec_paths A) = dec'.(@dec_paths A) -> dec = dec'. 
+  destruct dec, dec'. cbn. destruct 1. reflexivity.
+Defined. 
+
+Definition path_sum {A B : Type} (z z' : A + B)
+           (pq : match z, z' with
+                   | inl z0, inl z'0 => z0 = z'0
+                   | inr z0, inr z'0 => z0 = z'0
+                   | _, _ => False
+                 end)
+: z = z'.
+  destruct z, z'.
+  all:try apply ap, pq.
+  all:elim pq.
+Defined.
+
+Definition Decidable_hprop : forall (A B : DType), A.(carrier) = B.(carrier) -> A = B.
+  intros A B e. destruct A as [A decA], B as [B decB]. cbn in *. assert (HSet A). apply Hedberg. auto. 
+  apply path_DType. cbn in *. exists e. apply path_Decidable. apply funext. intro a. apply funext. intro b.
+  destruct decA, decB. destruct e. cbn. apply path_sum. destruct (dec_paths a b), (dec_paths0 a b); auto. 
+  apply is_hset. apply funext. intro e. destruct (f e).
+Defined. 
+
+Axiom admit : forall X, X. 
+
+Instance URDType_IsEq : URIsEq DType DType (Equiv_id _) _ URDType_Refl.
+Proof.
+  intros A B. destruct A as [A decA], B as [B decB]. cbn.
+  apply admit. 
+Defined.
+    
+Instance Canonical_eq_DType : Canonical_eq DType := Canonical_eq_gen _.
+
+Instance FP_DType : DType ⋈ DType.
+Proof. 
+  econstructor; try typeclasses eauto.
+Defined.
+
+(*! Establishing FP for Prop !*)
 
 Instance UR_Prop : UR Prop Prop :=
   {| ur := fun (A B :Prop) => A ⋈ B |}.
@@ -301,20 +385,6 @@ Proof.
   - apply Canonical_eq_gen. 
 Defined.     
 
-
-Definition URType_Refl_can A (HA : Canonical_eq A) : A ⋈ A.
-Proof.
-  unshelve eexists.
-  - apply Equiv_id.
-  - apply UR_gen.
-  - constructor. intros;apply Equiv_id.
-  - apply HA.
-  - apply HA.    
-Defined.
-
-Instance URType_Refl_decidable A (dec:Decidable A)
-  : A ⋈ A :=
-  URType_Refl_can A (@Canonical_eq_decidable  _ dec).
 
 (* Definition UR_Type_gen (A:Type) : ur A A := @Canonical_UR _ _ (Equiv_id A).  *)
 
@@ -566,7 +636,8 @@ Proof.
   
    unshelve refine
            (BuildEquiv _ _ (functor_forall (e_fun (equiv e))
-           (fun x => (e_inv' ((equiv (e' x (e_fun (equiv e) x) (ur_refl (e:=e) x)))))))_). 
+                                           (fun x => (e_inv' ((equiv (e' x (e_fun (equiv e) x) (ur_refl (e:=e) x)))))))
+                       _). 
 Defined.
 
 Definition transport_e_fun' A B (P : A -> Type) a a' (e : a = a') (e' : B ≃ P a) x
@@ -668,18 +739,16 @@ Hint Extern 0 (Transportable (eq _ _))
 Hint Extern 0 (Canonical_eq (_ = _))
 => apply Canonical_eq_gen : typeclass_instances.
 
-Definition FP_forall :
-            (fun A B => forall x:A , B x) ≈ (fun A' B' => forall x:A', B' x).
+Definition FP_forall_UR_Coh (A A' : Type) (eA : A ⋈ A')
+           (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B') : 
+  UR_Coh (forall x : A, B x) (forall x : A', B' x) (Equiv_forall A A' eA B B' eB) (URForall A A' B B').
 Proof.
-  cbn. intros A A' eA. split ; [typeclasses eauto | ]. 
-  intros B B' eB.
-  
-  unshelve econstructor.
+
   econstructor. intros f g. 
 
   eapply equiv_compose. 
   eapply (BuildEquiv _ _ (@apD10_gen _ _ f g) _).
-
+  
   unshelve eapply Equiv_forall.
   apply URType_Refl_can. apply eA. 
   split; [typeclasses eauto | ].
@@ -760,8 +829,22 @@ Proof.
   rewrite inv2. exact X. 
   destruct X0. apply Equiv_id.
 
+Defined. 
+
+Definition FP_forall_ur_type (A A' : Type) (eA : A ⋈ A')
+           (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B') :
+  (forall x : A, B x) ⋈ (forall x : A', B' x).
+  unshelve econstructor.
+  - apply FP_forall_UR_Coh.
   - apply Canonical_eq_gen.
   - apply Canonical_eq_gen.
+Defined.
+
+Definition FP_forall :
+            (fun A B => forall x:A , B x) ≈ (fun A' B' => forall x:A', B' x).
+Proof.
+  cbn. intros A A' eA. split ; [typeclasses eauto | ]. 
+  intros B B' eB. eapply FP_forall_ur_type; eauto. 
 Defined. 
 
 Hint Extern 0 (UR_Type (forall x:_ , _) (forall y:_, _)) => erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros : typeclass_instances.
