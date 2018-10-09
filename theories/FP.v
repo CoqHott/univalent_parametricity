@@ -233,11 +233,15 @@ Defined.
 
 (*! Establishing FP for Type with a decidable equality !*)
 
-Record DType@{i} :=
+Structure DType@{i} :=
   { carrier :> Type@{i} ;
-    dec :> DecidableEq@{i} carrier }.
+    dec : DecidableEq@{i} carrier }.
 
 Instance DTypeDec (A : DType) : DecidableEq A.(carrier) := A.(dec). 
+
+Canonical Structure Dnat : DType := Build_DType nat _.
+
+Canonical Structure Dbool : DType := Build_DType bool _.
 
 (* Notation "∥ A ∥" := (A.(carrier)) : type_scope. *)
 
@@ -608,7 +612,7 @@ Proof.
   - refine (functor_forall (e_inv f) _).
     intros a y.
     generalize (e_inv (g _) y). clear y.
-    apply (transportable _ _ (eA.(can_eq) _ _ (e_retr f a))).
+    exact (transportable _ _ (eA.(can_eq) _ _ (e_retr f a))).
   - intros h. apply funext. intro a. unfold functor_forall.
     destruct (e_retr f a). rewrite can_eq_refl, transportable_refl. apply e_sect. 
   - intros h;apply funext. unfold functor_forall. intros b.
@@ -1095,7 +1099,7 @@ Definition Equiv_eq (A B:Type) (e: A ≈ B)
            (x :A) (y : B) (e1 : x ≈ y)
            (x' : A) (y' : B) (e2 : x' ≈ y'): (x = x') ≃ (y = y').
 Proof.
-  unfold univalent_transport in *.
+  unfold univalent_transport in *. 
   pose (e_i := Equiv_inverse (equiv e)).
   unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)).
   - eapply eq_map; eauto. apply e. 
@@ -1105,7 +1109,7 @@ Proof.
     repeat rewrite ap_pp.
     repeat rewrite <- (ap_compose (e_fun (equiv e))).
     repeat rewrite concat_p_pp.
-    repeat rewrite ap_V.
+    repeat rewrite ap_V. 
     rewrite <- (concat_p_pp _ ((ap (e_inv (e_fun (equiv e))) (e_retr (e_fun (equiv e)) y))^)).
     rewrite <- concat_inv.
     pose (e_adj' (Equiv_inverse (equiv e)) y). simpl in e0.
