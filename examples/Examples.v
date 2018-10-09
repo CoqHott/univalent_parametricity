@@ -485,6 +485,8 @@ Defined.
 Definition N_divide_conv :=
   ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), N)).
 Definition N_divide := N_divide_conv.1.
+Hint Extern 0 (_ = _) => eapply N_divide_conv.2 : typeclass_instances.
+
 
 (* N_divide is really the division on N *)
 Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
@@ -572,6 +574,19 @@ Eval lazy in (N_divide_dep_auto 10%N arg).1.
 Check eq_refl : N_divide_dep_comp'.1 = N_divide_dep_comp.
 (* can't prove it directly for the auto version (does not seem to terminate) *)
 (* Check eq_refl : N_divide_dep_comp = N_divide_dep_auto. *)
+
+
+(* Now, we can exploit the new divide - N_divide correspondance to efficiently convert 
+   nat functions that use divide *)
+
+Definition two : {n:nat & lt 0 n}.
+  apply (existT _) with (x:=2).
+  apply -> Nat.succ_le_mono. apply Nat.le_succ_diag_r.
+Defined.  
+Definition avg (x y: nat) := divide (x + y) two.
+
+Definition N_avg := ltac: (convert avg : (N -> N -> N)).
+
 
 
 (* In the timing experiments below, we use const0 to avoid 
