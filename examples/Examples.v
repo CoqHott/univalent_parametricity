@@ -89,20 +89,7 @@ Hint Extern 0 => progress (unfold Lib_sig) :  typeclass_instances.
 (* the proof is automatic using the univ_param_record tactic *)
 
 Definition FP_Lib : Lib ≈ Lib.
-  cbn;   split ; [typeclasses eauto | ]; intros;
-    unshelve refine (UR_Type_Equiv_gen _ _ _ _ _ _ _ _).
-  tc. erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn in *; intros. tc.
-  econstructor. tc. intros.
-  
-  erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn in *; intros. tc.
-  econstructor. tc. cbn. intros.
-
-  erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros. tc. tc. 
-  erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros. tc. tc. 
-  erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros. tc. tc. 
-  erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros. tc. tc. 
-  erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros. tc. tc. 
-  cbn. unshelve notypeclasses refine (ur_type (FP_eq _ _ _ _ _ _) _ _ _); cbn. tc.  tc. cbn; tc. 
+  univ_param_record.
 Defined.
 
 Hint Extern 0 (Lib _ ≃ Lib _) => erefine (ur_type FP_Lib _ _ _).(equiv); simpl
@@ -123,11 +110,6 @@ Definition libvec : Lib Vector.t :=
      map := fun A B f n => Vector.map f;
      lib_prop := lib_vector_prop |}.
 
-Definition libvec' : Lib_sig Vector.t :=
-  (fun A n x => @Vector.hd A n x;
-     (fun A B f n => Vector.map f;
-      lib_vector_prop)).
-
 (* using the equivalence between vectors and sized lists
    we can automatically infer the Lib structure on sized lists. 
 *)
@@ -137,15 +119,6 @@ Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑ libvec.
 Notation vect_to_list := (vector_to_list _ _ (Equiv_id _) _ _ _).
 Notation list_to_vect := (list_to_vector _ _ (Equiv_id _) _ _ _).
 
-(* Definition lib_list'' : Lib (fun A n => {l: list A & length l = n}) := *)
-(*   {| *)
-(*     head := fun A n l => hd (list_to_vect l); *)
-(*     map := fun A B f n l => vect_to_list (Vector.map f (list_to_vect l));  *)
-(*     lib_prop := fun n A B f (l : {l : list A & length l = S n}) => *)
-(*                   transport_eq (fun l => hd (Vector.map f l) = f (hd l)) *)
-(*                                (e_sect _ _) *)
-(*                                (lib_vector_prop n A B f _) |}. *)
-
 Transparent vector_to_list list_to_vector.
 
 Notation "[[ ]]" := ([ ]; eq_refl).
@@ -154,7 +127,7 @@ Notation "[[ x ; y ; .. ; z ]]" := ((FP.cons x (FP.cons y .. (FP.cons z FP.nil) 
 
 (* Eval compute in (lib_list.(lib_prop)). *)
 
-Eval compute in (lib_list.(lib_prop) (B := Build_DType nat _ ) S [[1; 2; 3 ; 4 ; 5 ; 6]]).
+Time Eval lazy in (lib_list.(lib_prop) S [[1; 2; 3 ; 4 ; 5 ; 6]]).
 
 (* the induced lib_list.(map) function behaves as map on sized lists. *)
 
@@ -189,6 +162,8 @@ Eval compute in (app_list [[1;2]] [[1;2]]).
 Eval compute in (app_list' [[1;2]] [[1;2]]).
 
 Eval compute in (lib_list.(map) S (app_list [[1;2]] [[5;6]])).
+
+Eval compute in (lib_list.(map) neg (app_list [[true;false]] [[true;false]])).
 
 (* the lib_prop theorem has been lifted as expected. *)
 
@@ -492,7 +467,7 @@ Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
 (* more dependent version of divide (on Nat)*)
 
 Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n}.
-  apply (existT _) with (x:=divide n m).
+  exists (divide n m).
   destruct m as [m Hm]. destruct m.
   - inversion Hm.
   - apply Nat.div_le_upper_bound.
@@ -518,7 +493,7 @@ Definition N_divide_dep_p := N_divide_dep_p_lift.1.
 (* ... and put the pieces together *)
 Definition N_divide_dep_comp : forall (n:N) (m : {m : N & (0 < m)%N}),
     {res:N & (res <= n)%N} :=
-  fun n m => existT _ (N_divide_dep_f n m) (N_divide_dep_p n m).
+  fun n m => (N_divide_dep_f n m; N_divide_dep_p n m).
 
 Definition N_two : {m : N & (0 < m)%N}.
   apply (existT _) with (x:=N.succ (N.succ 0)). unfold lt_N.
@@ -577,23 +552,24 @@ Check eq_refl : N_divide_dep_comp'.1 = N_divide_dep_comp.
 (* Now, we can exploit the new divide - N_divide correspondance to efficiently convert 
    nat functions that use divide *)
 
-Definition two : {n:nat & lt 0 n}.
+Definition two : {n:nat & 0 < n}.
   apply (existT _) with (x:=2).
   apply -> Nat.succ_le_mono. apply Nat.le_succ_diag_r.
 Defined.
+
+Definition N_two' := ltac: (lift two : {n:N & (0 < n)%N}).
+
+Hint Extern 0 { _ : _ & _ }  => eapply N_two'.2 : typeclass_instances.
+
 Definition avg (x y: nat) := divide (x + y) two.
 
-Opaque divide.
-Hint Extern 0 (_ = _) => eapply N_divide_conv.2 : typeclass_instances.
+Hint Extern 0 => progress (unfold avg) :  typeclass_instances.
 
-Definition compat_two : two ≈ N_two. Admitted.
-Hint Extern 0 (_ = _) => eapply compat_two : typeclass_instances.
-Hint Extern 0 (_ ⋈ _) => eapply compat_two : typeclass_instances. 
-Hint Extern 0 (_ ≃ _) => eapply compat_two : typeclass_instances.
+Opaque divide. 
 
-Set Typeclasses Debug Verbosity 2.
+Definition N_avg := ltac: (convert avg : (N -> N -> N)).
 
-Fail Definition N_avg := ltac: (convert avg : (N -> N -> N)).
+Transparent divide.
 
 
 (* In the timing experiments below, we use const0 to avoid 
