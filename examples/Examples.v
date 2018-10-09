@@ -485,8 +485,6 @@ Defined.
 Definition N_divide_conv :=
   ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), N)).
 Definition N_divide := N_divide_conv.1.
-Hint Extern 0 (_ = _) => eapply N_divide_conv.2 : typeclass_instances.
-
 
 (* N_divide is really the division on N *)
 Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
@@ -522,11 +520,11 @@ Definition N_divide_dep_comp : forall (n:N) (m : {m : N & (0 < m)%N}),
     {res:N & (res <= n)%N} :=
   fun n m => existT _ (N_divide_dep_f n m) (N_divide_dep_p n m).
 
-Definition arg : {m : N & (0 < m)%N}.
+Definition N_two : {m : N & (0 < m)%N}.
   apply (existT _) with (x:=N.succ (N.succ 0)). unfold lt_N.
   apply -> N.succ_le_mono. apply N.le_succ_diag_r.
 Defined.
-Eval lazy in (N_divide_dep_comp 10%N arg).1.
+Eval lazy in (N_divide_dep_comp 10%N N_two).1.
 
 (* Approach 2: working with N_divide: lift the property wrt N_divide *)
 
@@ -542,7 +540,7 @@ Definition N_divide_dep_comp' : {function : forall (n:N) (m : {m : N & (0 < m)%N
   exists (fun n m => (N_divide n m ; N_divide_dep_p' n m)).
   intros. unshelve eexists. cbn; tc. apply N_divide_dep_p'_lift.2.
 Defined.
-Eval lazy in (N_divide_dep_comp'.1 10%N arg).1.
+Eval lazy in (N_divide_dep_comp'.1 10%N N_two).1.
 
 (* Approach 3: more automatic, ad-hoc to the { conv & lift } setting *)
 
@@ -568,7 +566,7 @@ Tactic Notation "conv&lift" constr(function) :=
 Definition N_divide_dep_auto : forall (n:N) (m : {m : N & (0 < m)%N}), {res:N & (res <= n)%N}.
   conv&lift divide_dep.
 Defined.
-Eval lazy in (N_divide_dep_auto 10%N arg).1.
+Eval lazy in (N_divide_dep_auto 10%N N_two).1.
 
 (* the two versions we derive manually are indeed equal *)
 Check eq_refl : N_divide_dep_comp'.1 = N_divide_dep_comp.
@@ -582,11 +580,20 @@ Check eq_refl : N_divide_dep_comp'.1 = N_divide_dep_comp.
 Definition two : {n:nat & lt 0 n}.
   apply (existT _) with (x:=2).
   apply -> Nat.succ_le_mono. apply Nat.le_succ_diag_r.
-Defined.  
+Defined.
 Definition avg (x y: nat) := divide (x + y) two.
 
-Definition N_avg := ltac: (convert avg : (N -> N -> N)).
+Opaque divide.
+Hint Extern 0 (_ = _) => eapply N_divide_conv.2 : typeclass_instances.
 
+Definition compat_two : two ≈ N_two. Admitted.
+Hint Extern 0 (_ = _) => eapply compat_two : typeclass_instances.
+Hint Extern 0 (_ ⋈ _) => eapply compat_two : typeclass_instances. 
+Hint Extern 0 (_ ≃ _) => eapply compat_two : typeclass_instances.
+
+Set Typeclasses Debug Verbosity 2.
+
+Fail Definition N_avg := ltac: (convert avg : (N -> N -> N)).
 
 
 (* In the timing experiments below, we use const0 to avoid 
