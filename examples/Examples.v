@@ -476,22 +476,21 @@ Definition lt_N (n m : N) := (N.succ n <= m)%N.
 Notation "n < m" := (lt_N n m) : N_scope.
 Hint Extern 0 => progress (unfold lt_N) :  typeclass_instances.
 
-Definition N_divide_def :=
-  ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), N)).
-
-Definition N_divide := N_divide_def.1.
-
-Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
- 
-Hint Extern 0 (_ = _) => eapply N_divide_def.2 : typeclass_instances.
-
 Instance Decidable_leq_N n m : DecidableEq (n <= m)%N.
 apply (DecidableEq_equiv (↑n <= ↑m) (n <= m)%N).
 apply compat_le; cbn; apply inverse. refine (e_retr N.of_nat n). refine (e_retr N.of_nat m).
 tc. 
 Defined.
 
-(* more dependent version... *)
+Definition N_divide_conv :=
+  ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), N)).
+Definition N_divide := N_divide_conv.1.
+(* register than N_divide is "equivalent" to divide, necessary for future lifts *)
+Hint Extern 0 (_ = _) => eapply N_divide_conv.2 : typeclass_instances.
+
+Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
+
+(* more dependent version of divide (on Nat)*)
 
 Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n}.
   apply (existT _) with (x:=divide n m).
@@ -503,27 +502,52 @@ Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n}.
       apply Nat.mul_le_mono_r. apply le_n_S. apply Nat.le_0_l.
 Defined.
 
-(* we need to do it in two steps, as the first projection is a conversion 
-   while the second is a lifting *)
+Definition divide_dep_f := fun n m => (divide_dep n m).1.
+Definition divide_dep_p := fun n m => (divide_dep n m).2.
 
+(* Approach 1: start from divide_dep, convert first proj, lift second proj... *)
 
-Definition N_divide_dep_all := 
-  ltac: (lift (fun n  m => (divide_dep n m).2) :
-           (forall (n:N) (m : {m : N & (0 < m)%N}),
-               (N_divide n m <= n)%N)).
+Definition N_divide_dep_f_conv :=
+  ltac: (convert divide_dep_f : (forall (n:N) (m: {m : N & (0 < m)%N}), N)).
+Definition N_divide_dep_f := N_divide_dep_f_conv.1.
+Hint Extern 0 (_ = _) => eapply N_divide_dep_f_conv.2 : typeclass_instances.
 
-Definition N_divide_dep : forall (n:N) (m : {m : N & (0 < m)%N}),
-    (N_divide n m <= n)%N := N_divide_dep_all.1.
+Definition N_divide_dep_p_lift :=
+  ltac: (lift divide_dep_p :
+           (forall (n:N) (m : {m : N & (0 < m)%N}), (N_divide_dep_f n m <= n)%N)).
+Definition N_divide_dep_p := N_divide_dep_p_lift.1.
 
-Definition N_divide_dep_def : {function : forall (n:N) (m : {m : N & (0 < m)%N}),
+(* ... and put the pieces together *)
+Definition N_divide_dep_comp : forall (n:N) (m : {m : N & (0 < m)%N}),
+    {res:N & (res <= n)%N} :=
+  fun n m => existT _ (N_divide_dep_f n m) (N_divide_dep_p n m).
+
+Definition arg : {m : N & (0 < m)%N}.
+  apply (existT _) with (x:=N.succ (N.succ 0)). unfold lt_N.
+  apply -> N.succ_le_mono. apply N.le_succ_diag_r.
+Defined.
+Eval compute in (N_divide_dep_comp 10%N arg).1.
+
+(* Approach 2: working with N_divide: lift the property wrt N_divide *)
+
+Definition N_divide_dep_p'_lift := 
+  ltac: (lift divide_dep_p : 
+           (forall (n:N) (m : {m : N & (0 < m)%N}), (N_divide n m <= n)%N)).
+
+Definition N_divide_dep_p' := N_divide_dep_p'_lift.1.
+
+(* ... and basically lifting "by hand"... *)
+Definition N_divide_dep_comp' : {function : forall (n:N) (m : {m : N & (0 < m)%N}),
                                   {res:N & (res <= n)%N} & divide_dep ≈ function}.
-  exists (fun n m => (N_divide n m ; N_divide_dep n m)).
-  intros. unshelve eexists. cbn; tc. apply N_divide_dep_all.2.
+  exists (fun n m => (N_divide n m ; N_divide_dep_p' n m)).
+  intros. unshelve eexists. cbn; tc. apply N_divide_dep_p'_lift.2.
 Defined. 
+Eval compute in (N_divide_dep_comp'.1 10%N arg).1.
 
-(* attempt to do it more automatically, certainly too ad-hoc *)
+(* Approach 3: more automatic, ad-hoc to the { conv & lift } setting *)
 
-Tactic Notation "convert_lift" constr(function) :=
+(* with a small tactic to do the job... *)
+Tactic Notation "conv&lift" constr(function) :=
   let opt := fresh "opt" in
   match goal with | |-
     forall x:?A, forall y : ?B , @sigT ?T1 ?P =>
@@ -540,11 +564,11 @@ Tactic Notation "convert_lift" constr(function) :=
                                P (opt.1 x) ) a)] 
   end.
 
-Definition N_divide_dep_def_alt :
-  forall (n:N) (m : {m : N & (0 < m)%N}),
-      {res:N & (res <= n)%N}.
-  convert_lift divide_dep.
-Defined. 
+(* ... it's direct! *)
+Definition N_divide_dep_auto : forall (n:N) (m : {m : N & (0 < m)%N}), {res:N & (res <= n)%N}.
+  conv&lift divide_dep.
+Defined.
+Eval compute in (N_divide_dep_auto 10%N arg).1.
 
 
 
