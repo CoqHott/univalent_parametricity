@@ -777,7 +777,7 @@ Instance Equiv_nat_N : Equiv N nat := Equiv_inverse _.
 
 Instance UR_N : UR N N := UR_gen N. 
 
-Instance Decidable_eq_N : Decidable N := Decidable_equiv nat N _.
+Instance Decidable_eq_N : DecidableEq N := DecidableEq_equiv nat N _.
 
 Hint Extern 0 (?f ?x = ?y ) => erefine (Move_equiv Equiv_nat_N x y _)
                                : typeclass_instances.
@@ -842,7 +842,7 @@ Definition inv_leq m : forall n, apply_S_n n m <= m -> False.
     + apply (IHm (S n) H0).
 Defined.
 
-Instance Decidable_leq n m : Decidable (n <= m).
+Instance Decidable_leq n m : DecidableEq (n <= m).
 constructor. revert m n. intros n m.  
 assert (forall n n'
 (e : n = n'), forall (le_mn1 : m <= n) (le_mn2 : m <= n'), Logic.eq (e # le_mn1) le_mn2).

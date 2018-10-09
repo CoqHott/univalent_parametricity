@@ -152,7 +152,7 @@ Class Transportable {A} (P:A -> Type) :=
     transportable_refl : forall x, transportable x x eq_refl = Equiv_id _
   }.
 
-Instance Transportable_decidable {A} (P:A -> Type) `{Decidable A} : Transportable P.
+Instance Transportable_decidable {A} (P:A -> Type) `{DecidableEq A} : Transportable P.
 Proof.
   unshelve econstructor.
   - intros x y e. destruct (dec_paths x y) as [e0 | n0].
@@ -258,14 +258,14 @@ Proof.
   destruct e0. reflexivity.                  
 Defined. 
 
-Definition Canonical_eq_decidable_ A `{Decidable A} :
+Definition Canonical_eq_decidable_ A `{DecidableEq A} :
   forall x y:A , x = y -> x = y :=
   fun x y e => match (dec_paths x y) with
                | inl e0 => e0
                | inr n => match (n e) with end
                end. 
 
-Instance Canonical_eq_decidable A `{Decidable A} : Canonical_eq A.
+Instance Canonical_eq_decidable A `{DecidableEq A} : Canonical_eq A.
 Proof. 
   refine {| can_eq := @Canonical_eq_decidable_ A H |}.
   - unfold Canonical_eq_decidable_. intro x. cbn. destruct (dec_paths x x); cbn.

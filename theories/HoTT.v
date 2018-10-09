@@ -800,11 +800,11 @@ type [A] has decle equality, then it is a hSet, i.e. its equality
 is proof-irrelevant. See the proof at [https://github.com/HoTT] in
 [HoTT/theories/Basics/Decidable.v] *)
 
-Class Decidable A := { dec_paths : forall a b : A, (a = b) + (a = b -> False)}.
+Class DecidableEq A := { dec_paths : forall a b : A, (a = b) + (a = b -> False)}.
 
 Class HSet A := {is_hset : forall (x y : A) (e e' : x = y), e = e'}.
 
-Instance Hedberg A `{Decidable A} : HSet A.
+Instance Hedberg A `{DecidableEq A} : HSet A.
 Proof.
   econstructor. 
   intros a b.
@@ -833,7 +833,7 @@ Proof.
   destruct 1. reflexivity.
 Defined. 
  
-Instance Decidable_eq_nat : Decidable nat.
+Instance DecidableEq_eq_nat : DecidableEq nat.
 constructor. intros x y; revert y. 
 induction x.
 - destruct y.
@@ -845,7 +845,7 @@ induction x.
     intro H; right. intro e. inversion e. apply (H (logic_eq_is_eq H1)).
 Defined.
 
-Instance Decidable_eq_bool : Decidable bool.
+Instance DecidableEq_eq_bool : DecidableEq bool.
 constructor. intros x y; revert y. induction x.
 - destruct y.
  + left ;reflexivity.
@@ -874,7 +874,7 @@ Proof.
     apply concat_refl.
 Defined.
 
-Definition Decidable_equiv A B (eB : A ≃ B) `{Decidable A} : Decidable B. 
+Definition DecidableEq_equiv A B (eB : A ≃ B) `{DecidableEq A} : DecidableEq B. 
 Proof.
   constructor. pose (eB' := Equiv_inverse eB).
   intros x y. destruct (dec_paths (↑ x) (↑ y)). 
@@ -883,8 +883,8 @@ Proof.
 Defined. 
 
 
-Instance Decidable_Sigma A (B : A -> Type) `{Decidable A} `{forall a, Decidable (B a)} :
-  Decidable {a : A & B a}.
+Instance DecidableEq_Sigma A (B : A -> Type) `{DecidableEq A} `{forall a, DecidableEq (B a)} :
+  DecidableEq {a : A & B a}.
 Proof.
   constructor. intros [a b] [a' b' ].
   destruct (dec_paths a a').

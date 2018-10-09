@@ -316,7 +316,7 @@ Fixpoint alt_le (n m : nat) : Prop :=
   | _ , _ => False
   end.
 
-Instance Decidable_alt_le n m : Decidable (alt_le n m).
+Instance Decidable_alt_le n m : DecidableEq (alt_le n m).
 constructor. revert m. induction n.
 - cbn. intros _ [] []. exact (inl eq_refl).
 - destruct m.
@@ -485,8 +485,8 @@ Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
  
 Hint Extern 0 (_ = _) => eapply N_divide_def.2 : typeclass_instances.
 
-Instance Decidable_leq_N n m : Decidable (n <= m)%N.
-apply (Decidable_equiv (↑n <= ↑m) (n <= m)%N).
+Instance Decidable_leq_N n m : DecidableEq (n <= m)%N.
+apply (DecidableEq_equiv (↑n <= ↑m) (n <= m)%N).
 apply compat_le; cbn; apply inverse. refine (e_retr N.of_nat n). refine (e_retr N.of_nat m).
 tc. 
 Defined.

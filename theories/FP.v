@@ -181,7 +181,7 @@ Proof.
   - apply HA.    
 Defined.
 
-Instance URType_Refl_decidable A (dec:Decidable A)
+Instance URType_Refl_decidable A (dec:DecidableEq A)
   : A ⋈ A :=
   URType_Refl_can A (@Canonical_eq_decidable  _ dec).
 
@@ -235,19 +235,17 @@ Defined.
 
 Record DType@{i} :=
   { carrier :> Type@{i} ;
-    dec :> Decidable@{i} carrier }.
+    dec :> DecidableEq@{i} carrier }.
 
-Instance DTypeDec (A : DType) : Decidable A.(carrier) := A.(dec). 
+Instance DTypeDec (A : DType) : DecidableEq A.(carrier) := A.(dec). 
 
 (* Notation "∥ A ∥" := (A.(carrier)) : type_scope. *)
 
 Instance UR_DType_def@{i j} : UR@{j j j} DType@{i} DType@{i} :=
   {| ur := fun A B => UR_Type@{i i i} A.(carrier) B.(carrier) |}.
 
-Definition URDType_Refl : URRefl DType DType (Equiv_id _) _.
-Proof.
-  constructor; typeclasses eauto. 
-Defined.
+Program Definition URDType_Refl : URRefl DType DType (Equiv_id _) _ :=
+   {| ur_refl_ := fun a : DType => URType_Refl_decidable a.(carrier) (DTypeDec a) |}.
 
 Definition path_DType (A B : DType)
            (pq : {p : A.(carrier) = B.(carrier) & A.(dec) = p^ # B.(dec)})
@@ -257,7 +255,7 @@ Proof.
   simpl in q; destruct q; reflexivity.
 Defined.
 
-Definition path_Decidable A (dec dec': Decidable A) : dec.(@dec_paths A) = dec'.(@dec_paths A) -> dec = dec'. 
+Definition path_DecidableEq A (dec dec': DecidableEq A) : dec.(@dec_paths A) = dec'.(@dec_paths A) -> dec = dec'. 
   destruct dec, dec'. cbn. destruct 1. reflexivity.
 Defined. 
 
@@ -273,9 +271,9 @@ Definition path_sum {A B : Type} (z z' : A + B)
   all:elim pq.
 Defined.
 
-Definition Decidable_hprop : forall (A B : DType), A.(carrier) = B.(carrier) -> A = B.
+Definition DecidableEq_hprop : forall (A B : DType), A.(carrier) = B.(carrier) -> A = B.
   intros A B e. destruct A as [A decA], B as [B decB]. cbn in *. assert (HSet A). apply Hedberg. auto. 
-  apply path_DType. cbn in *. exists e. apply path_Decidable. apply funext. intro a. apply funext. intro b.
+  apply path_DType. cbn in *. exists e. apply path_DecidableEq. apply funext. intro a. apply funext. intro b.
   destruct decA, decB. destruct e. cbn. apply path_sum. destruct (dec_paths a b), (dec_paths0 a b); auto. 
   apply is_hset. apply funext. intro e. destruct (f e).
 Defined. 
@@ -390,11 +388,11 @@ Defined.
 
 (* (*! FP for nat, canonical !*) *)
 
-(* Instance FP_nat : nat ⋈ nat := _ URType_Refl_decidable nat Decidable_eq_nat. *)
+(* Instance FP_nat : nat ⋈ nat := _ URType_Refl_decidable nat DecidableEq_eq_nat. *)
 
 (* (*! FP for bool, canonical !*) *)
 
-(* Instance FP_bool : bool ⋈ bool := URType_Refl_decidable bool Decidable_eq_bool. *)
+(* Instance FP_bool : bool ⋈ bool := URType_Refl_decidable bool DecidableEq_eq_bool. *)
 
 (*! FP for Product !*)
 
