@@ -89,20 +89,7 @@ Hint Extern 0 => progress (unfold Lib_sig) :  typeclass_instances.
 (* the proof is automatic using the univ_param_record tactic *)
 
 Definition FP_Lib : Lib ≈ Lib.
-  cbn;   split ; [typeclasses eauto | ]; intros;
-    unshelve refine (UR_Type_Equiv_gen _ _ _ _ _ _ _ _).
-  tc. erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn in *; intros. tc.
-  econstructor. tc. intros.
-  
-  erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn in *; intros. tc.
-  econstructor. tc. cbn. intros.
-
-  erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros. tc. tc. 
-  erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros. tc. tc. 
-  erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros. tc. tc. 
-  erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros. tc. tc. 
-  erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros. tc. tc. 
-  cbn. unshelve notypeclasses refine (ur_type (FP_eq _ _ _ _ _ _) _ _ _); cbn. tc.  tc. cbn; tc. 
+  univ_param_record.
 Defined.
 
 Hint Extern 0 (Lib _ ≃ Lib _) => erefine (ur_type FP_Lib _ _ _).(equiv); simpl
@@ -123,11 +110,6 @@ Definition libvec : Lib Vector.t :=
      map := fun A B f n => Vector.map f;
      lib_prop := lib_vector_prop |}.
 
-Definition libvec' : Lib_sig Vector.t :=
-  (fun A n x => @Vector.hd A n x;
-     (fun A B f n => Vector.map f;
-      lib_vector_prop)).
-
 (* using the equivalence between vectors and sized lists
    we can automatically infer the Lib structure on sized lists. 
 *)
@@ -137,22 +119,13 @@ Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑ libvec.
 Notation vect_to_list := (vector_to_list _ _ (Equiv_id _) _ _ _).
 Notation list_to_vect := (list_to_vector _ _ (Equiv_id _) _ _ _).
 
-(* Definition lib_list'' : Lib (fun A n => {l: list A & length l = n}) := *)
-(*   {| *)
-(*     head := fun A n l => hd (list_to_vect l); *)
-(*     map := fun A B f n l => vect_to_list (Vector.map f (list_to_vect l));  *)
-(*     lib_prop := fun n A B f (l : {l : list A & length l = S n}) => *)
-(*                   transport_eq (fun l => hd (Vector.map f l) = f (hd l)) *)
-(*                                (e_sect _ _) *)
-(*                                (lib_vector_prop n A B f _) |}. *)
-
 Transparent vector_to_list list_to_vector.
 
 Notation "[[ ]]" := ([ ]; eq_refl).
 Notation "[[ x ]]" := ([x]; eq_refl).
 Notation "[[ x ; y ; .. ; z ]]" := ((FP.cons x (FP.cons y .. (FP.cons z FP.nil) ..)) ;eq_refl).
 
-(* Eval lazy in (lib_list.(lib_prop)). *)
+(* Eval compute in (lib_list.(lib_prop)). *)
 
 Time Eval lazy in (lib_list.(lib_prop) S [[1; 2; 3 ; 4 ; 5 ; 6]]).
 
