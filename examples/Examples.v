@@ -152,9 +152,9 @@ Notation "[[ ]]" := ([ ]; eq_refl).
 Notation "[[ x ]]" := ([x]; eq_refl).
 Notation "[[ x ; y ; .. ; z ]]" := ((FP.cons x (FP.cons y .. (FP.cons z FP.nil) ..)) ;eq_refl).
 
-(* Eval compute in (lib_list.(lib_prop)). *)
+(* Eval lazy in (lib_list.(lib_prop)). *)
 
-Eval compute in (lib_list.(lib_prop) (B := Build_DType nat _ ) S [[1; 2; 3 ; 4 ; 5 ; 6]]).
+Time Eval lazy in (lib_list.(lib_prop) S [[1; 2; 3 ; 4 ; 5 ; 6]]).
 
 (* the induced lib_list.(map) function behaves as map on sized lists. *)
 
@@ -189,6 +189,8 @@ Eval compute in (app_list [[1;2]] [[1;2]]).
 Eval compute in (app_list' [[1;2]] [[1;2]]).
 
 Eval compute in (lib_list.(map) S (app_list [[1;2]] [[5;6]])).
+
+Eval compute in (lib_list.(map) neg (app_list [[true;false]] [[true;false]])).
 
 (* the lib_prop theorem has been lifted as expected. *)
 
@@ -494,7 +496,7 @@ Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
 (* more dependent version of divide (on Nat)*)
 
 Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n}.
-  apply (existT _) with (x:=divide n m).
+  exists (divide n m).
   destruct m as [m Hm]. destruct m.
   - inversion Hm.
   - apply Nat.div_le_upper_bound.
@@ -520,12 +522,13 @@ Definition N_divide_dep_p := N_divide_dep_p_lift.1.
 (* ... and put the pieces together *)
 Definition N_divide_dep_comp : forall (n:N) (m : {m : N & (0 < m)%N}),
     {res:N & (res <= n)%N} :=
-  fun n m => existT _ (N_divide_dep_f n m) (N_divide_dep_p n m).
+  fun n m => (N_divide_dep_f n m; N_divide_dep_p n m).
 
 Definition arg : {m : N & (0 < m)%N}.
   apply (existT _) with (x:=N.succ (N.succ 0)). unfold lt_N.
   apply -> N.succ_le_mono. apply N.le_succ_diag_r.
 Defined.
+
 Eval lazy in (N_divide_dep_comp 10%N arg).1.
 
 (* Approach 2: working with N_divide: lift the property wrt N_divide *)
@@ -541,7 +544,8 @@ Definition N_divide_dep_comp' : {function : forall (n:N) (m : {m : N & (0 < m)%N
                                   {res:N & (res <= n)%N} & divide_dep ≈ function}.
   exists (fun n m => (N_divide n m ; N_divide_dep_p' n m)).
   intros. unshelve eexists. cbn; tc. apply N_divide_dep_p'_lift.2.
-Defined.
+Defined. 
+
 Eval lazy in (N_divide_dep_comp'.1 10%N arg).1.
 
 (* Approach 3: more automatic, ad-hoc to the { conv & lift } setting *)
@@ -568,6 +572,7 @@ Tactic Notation "conv&lift" constr(function) :=
 Definition N_divide_dep_auto : forall (n:N) (m : {m : N & (0 < m)%N}), {res:N & (res <= n)%N}.
   conv&lift divide_dep.
 Defined.
+
 Eval lazy in (N_divide_dep_auto 10%N arg).1.
 
 (* the two versions we derive manually are indeed equal *)
@@ -579,14 +584,24 @@ Check eq_refl : N_divide_dep_comp'.1 = N_divide_dep_comp.
 (* Now, we can exploit the new divide - N_divide correspondance to efficiently convert 
    nat functions that use divide *)
 
-Definition two : {n:nat & lt 0 n}.
+Definition two : {n:nat & 0 < n}.
   apply (existT _) with (x:=2).
   apply -> Nat.succ_le_mono. apply Nat.le_succ_diag_r.
-Defined.  
+Defined.
+
+Definition N_two := ltac: (lift two : {n:N & (0 < n)%N}).
+
+Hint Extern 0 { _ : _ & _ }  => eapply N_two.2 : typeclass_instances.
+
 Definition avg (x y: nat) := divide (x + y) two.
+
+Hint Extern 0 => progress (unfold avg) :  typeclass_instances.
+
+Opaque divide. 
 
 Definition N_avg := ltac: (convert avg : (N -> N -> N)).
 
+Transparent divide.
 
 
 (* In the timing experiments below, we use const0 to avoid 
