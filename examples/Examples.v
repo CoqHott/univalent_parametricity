@@ -481,13 +481,12 @@ apply (DecidableEq_equiv (↑n <= ↑m) (n <= m)%N).
 apply compat_le; cbn; apply inverse. refine (e_retr N.of_nat n). refine (e_retr N.of_nat m).
 tc. 
 Defined.
-
+ 
 Definition N_divide_conv :=
   ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), N)).
 Definition N_divide := N_divide_conv.1.
-(* register than N_divide is "equivalent" to divide, necessary for future lifts *)
-Hint Extern 0 (_ = _) => eapply N_divide_conv.2 : typeclass_instances.
 
+(* N_divide is really the division on N *)
 Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
 
 (* more dependent version of divide (on Nat)*)
@@ -510,7 +509,6 @@ Definition divide_dep_p := fun n m => (divide_dep n m).2.
 Definition N_divide_dep_f_conv :=
   ltac: (convert divide_dep_f : (forall (n:N) (m: {m : N & (0 < m)%N}), N)).
 Definition N_divide_dep_f := N_divide_dep_f_conv.1.
-Hint Extern 0 (_ = _) => eapply N_divide_dep_f_conv.2 : typeclass_instances.
 
 Definition N_divide_dep_p_lift :=
   ltac: (lift divide_dep_p :
@@ -526,7 +524,7 @@ Definition arg : {m : N & (0 < m)%N}.
   apply (existT _) with (x:=N.succ (N.succ 0)). unfold lt_N.
   apply -> N.succ_le_mono. apply N.le_succ_diag_r.
 Defined.
-Eval compute in (N_divide_dep_comp 10%N arg).1.
+Eval lazy in (N_divide_dep_comp 10%N arg).1.
 
 (* Approach 2: working with N_divide: lift the property wrt N_divide *)
 
@@ -541,8 +539,8 @@ Definition N_divide_dep_comp' : {function : forall (n:N) (m : {m : N & (0 < m)%N
                                   {res:N & (res <= n)%N} & divide_dep ≈ function}.
   exists (fun n m => (N_divide n m ; N_divide_dep_p' n m)).
   intros. unshelve eexists. cbn; tc. apply N_divide_dep_p'_lift.2.
-Defined. 
-Eval compute in (N_divide_dep_comp'.1 10%N arg).1.
+Defined.
+Eval lazy in (N_divide_dep_comp'.1 10%N arg).1.
 
 (* Approach 3: more automatic, ad-hoc to the { conv & lift } setting *)
 
@@ -568,9 +566,12 @@ Tactic Notation "conv&lift" constr(function) :=
 Definition N_divide_dep_auto : forall (n:N) (m : {m : N & (0 < m)%N}), {res:N & (res <= n)%N}.
   conv&lift divide_dep.
 Defined.
-Eval compute in (N_divide_dep_auto 10%N arg).1.
+Eval lazy in (N_divide_dep_auto 10%N arg).1.
 
-
+(* the two versions we derive manually are indeed equal *)
+Check eq_refl : N_divide_dep_comp'.1 = N_divide_dep_comp.
+(* can't prove it directly for the auto version (does not seem to terminate) *)
+(* Check eq_refl : N_divide_dep_comp = N_divide_dep_auto. *)
 
 
 (* In the timing experiments below, we use const0 to avoid 
