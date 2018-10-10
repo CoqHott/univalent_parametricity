@@ -549,29 +549,39 @@ Check eq_refl : N_divide_dep_comp'.1 = N_divide_dep_comp.
 (* Check eq_refl : N_divide_dep_comp = N_divide_dep_auto. *)
 
 
-(* Now, we can exploit the new divide - N_divide correspondance to efficiently convert 
-   nat functions that use divide *)
+(* Now, we can exploit the new divide - N_divide correspondance 
+to efficiently convert nat functions that use divide, such as avg below *)
 
 Definition two : {n:nat & 0 < n}.
   apply (existT _) with (x:=2).
   apply -> Nat.succ_le_mono. apply Nat.le_succ_diag_r.
 Defined.
 
-Definition N_two' := ltac: (lift two : {n:N & (0 < n)%N}).
-
-Hint Extern 0 { _ : _ & _ }  => eapply N_two'.2 : typeclass_instances.
-
 Definition avg (x y: nat) := divide (x + y) two.
 
-Hint Extern 0 => progress (unfold avg) :  typeclass_instances.
+(* first, make sure that TC resolution exploits the correspondance *)
 Hint Extern 0 (_ = _) => eapply N_divide_conv.2 : typeclass_instances.
 
+Definition N_two_lift := ltac: (lift two : {n:N & (0 < n)%N}).
+
+(* here also, feed the TC resolution *)
+Hint Extern 0 { _ : _ & _ }  => eapply N_two_lift.2 : typeclass_instances.
+
+(* instruct resolution to dive into avg if helpful *)
+Hint Extern 0 => progress (unfold avg) :  typeclass_instances.
+
+(* now convert (making divide opaque in order to stop conversion at
+   that level, and use the correspondance with N_divide *)
 Opaque divide. 
-
-Definition N_avg := ltac: (convert avg : (N -> N -> N)).
-
+Definition N_avg_conv := ltac: (convert avg : (N -> N -> N)).
 Transparent divide.
+Definition N_avg := N_avg_conv.1.
 
+(* it works... *)
+Eval lazy in N_avg 10%N 30%N.
+
+(* and is needed the same as the hand-written N-based version *)
+Check eq_refl : N_avg = (fun x y => N_divide (x + y) N_two).
 
 (* In the timing experiments below, we use const0 to avoid 
    let binder optimization in newer versions of Coq. *)
