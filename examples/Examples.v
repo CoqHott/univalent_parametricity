@@ -564,6 +564,7 @@ Hint Extern 0 { _ : _ & _ }  => eapply N_two'.2 : typeclass_instances.
 Definition avg (x y: nat) := divide (x + y) two.
 
 Hint Extern 0 => progress (unfold avg) :  typeclass_instances.
+Hint Extern 0 (_ = _) => eapply N_divide_conv.2 : typeclass_instances.
 
 Opaque divide. 
 
