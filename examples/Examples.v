@@ -22,6 +22,15 @@ Tactic Notation "lift" constr(function) ":" constr(T) :=
         | exact X].
 
 
+Tactic Notation "solve_eq" "on" constr(A) "using" constr(B) :=
+  eapply (@isequiv_ap A B ) ;
+    eapply concat; [symmetry ; tc | reflexivity]. 
+
+Tactic Notation "solve_eq_abstract" "on" constr(A) "using" constr(B) :=
+  eexists;
+  eapply (@isequiv_ap nat N);
+  eapply concat ; [ symmetry; tc | symmetry; apply e_retr].
+
 
 Definition Canonical_eq_sig A :=   {can_eq : forall (x y : A), x = y -> x = y &
     forall x, can_eq x x eq_refl = eq_refl }.
@@ -279,6 +288,8 @@ Defined.
 Definition compat_add : plus ≈ N.add. Admitted.
 Definition compat_mul : mult ≈ N.mul. Admitted. 
 Definition compat_div : Nat.div ≈ N.div. Admitted.
+Definition compat_pow : Nat.pow ≈ N.pow. Admitted.
+Definition compat_sub : Nat.sub ≈ N.sub. Admitted.
 
 (* alternative possible version *)
 
@@ -359,12 +370,16 @@ Definition compat_le : le ≈ N.le. Admitted.
 Hint Extern 0 (_ = _) => eapply compat_add : typeclass_instances.
 Hint Extern 0 (_ = _) => eapply compat_mul : typeclass_instances.
 Hint Extern 0 (_ = _) => eapply compat_div : typeclass_instances.
+Hint Extern 0 (_ = _) => eapply compat_pow : typeclass_instances.
+Hint Extern 0 (_ = _) => eapply compat_sub : typeclass_instances.
 Hint Extern 0 (_ ⋈ _) => eapply compat_le : typeclass_instances. 
 Hint Extern 0 (_ ≃ _) => eapply compat_le : typeclass_instances. 
 
 Definition compat_add' : N.add ≈ plus := compat_inverse2 compat_add.
 Definition compat_mul' : N.mul ≈ mult := compat_inverse2 compat_mul.
 Definition compat_div' : N.div ≈ Nat.div := compat_inverse2 compat_div. 
+Definition compat_pow' : N.pow ≈ Nat.pow := compat_inverse2 compat_pow. 
+Definition compat_sub' : N.sub ≈ Nat.sub := compat_inverse2 compat_sub. 
 Definition compat_le' : N.le ≈ le.
   cbn; intros. intros. apply UR_Type_Inverse. tc. 
 Defined.
@@ -372,9 +387,10 @@ Defined.
 Hint Extern 0 (_ = _) => eapply compat_add' : typeclass_instances.
 Hint Extern 0 (_ = _) => eapply compat_mul' : typeclass_instances.
 Hint Extern 0 (_ = _) => eapply compat_div' : typeclass_instances.
+Hint Extern 0 (_ = _) => eapply compat_pow' : typeclass_instances.
+Hint Extern 0 (_ = _) => eapply compat_sub' : typeclass_instances.
 Hint Extern 0 (_ ⋈ _) => eapply compat_le' : typeclass_instances. 
 Hint Extern 0 (_ ≃ _) => eapply compat_le' : typeclass_instances. 
-
 
 (* we can lift properties up to the correspondance table *)
 
@@ -419,7 +435,6 @@ Proof.
   intros. rewrite mult_comm. rewrite nat_distrib.
   rewrite mult_comm. rewrite (mult_comm c b). reflexivity. 
 Defined.
-
 
 Definition square_prop : forall n, square (2 * n) = 4 * square n.
   intro n. cbn. repeat rewrite plus_0_r. repeat rewrite nat_distrib.
@@ -586,6 +601,30 @@ Check eq_refl : N_avg = (fun x y => N_divide (x + y) N_two).
 (* In the timing experiments below, we use const0 to avoid 
    let binder optimization in newer versions of Coq. *)
 Definition const0 {A} : A -> nat := fun _ => 0. 
+
+
+(* Test with polynomials *)
+
+Definition poly : nat -> nat := fun n => 4 * n + 12 * (Nat.pow n 4) - 11 * (Nat.pow n 4).
+
+Fail Eval compute in poly 20. 
+
+Hint Extern 0 => progress (unfold poly) :  typeclass_instances.
+Definition poly'  := ltac: (convert poly : (N -> N)).
+Hint Extern 0 (_ = _ (poly ?m))  => eapply (poly'.2 m _) : typeclass_instances.
+
+Opaque poly.
+
+Lemma poly_50_abstract : { n : N & poly 50 = ↑ n}.
+  solve_eq_abstract on nat using N.
+Defined.
+
+Definition poly_50_alt : poly 50 = ↑ poly_50_abstract.1 := poly_50_abstract.2.
+
+Eval lazy in poly_50_abstract.1.
+
+Transparent poly. 
+
 
 (* Observe the evolution of time as the exponent increases, 
    in first the standard nat version, and in the lifted N version. 
