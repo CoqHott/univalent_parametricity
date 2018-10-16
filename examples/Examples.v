@@ -23,13 +23,11 @@ Tactic Notation "lift" constr(function) ":" constr(T) :=
 
 
 Tactic Notation "solve_eq" "on" constr(A) "using" constr(B) :=
-  eapply (@isequiv_ap A B ) ;
-    eapply concat; [symmetry ; tc | reflexivity]. 
+  eapply concat; [tc | reflexivity]. 
 
 Tactic Notation "solve_eq_abstract" "on" constr(A) "using" constr(B) :=
   eexists;
-  eapply (@isequiv_ap nat N);
-  eapply concat ; [ symmetry; tc | symmetry; apply e_retr].
+  eapply concat ; [ tc | symmetry; apply e_retr].
 
 
 Definition Canonical_eq_sig A :=   {can_eq : forall (x y : A), x = y -> x = y &
@@ -356,12 +354,13 @@ Definition comp_S_inj a b :
 Defined. 
 
 
-Definition compat_alt_le : alt_le ≈ le_N.
-  cbn; intros. rewrite H, H0. clear.
-  revert x0; induction x; intro n; destruct n; cbn.
-  all: try apply URType_Refl.
-  unfold le_N in *. rewrite <- comp_S_inj. apply IHx. 
-Defined.
+(* Definition compat_alt_le : alt_le ≈ le_N. *)
+(*   cbn; intros. rewrite H, H0. clear. *)
+(*   revert y0; induction y; intro n; destruct n; cbn. *)
+(*   all: try apply URType_Refl. *)
+(*   Focus 2.  *)
+(*   unfold le_N in *. rewrite <- comp_S_inj. apply IHx.  *)
+(* Defined. *)
 
 End Alt_LE. 
 
@@ -375,22 +374,30 @@ Hint Extern 0 (_ = _) => eapply compat_sub : typeclass_instances.
 Hint Extern 0 (_ ⋈ _) => eapply compat_le : typeclass_instances. 
 Hint Extern 0 (_ ≃ _) => eapply compat_le : typeclass_instances. 
 
-Definition compat_add' : N.add ≈ plus := compat_inverse2 compat_add.
-Definition compat_mul' : N.mul ≈ mult := compat_inverse2 compat_mul.
-Definition compat_div' : N.div ≈ Nat.div := compat_inverse2 compat_div. 
-Definition compat_pow' : N.pow ≈ Nat.pow := compat_inverse2 compat_pow. 
-Definition compat_sub' : N.sub ≈ Nat.sub := compat_inverse2 compat_sub. 
-Definition compat_le' : N.le ≈ le.
-  cbn; intros. intros. apply UR_Type_Inverse. tc. 
-Defined.
+(* Definition compat_add' : N.add ≈ plus eapply compat_inverse2 compat_add. *)
+(* Definition compat_add' : N.add ≈ plus := compat_inverse2 compat_add. *)
+(* Definition compat_mul' : N.mul ≈ mult := compat_inverse2 compat_mul. *)
+(* Definition compat_div' : N.div ≈ Nat.div := compat_inverse2 compat_div. *)
+(* Definition compat_pow' : N.pow ≈ Nat.pow := compat_inverse2 compat_pow. *)
+(* Definition compat_sub' : N.sub ≈ Nat.sub := compat_inverse2 compat_sub. *)
+(* Definition compat_le' : N.le ≈ le. *)
+(*   cbn; intros. intros. apply UR_Type_Inverse. tc. *)
+(* Defined. *)
+
+Definition compat_add' : N.add ≈ plus. Admitted.
+Definition compat_mul' : N.mul ≈ mult. Admitted. 
+Definition compat_div' : N.div ≈ Nat.div. Admitted.
+Definition compat_pow' : N.pow ≈ Nat.pow. Admitted.
+Definition compat_sub' : N.sub ≈ Nat.sub. Admitted.
+Definition compat_le' : N.le ≈ le. Admitted.
 
 Hint Extern 0 (_ = _) => eapply compat_add' : typeclass_instances.
 Hint Extern 0 (_ = _) => eapply compat_mul' : typeclass_instances.
 Hint Extern 0 (_ = _) => eapply compat_div' : typeclass_instances.
 Hint Extern 0 (_ = _) => eapply compat_pow' : typeclass_instances.
 Hint Extern 0 (_ = _) => eapply compat_sub' : typeclass_instances.
-Hint Extern 0 (_ ⋈ _) => eapply compat_le' : typeclass_instances. 
-Hint Extern 0 (_ ≃ _) => eapply compat_le' : typeclass_instances. 
+Hint Extern 0 (_ ⋈ _) => eapply compat_le' : typeclass_instances.
+Hint Extern 0 (_ ≃ _) => eapply compat_le' : typeclass_instances.
 
 (* we can lift properties up to the correspondance table *)
 
@@ -467,9 +474,7 @@ Notation "n < m" := (lt_N n m) : N_scope.
 Hint Extern 0 => progress (unfold lt_N) :  typeclass_instances.
 
 Instance Decidable_leq_N n m : DecidableEq (n <= m)%N.
-apply (DecidableEq_equiv (↑n <= ↑m) (n <= m)%N).
-apply compat_le; cbn; apply inverse. refine (e_retr N.of_nat n). refine (e_retr N.of_nat m).
-tc. 
+apply (DecidableEq_equiv (↑n <= ↑m) (n <= m)%N); tc. 
 Defined.
  
 Definition N_divide_conv :=
@@ -610,20 +615,67 @@ Definition poly : nat -> nat := fun n => 4 * n + 12 * (Nat.pow n 4) - 11 * (Nat.
 Fail Eval compute in poly 20. 
 
 Hint Extern 0 => progress (unfold poly) :  typeclass_instances.
-Definition poly'  := ltac: (convert poly : (N -> N)).
+
+Hint Extern 100 (_ = _ ) => eapply (@ur_refl _ _ compat_nat_N):  typeclass_instances.
+
+Opaque mult.
+
+Definition poly' := ltac: (convert poly : (N -> N)).
+
 Hint Extern 0 (_ = _ (poly ?m))  => eapply (poly'.2 m _) : typeclass_instances.
 
 Opaque poly.
 
 Lemma poly_50_abstract : { n : N & poly 50 = ↑ n}.
-  solve_eq_abstract on nat using N.
-Defined.
-
-Definition poly_50_alt : poly 50 = ↑ poly_50_abstract.1 := poly_50_abstract.2.
+  solve_eq_abstract on N using nat.
+Defined. 
 
 Eval lazy in poly_50_abstract.1.
 
 Transparent poly. 
+
+(* Test for sequences *)
+
+Fixpoint Fib (n:nat) : nat :=
+  match n with
+  | S (S n1 as n0) => Fib n1 + Fib n0
+  | _ => 1
+  end.
+
+
+(* Definition alt_Fib : nat -> nat  := *)
+(*   nat_rect (fun n => nat) 1 (fun n X0 => nat_rect (fun _ => nat) 1 (fun _ X1 => X0 + X1) n).   *)
+
+Definition Ackermann : nat -> nat -> nat :=
+  nat_rect (fun _ => nat -> nat) (fun n : nat => n + 1)
+           (fun m (Ack : nat -> nat) => nat_rect (fun _ => nat) (Ack 1) (fun n X => Ack X)).
+
+Time Eval compute in Ackermann 3 5.
+
+Definition Ackermann_N : nat -> nat -> N :=
+  nat_rect (fun _ => nat -> N) (fun n : nat => (↑n + 1%N)%N)
+           (fun m (Ack : nat -> N) => nat_rect (fun _ => N) (Ack 1) (fun n X => Ack (↑X))).
+
+Definition bar : {opt : nat -> N & (fun n : nat => n + 1) ≈ opt}.
+  eexists. cbn. intros. rewrite H; clear x H.  tc.
+Defined.
+
+Hint Extern 0 (nat_rect _ _ _ _ = _)
+=> refine (FP_nat_rect_cst _ _ compat_nat_N _ _ _ _ _ _ _ _ _) ; try eassumption : typeclass_instances.
+
+Definition test_sequence : nat -> nat -> nat := fun acc => 
+  nat_rect (fun _ => nat) acc 
+           (fun _ res => Nat.pow res acc).
+
+Hint Extern 0 => progress (unfold test_sequence) :  typeclass_instances.
+
+Definition test_sequence' := ltac: (convert test_sequence : (N -> nat -> N)).
+
+Transparent Nat.pow mult. 
+
+Fail Time Eval compute in test_sequence 2 5.
+
+Time Eval compute in test_sequence'.1 2%N 5.
 
 
 (* Observe the evolution of time as the exponent increases, 
