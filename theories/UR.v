@@ -7,6 +7,7 @@ Require Import HoTT HoTT_axioms URTactics String.
 
 Set Universe Polymorphism.
 Set Primitive Projections.
+Set Polymorphic Inductive Cumulativity. 
 
 
 Class UR A B := {

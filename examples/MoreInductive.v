@@ -263,10 +263,26 @@ Defined.
 
 (*! Establishing FP for nat_rect !*)
 
+Definition nat_rect : forall P : nat -> Type,
+    P 0 -> (forall n : nat, P n -> P (S n)) -> forall n : nat, P n
+  := 
+    fun (P : nat -> Type) (f : P 0)
+        (f0 : forall n : nat, P n -> P (S n)) =>
+      fix F (n : nat) : P n :=
+      match n as n0 return (P n0) with
+      | 0 => f
+      | S n0 => f0 n0 (F n0)
+      end.
+
 Definition FP_nat_rect : nat_rect ≈ nat_rect.
-  intros X X' [H H'] P P' e0 Q Q' e_S n n' en.   
+  intros X X' [H H'] P P' e0 Q Q' e_S n n' en.    
   equiv_elim. exact (e_S n n eq_refl _ _ IHn).
 Defined.
+
+Definition FP_nat_rect_cst (P Q:Type) (e : P ≈ Q) :
+  nat_rect (fun _ => P) ≈ nat_rect (fun _ => Q) :=
+  FP_nat_rect (fun _ => P) (fun _ => Q)
+              {| transport_ := Transportable_cst nat P ; ur_type := fun _ _ _ => e |}.
 
 (*! non effective FP for list !*)
 Definition FP_List' : list ≈ list.
@@ -786,9 +802,7 @@ Hint Extern 0 (?f ?x = ?y ) => erefine (Move_equiv Equiv_N_nat x y _)
                                : typeclass_instances.
 
 Instance UR_N_nat : UR N nat | 0.
-eapply UR_Equiv.
-typeclasses eauto.
-typeclasses eauto.
+eapply UR_Equiv; tc.
 Defined.
 
 Instance compat_N_nat : N ⋈ nat.
@@ -798,8 +812,18 @@ Proof.
   rewrite (N2Nat_id _). apply Equiv_id.
 Defined. 
 
-Instance compat_nat_N : nat ⋈ N := UR_Type_Inverse _ _ compat_N_nat.
+Instance UR_nat_N : UR nat N | 0.
+eapply UR_Equiv; tc. 
+Defined.
 
+Instance compat_nat_N : nat ⋈ N.
+Proof.
+  unshelve eexists; try tc.
+  econstructor. intros. cbn.
+  rewrite (Nat2N_id _). apply Equiv_id.
+Defined. 
+
+(* Instance compat_nat_N : nat ⋈ N := UR_Type_Inverse _ _ compat_N_nat. *)
 
 Definition le_rect : forall (n : nat) (P : forall n0 : nat, le n n0 -> Prop),
        P n (le_n n) ->

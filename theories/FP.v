@@ -2,6 +2,8 @@
 (* This file proves the fundamental property for the main constructors of CIC *)
 (************************************************************************)
 
+Set Polymorphic Inductive Cumulativity. 
+
 Set Universe Polymorphism.
 
 Require Import HoTT HoTT_axioms URTactics ADT String UR.
