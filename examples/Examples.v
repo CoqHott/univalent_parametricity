@@ -26,8 +26,7 @@ Tactic Notation "solve_eq" "on" constr(A) "using" constr(B) :=
   eapply concat; [tc | reflexivity]. 
 
 Tactic Notation "solve_eq_abstract" "on" constr(A) "using" constr(B) :=
-  eexists;
-  eapply concat ; [ tc | symmetry; apply e_retr].
+  eexists; eapply concat; [ tc | reflexivity].
 
 
 Definition Canonical_eq_sig A :=   {can_eq : forall (x y : A), x = y -> x = y &
@@ -622,7 +621,7 @@ Opaque mult.
 
 Definition poly' := ltac: (convert poly : (N -> N)).
 
-Hint Extern 0 (_ = _ (poly ?m))  => eapply (poly'.2 m _) : typeclass_instances.
+Hint Extern 0 (poly _ = _ )  => eapply poly'.2 : typeclass_instances.
 
 Opaque poly.
 
@@ -642,9 +641,12 @@ Fixpoint Fib (n:nat) : nat :=
   | _ => 1
   end.
 
+Definition alt_Fib : nat -> nat * nat := 
+  nat_rect (fun n => (nat * nat)%type) (1,1)
+           (fun n r => (snd r, fst r + snd r)).
 
-(* Definition alt_Fib : nat -> nat  := *)
-(*   nat_rect (fun n => nat) 1 (fun n X0 => nat_rect (fun _ => nat) 1 (fun _ X1 => X0 + X1) n).   *)
+Check eq_refl : fst (alt_Fib 10) = Fib 10. 
+
 
 Definition Ackermann : nat -> nat -> nat :=
   nat_rect (fun _ => nat -> nat) (fun n : nat => n + 1)
@@ -656,27 +658,55 @@ Definition Ackermann_N : nat -> nat -> N :=
   nat_rect (fun _ => nat -> N) (fun n : nat => (↑n + 1%N)%N)
            (fun m (Ack : nat -> N) => nat_rect (fun _ => N) (Ack 1) (fun n X => Ack (↑X))).
 
-Definition bar : {opt : nat -> N & (fun n : nat => n + 1) ≈ opt}.
-  eexists. cbn. intros. rewrite H; clear x H.  tc.
-Defined.
+Hint Extern 0 (nat_rect ?P _ _ _ = _)
+=> refine (FP_nat_rect_cst _ _ compat_nat_N _ _ _ _ _ _ _ _ _) ;
+     try eassumption : typeclass_instances.
 
-Hint Extern 0 (nat_rect _ _ _ _ = _)
-=> refine (FP_nat_rect_cst _ _ compat_nat_N _ _ _ _ _ _ _ _ _) ; try eassumption : typeclass_instances.
+Fixpoint test_sequence_ (acc n : nat) :=
+  match n with
+    0 => acc
+  | 1 => 2 * acc
+  | 2 => 3 * acc
+  | S n => Nat.pow (test_sequence_ acc n) acc
+  end.
 
 Definition test_sequence : nat -> nat -> nat := fun acc => 
   nat_rect (fun _ => nat) acc 
-           (fun _ res => Nat.pow res acc).
+           (fun n res => nat_rect (fun _ => nat) (2 * acc) 
+                                  (fun m res' =>
+                                     nat_rect (fun _ => nat) (3 * acc) 
+                                              (fun _ res'' => Nat.pow res acc) m) n).
 
-Hint Extern 0 => progress (unfold test_sequence) :  typeclass_instances.
+Hint Extern 0 => progress (unfold test_sequence) : typeclass_instances.
 
 Definition test_sequence' := ltac: (convert test_sequence : (N -> nat -> N)).
 
+Hint Extern 0 (test_sequence _ _ = _ )  => eapply test_sequence'.2 : typeclass_instances.
+
+Eval cbn in test_sequence'.1. 
+
 Transparent Nat.pow mult. 
 
-Fail Time Eval compute in test_sequence 2 5.
+(* Time Eval compute in test_sequence 2 5. *)
 
+Ltac replace_goal :=
+  let X := fresh "X" in
+  match goal with | |- ?P =>
+                    pose (X := ltac: (convert P : Prop));
+                    apply (e_inv' (equiv X.2)); cbn; clear X
+  end.
+
+Opaque test_sequence.
+
+Goal test_sequence 2 5 >= 1000.
+  replace_goal. compute. inversion 1. 
+Defined. 
+  
 Time Eval compute in test_sequence'.1 2%N 5.
 
+Goal test_sequence ≈ test_sequence'.1. cbn. 
+
+Eval compute in test_sequence'.2  2 2%N eq_refl 4 4 eq_refl.
 
 (* Observe the evolution of time as the exponent increases, 
    in first the standard nat version, and in the lifted N version. 
