@@ -263,6 +263,84 @@ Print Assumptions lib_map_noeff.
 
 (* Eval compute in lib_list.  *)
 
+
+(* Observe the evolution of time as the exponent increases, 
+   in first the standard nat version, and in the lifted N version. 
+   (all Time Eval commands are commented in order to not affect
+   compilation time - just uncomment and eval to test.)
+
+   Also, times commented below were produced on an iMac with 
+   3.5 GHz Intel Core i5 -- results on your machine would certainly 
+   differ, but the relative results is what matter.
+*)
+
+(* In the timing experiments below, we use const0 to avoid 
+   let binder optimization in newer versions of Coq. *)
+Definition const0 {A} : A -> nat := fun _ => 0. 
+
+(* with the standard nat function: *)
+(* Time Eval vm_compute in let x := Nat.pow 3 18 in const0 x. *)
+(* 26:  8.221u *)
+(* 27: 28.715u *)
+(* 28: 83.669u *)
+
+(* with the lifted function *)
+(* Time Eval vm_compute in let x := nat_pow 2 26 in const0 x. *)
+(* 26:  5.086u *)
+(* 27: 12.173u *)
+(* 28: 37.205u *)
+
+(* The results are much better than with the standard nat function,
+   but in fact, ALL the cost here in the lifted case is the conversion of 
+   the resulting binary number back to a nat! (the power itself takes 0.u) *)
+
+(* To illustrate, consider another function that also uses pow, but does 
+   not necessarily produce big numbers: *)
+
+(* a- the N version *)
+Definition diffN x y n := N.sub (N.pow x n) (N.pow y n).
+
+(* b- the nat version *)
+Definition diff x y n := (Nat.pow x n) - (Nat.pow y n).
+
+(* c- the nat version obtained by lifting the N version *)
+Definition diff' : nat -> nat -> nat -> nat := Eval compute in ↑ diffN.
+
+(* In the following, the computed value is 0 (so converting back 
+   in the lifted version costs nothing). *)
+
+(* the standard nat function is expectedly slow *)
+(* Time Eval vm_compute in let x := diff 2 2 25 in const0 x. *)
+(* 25:  8.322u *)
+(* 26: 21.105u *)
+
+(* the lifted function is blazzing fast! *)
+(* Time Eval vm_compute in let x := diff' 2 2 25 in const0 x. *)
+(* 25: 0.u *)
+(* 26: 0.u *)
+(* 27: 0.u *)
+(* 28: 0.u *)
+
+Definition nat_sub : nat -> nat -> nat := ↑ N.sub.
+
+(* d- the combined version *)
+Definition diff_comb x y n := nat_sub (nat_pow_ x n) (nat_pow_ y n).
+
+
+Definition diff_opt := ltac: (optimize diff_comb).
+
+Definition diff_comb_ := Eval compute in diff_comb.
+
+(* Time Eval vm_compute in let x := diff_comb_ 2 2 25 in const0 x. *)
+
+Check eq_refl : diff_opt.1 =
+                fun x y n => ↑(N.pow (↑x) (↑n) - N.pow (↑y) (↑n))%N.
+
+Fail Check eq_refl : diff_comb_ =
+                (fun (x y n : nat) => ↑(N.pow (↑x) (↑n) - N.pow (↑y) (↑n))%N).
+
+Time Eval vm_compute in let x := diff_opt.1 2 2 25 in const0 x.
+
 (* Example doing change of representation à la CoqEAL *)
 
 (* correspondance between libraries over nat and N *)
@@ -601,9 +679,6 @@ Eval lazy in N_avg 10%N 30%N.
 (* and is needed the same as the hand-written N-based version *)
 Check eq_refl : N_avg = (fun x y => N_divide (x + y) N_two).
 
-(* In the timing experiments below, we use const0 to avoid 
-   let binder optimization in newer versions of Coq. *)
-Definition const0 {A} : A -> nat := fun _ => 0. 
 
 
 (* Test with polynomials *)
@@ -618,9 +693,9 @@ Hint Extern 100 (_ = _ ) => eapply (@ur_refl _ _ compat_nat_N):  typeclass_insta
 
 Opaque mult.
 
-Definition poly' := ltac: (convert poly : (N -> N)).
+Definition poly_conv := ltac: (convert poly : (N -> N)).
 
-Hint Extern 0 (poly _ = _ )  => eapply poly'.2 : typeclass_instances.
+Hint Extern 0 (poly _ = _ )  => eapply poly_conv.2 : typeclass_instances.
 
 Opaque poly.
 
@@ -633,10 +708,6 @@ Eval lazy in poly_50_abstract.1.
 Transparent poly. 
 
 (* Test for sequences *)
-
-Hint Extern 0 (nat_rect ?P _ _ _ = _)
-=> refine (FP_nat_rect_cst _ _ compat_nat_N _ _ _ _ _ _ _ _ _) ;
-     try eassumption : typeclass_instances.
 
 Fixpoint test_sequence_ (acc n : nat) :=
   match n with
@@ -655,11 +726,15 @@ Definition test_sequence : nat -> nat -> nat := fun acc =>
 
 Hint Extern 0 => progress (unfold test_sequence) : typeclass_instances.
 
-Definition test_sequence' := ltac: (convert test_sequence : (N -> nat -> N)).
+Hint Extern 0 (nat_rect ?P _ _ _ = _)
+=> refine (FP_nat_rect_cst _ _ compat_nat_N _ _ _ _ _ _ _ _ _) ;
+     try eassumption : typeclass_instances.
 
-Hint Extern 0 (test_sequence _ _ = _ )  => eapply test_sequence'.2 : typeclass_instances.
+Definition test_sequence_conv := ltac: (convert test_sequence : (N -> nat -> N)).
 
-Eval cbn in test_sequence'.1. 
+Hint Extern 0 (test_sequence _ _ = _ )  => eapply test_sequence_conv.2 : typeclass_instances.
+
+Eval cbn in test_sequence_conv.1. 
 
 Transparent Nat.pow mult. 
 
@@ -678,79 +753,6 @@ Goal test_sequence 2 5 >= 1000.
   replace_goal. compute. inversion 1. 
 Defined. 
   
-Time Eval compute in test_sequence'.1 2%N 5.
+Time Eval compute in test_sequence_conv.1 2%N 5.
 
-Eval compute in test_sequence'.2  2 2%N eq_refl 4 4 eq_refl.
-
-(* Observe the evolution of time as the exponent increases, 
-   in first the standard nat version, and in the lifted N version. 
-   (all Time Eval commands are commented in order to not affect
-   compilation time - just uncomment and eval to test.)
-
-   Also, times commented below were produced on an iMac with 
-   3.5 GHz Intel Core i5 -- results on your machine would certainly 
-   differ, but the relative results is what matter.
-*)
-
-(* with the standard nat function: *)
-(* Time Eval vm_compute in let x := Nat.pow 3 18 in const0 x. *)
-(* 26:  8.221u *)
-(* 27: 28.715u *)
-(* 28: 83.669u *)
-
-(* with the lifted function *)
-(* Time Eval vm_compute in let x := nat_pow 2 26 in const0 x. *)
-(* 26:  5.086u *)
-(* 27: 12.173u *)
-(* 28: 37.205u *)
-
-(* The results are much better than with the standard nat function,
-   but in fact, ALL the cost here in the lifted case is the conversion of 
-   the resulting binary number back to a nat! (the power itself takes 0.u) *)
-
-(* To illustrate, consider another function that also uses pow, but does 
-   not necessarily produce big numbers: *)
-
-(* a- the N version *)
-Definition diffN x y n := N.sub (N.pow x n) (N.pow y n).
-
-(* b- the nat version *)
-Definition diff x y n := (Nat.pow x n) - (Nat.pow y n).
-
-(* c- the nat version obtained by lifting the N version *)
-Definition diff' : nat -> nat -> nat -> nat := Eval compute in ↑ diffN.
-
-(* In the following, the computed value is 0 (so converting back 
-   in the lifted version costs nothing). *)
-
-(* the standard nat function is expectedly slow *)
-(* Time Eval vm_compute in let x := diff 2 2 25 in const0 x. *)
-(* 25:  8.322u *)
-(* 26: 21.105u *)
-
-(* the lifted function is blazzing fast! *)
-(* Time Eval vm_compute in let x := diff' 2 2 25 in const0 x. *)
-(* 25: 0.u *)
-(* 26: 0.u *)
-(* 27: 0.u *)
-(* 28: 0.u *)
-
-Definition nat_sub : nat -> nat -> nat := ↑ N.sub.
-
-(* d- the combined version *)
-Definition diff_comb x y n := nat_sub (nat_pow_ x n) (nat_pow_ y n).
-
-
-Definition diff_opt := ltac: (optimize diff_comb).
-
-Definition diff_comb_ := Eval compute in diff_comb.
-
-(* Time Eval vm_compute in let x := diff_comb_ 2 2 25 in const0 x. *)
-
-Check eq_refl : diff_opt.1 =
-                fun x y n => ↑(N.pow (↑x) (↑n) - N.pow (↑y) (↑n))%N.
-
-Fail Check eq_refl : diff_comb_ =
-                (fun (x y n : nat) => ↑(N.pow (↑x) (↑n) - N.pow (↑y) (↑n))%N).
-
-Time Eval vm_compute in let x := diff_opt.1 2 2 25 in const0 x.
+Eval compute in test_sequence_conv.2  2 2%N eq_refl 4 4 eq_refl.
