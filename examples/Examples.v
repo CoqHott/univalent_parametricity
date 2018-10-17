@@ -22,12 +22,11 @@ Tactic Notation "lift" constr(function) ":" constr(T) :=
         | exact X].
 
 
-Tactic Notation "solve_eq" "on" constr(A) "using" constr(B) :=
+Tactic Notation "solve_eq" :=
   eapply concat; [tc | reflexivity]. 
 
-Tactic Notation "solve_eq_abstract" "on" constr(A) "using" constr(B) :=
-  eexists; eapply concat; [ tc | reflexivity].
-
+Tactic Notation "solve_eq_abstract" :=
+  eexists; solve_eq.
 
 Definition Canonical_eq_sig A :=   {can_eq : forall (x y : A), x = y -> x = y &
     forall x, can_eq x x eq_refl = eq_refl }.
@@ -626,7 +625,7 @@ Hint Extern 0 (poly _ = _ )  => eapply poly'.2 : typeclass_instances.
 Opaque poly.
 
 Lemma poly_50_abstract : { n : N & poly 50 = ↑ n}.
-  solve_eq_abstract on N using nat.
+  solve_eq_abstract.
 Defined. 
 
 Eval lazy in poly_50_abstract.1.
@@ -634,29 +633,6 @@ Eval lazy in poly_50_abstract.1.
 Transparent poly. 
 
 (* Test for sequences *)
-
-Fixpoint Fib (n:nat) : nat :=
-  match n with
-  | S (S n1 as n0) => Fib n1 + Fib n0
-  | _ => 1
-  end.
-
-Definition alt_Fib : nat -> nat * nat := 
-  nat_rect (fun n => (nat * nat)%type) (1,1)
-           (fun n r => (snd r, fst r + snd r)).
-
-Check eq_refl : fst (alt_Fib 10) = Fib 10. 
-
-
-Definition Ackermann : nat -> nat -> nat :=
-  nat_rect (fun _ => nat -> nat) (fun n : nat => n + 1)
-           (fun m (Ack : nat -> nat) => nat_rect (fun _ => nat) (Ack 1) (fun n X => Ack X)).
-
-Time Eval compute in Ackermann 3 5.
-
-Definition Ackermann_N : nat -> nat -> N :=
-  nat_rect (fun _ => nat -> N) (fun n : nat => (↑n + 1%N)%N)
-           (fun m (Ack : nat -> N) => nat_rect (fun _ => N) (Ack 1) (fun n X => Ack (↑X))).
 
 Hint Extern 0 (nat_rect ?P _ _ _ = _)
 => refine (FP_nat_rect_cst _ _ compat_nat_N _ _ _ _ _ _ _ _ _) ;
@@ -703,8 +679,6 @@ Goal test_sequence 2 5 >= 1000.
 Defined. 
   
 Time Eval compute in test_sequence'.1 2%N 5.
-
-Goal test_sequence ≈ test_sequence'.1. cbn. 
 
 Eval compute in test_sequence'.2  2 2%N eq_refl 4 4 eq_refl.
 
