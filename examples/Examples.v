@@ -18,14 +18,8 @@ Ltac solve_with_lift A B := let e := fresh "e" in
                                        unshelve refine (let e : A ≈ B := _ in _);
                                          [tc | exact (ur_refl (e:=e) _)].
 
-Tactic Notation "lift" constr(function) ":" constr(T) :=
-  let X := fresh "X" in
-  let e := fresh "e" in
-  assert (X : { opt : T & function ≈ opt});
-  [exists (↑ function); intros;
-          match goal with | |- @ur ?A ?B _ _ _ => solve_with_lift A B end
-        | exact X].
-
+Ltac direct_lifting f g := assert (X : f ≈ g); 
+   [match goal with | |- @ur ?A ?B _ f _ => solve_with_lift A B end | eapply X].
 
 Definition Canonical_eq_sig A :=   {can_eq : forall (x y : A), x = y -> x = y &
     forall x, can_eq x x eq_refl = eq_refl }.
@@ -55,6 +49,8 @@ Instance Transportable_DType : Transportable (fun A:DType => A) :=
   Transportable_default _.
 
 Instance Canonical_eq_Forall A (B: A -> Type) : Canonical_eq (forall x:A, B x) := Canonical_eq_gen _.
+
+Hint Extern 0 (sigT _) => unshelve refine (existT _ _ _): typeclass_instances.
 
 
 (* This file contains 3 examples: Lib, Monoid, and pow. 
@@ -560,8 +556,7 @@ Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
 
 (* more dependent version of divide (on Nat)*)
 
-Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n}.
-  exists (divide n m).
+Definition divide_dep_p n (m : {m : nat & 0 < m }) : divide n m <= n.
   destruct m as [m Hm]. destruct m.
   - inversion Hm.
   - apply Nat.div_le_upper_bound.
@@ -570,21 +565,19 @@ Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n}.
       apply Nat.mul_le_mono_r. apply le_n_S. apply Nat.le_0_l.
 Defined.
 
-Definition divide_dep_f := fun n m => (divide_dep n m).1.
-Definition divide_dep_p := fun n m => (divide_dep n m).2.
+Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n} :=
+  (divide n m ; divide_dep_p n m).
 
-
-
-(* Approach 1: start from divide_dep, convert first proj, lift second proj... *)
-
-(* Hint Extern 1000 (@ur ?A ?B _ divide_dep_p _) => solve_with_lift A B : typeclass_instances. *)
-Hint Extern 1000 (divide_dep_p _ _ ≈ ?g _ _) => assert (X : divide_dep_p ≈ g); 
-   [match goal with | |- @ur ?A ?B _ divide_dep_p _ => solve_with_lift A B end | eapply X] : typeclass_instances.
+(* divide_dep_p is a proof with no computational meaning, so we want to lift it globally *)
 
 Arguments divide_dep_p : simpl never.
 
+Hint Extern 0 (divide_dep_p _ _ ≈ ?g _ _) => direct_lifting divide_dep_p g : typeclass_instances.
+
+(* Approach 1: start from divide_dep, convert first proj, lift second proj... *)
+
 Definition N_divide_dep_f_conv :=
-  ltac: (convert divide_dep_f : (forall (n:N) (m: {m : N & (0 < m)%N}), N)).
+  ltac: (convert divide : (forall (n:N) (m: {m : N & (0 < m)%N}), N)).
 
 Definition N_divide_dep_f := N_divide_dep_f_conv.1.
 
@@ -601,8 +594,8 @@ Definition N_two : {m : N & (0 < m)%N}.
   apply (existT _) with (x:=N.succ (N.succ 0)). unfold lt_N.
   apply -> N.succ_le_mono. apply N.le_succ_diag_r.
 Defined.
-Eval lazy in (N_divide_dep_comp 10%N N_two).1.
 
+Eval lazy in (N_divide_dep_comp 10%N N_two).1.
 
 (* Approach 2: working with N_divide: lift the property wrt N_divide *)
 
@@ -623,11 +616,8 @@ Eval lazy in (N_divide_dep_comp'.1 10%N N_two).1.
 (* Approach 3: more automatic *)
 (* ... it's direct! *)
 
-Hint Extern 0 (sigT _) => unshelve refine (existT _ _ _): typeclass_instances.
-
-Definition N_divide_dep_auto_conv :=  
-  ltac: (convert (fun n m => (divide_dep_f n m; divide_dep_p n m)) : (forall (n:N) (m : {m : N & (0 < m)%N}),
-    {res:N & (res <= n)%N})). 
+Definition N_divide_dep_auto_conv :=
+  ltac: (convert divide_dep : (forall (n:N) (m : {m : N & (0 < m)%N}), {res:N & (res <= n)%N})). 
 
 Definition N_divide_dep_auto := N_divide_dep_auto_conv.1.
 
@@ -658,7 +648,10 @@ Definition avg (x y: nat) := divide (x + y) two.
 Arguments divide : simpl never.
 Hint Extern 0 (_ = _) => eapply N_divide_conv.2 : typeclass_instances.
 
-Definition N_two_lift := ltac: (lift two : {n:N & (0 < n)%N}).
+Arguments two : simpl never.
+Hint Extern 0 (two ≈ ?n) => direct_lifting two n : typeclass_instances.
+
+Definition N_two_lift := ltac: (convert two : {n:N & (0 < n)%N}).
 
 (* here also, feed the TC resolution *)
 Hint Extern 0 { _ : _ & _ }  => eapply N_two_lift.2 : typeclass_instances.
