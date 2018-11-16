@@ -11,22 +11,18 @@ Tactic Notation "convert" constr(function) ":" constr(T) :=
 
 Ltac optimize f := let T := type of f in convert f : T. 
 
+Ltac solve_with_lift A B := let e := fresh "e" in
+                                       unshelve refine (let e : A ≈ B := _ in _);
+                                         [tc | exact (ur_refl (e:=e) _)].
+
 Tactic Notation "lift" constr(function) ":" constr(T) :=
   let X := fresh "X" in
   let e := fresh "e" in
   assert (X : { opt : T & function ≈ opt});
   [exists (↑ function); intros;
-          match goal with | |- @ur ?A ?B _ _ _ =>
-                            unshelve refine (let e : A ≈ B := _ in _);
-                            [tc | exact (ur_refl (e:=e) _)] end
+          match goal with | |- @ur ?A ?B _ _ _ => solve_with_lift A B end
         | exact X].
 
-
-Tactic Notation "solve_eq" :=
-  eapply concat; [tc | reflexivity]. 
-
-Tactic Notation "solve_eq_abstract" :=
-  eexists; solve_eq.
 
 Definition Canonical_eq_sig A :=   {can_eq : forall (x y : A), x = y -> x = y &
     forall x, can_eq x x eq_refl = eq_refl }.
@@ -575,16 +571,21 @@ Defined.
 Definition divide_dep_f := fun n m => (divide_dep n m).1.
 Definition divide_dep_p := fun n m => (divide_dep n m).2.
 
+
+
 (* Approach 1: start from divide_dep, convert first proj, lift second proj... *)
+
+Hint Extern 1000 (@ur ?A ?B _ divide_dep_p _) => solve_with_lift A B : typeclass_instances.
+Arguments divide_dep_p : simpl never. 
 
 Definition N_divide_dep_f_conv :=
   ltac: (convert divide_dep_f : (forall (n:N) (m: {m : N & (0 < m)%N}), N)).
+
 Definition N_divide_dep_f := N_divide_dep_f_conv.1.
 
-Definition N_divide_dep_p_lift :=
-  ltac: (lift divide_dep_p :
-           (forall (n:N) (m : {m : N & (0 < m)%N}), (N_divide_dep_f n m <= n)%N)).
-Definition N_divide_dep_p := N_divide_dep_p_lift.1.
+Definition N_divide_dep_p_conv := ltac: (convert divide_dep_p : (forall (n:N) (m : {m : N & (0 < m)%N}), (N_divide_dep_f n m <= n)%N)).
+
+Definition N_divide_dep_p := N_divide_dep_p_conv.1.
 
 (* ... and put the pieces together *)
 Definition N_divide_dep_comp : forall (n:N) (m : {m : N & (0 < m)%N}),
@@ -597,10 +598,11 @@ Definition N_two : {m : N & (0 < m)%N}.
 Defined.
 Eval lazy in (N_divide_dep_comp 10%N N_two).1.
 
+
 (* Approach 2: working with N_divide: lift the property wrt N_divide *)
 
 Definition N_divide_dep_p'_lift := 
-  ltac: (lift divide_dep_p : 
+  ltac: (convert divide_dep_p : 
            (forall (n:N) (m : {m : N & (0 < m)%N}), (N_divide n m <= n)%N)).
 
 Definition N_divide_dep_p' := N_divide_dep_p'_lift.1.
@@ -634,15 +636,19 @@ Tactic Notation "conv&lift" constr(function) :=
   end.
 
 (* ... it's direct! *)
-Definition N_divide_dep_auto : forall (n:N) (m : {m : N & (0 < m)%N}), {res:N & (res <= n)%N}.
-  conv&lift divide_dep.
-Defined.
+Definition N_divide_dep_auto : forall (n:N) (m : {m : N & (0 < m)%N}), {res:N & (res <= n)%N} :=
+  ltac: (conv&lift divide_dep).
+
 Eval lazy in (N_divide_dep_auto 10%N N_two).1.
 
 (* the two versions we derive manually are indeed equal *)
 Check eq_refl : N_divide_dep_comp'.1 = N_divide_dep_comp.
 (* can't prove it directly for the auto version (does not seem to terminate) *)
 (* Check eq_refl : N_divide_dep_comp = N_divide_dep_auto. *)
+
+Goal N_divide_dep_comp = N_divide_dep_auto.
+  reflexivity.
+Defined. 
 
 
 (* Now, we can exploit the new divide - N_divide correspondance 
@@ -685,7 +691,7 @@ Check eq_refl : N_avg = (fun x y => N_divide (x + y) N_two).
 
 Definition poly : nat -> nat := fun n => 4 * n + 12 * (Nat.pow n 4) - 11 * (Nat.pow n 4).
 
-Fail Eval compute in poly 20. 
+(* Fail Eval compute in poly 50.  *)
 
 Hint Extern 0 => progress (unfold poly) :  typeclass_instances.
 
@@ -697,8 +703,13 @@ Definition poly_conv := ltac: (convert poly : (N -> N)).
 
 Hint Extern 0 (poly _ = _ )  => eapply poly_conv.2 : typeclass_instances.
 
-Opaque poly.
+Tactic Notation "solve_eq" :=
+  eapply concat; [tc | reflexivity]. 
 
+Tactic Notation "solve_eq_abstract" :=
+  eexists; solve_eq.
+
+Opaque poly.
 Lemma poly_50_abstract : { n : N & poly 50 = ↑ n}.
   solve_eq_abstract.
 Defined. 
@@ -709,12 +720,12 @@ Transparent poly.
 
 (* Test for sequences *)
 
-Fixpoint test_sequence_ (acc n : nat) :=
+Definition test_sequence_ acc := fix f (n : nat) :=
   match n with
     0 => acc
   | 1 => 2 * acc
   | 2 => 3 * acc
-  | S n => Nat.pow (test_sequence_ acc n) acc
+  | S n => Nat.pow (f n) acc
   end.
 
 Definition test_sequence : nat -> nat -> nat := fun acc => 
@@ -724,11 +735,68 @@ Definition test_sequence : nat -> nat -> nat := fun acc =>
                                      nat_rect (fun _ => nat) (3 * acc) 
                                               (fun _ res'' => Nat.pow res acc) m) n).
 
+(* Definition FP_nat_rect : nat_rect ≈ nat_rect. *)
+
+Definition fix_nat_1 : (fun P X0 XS => fix f (n : nat) {struct n} : P :=
+  match n with
+  | 0 => X0
+  | S n => XS n (f n)
+  end) ≈
+       (fun P X0 XS => fix f (n : nat) {struct n} : P :=
+  match n with
+  | 0 => X0
+  | S n => XS n (f n)
+  end).
+Proof. 
+  cbn; intros. equiv_elim. 
+Defined. 
+
+Definition fix_nat_2 : (fun P X0 X1 XS => fix f (n : nat) {struct n} : P :=
+  match n with
+  | 0 => X0
+  | 1 => X1
+  | S n => XS n (f n)
+  end) ≈
+       (fun P X0 X1 XS => fix f (n : nat) {struct n} : P :=
+  match n with
+  | 0 => X0
+  | 1 => X1
+  | S n => XS n (f n)
+  end).
+Proof. 
+  cbn; intros. repeat equiv_elim.
+Defined. 
+
+Definition fix_nat_3 : (fun P X0 X1 X2 XS => fix f (n : nat) {struct n} : P :=
+  match n with
+  | 0 => X0
+  | 1 => X1
+  | 2 => X2
+  | S n => XS n (f n)
+  end) ≈
+       (fun P X0 X1 X2 XS => fix f (n : nat) {struct n} : P :=
+  match n with
+  | 0 => X0
+  | 1 => X1
+  | 2 => X2
+  | S n => XS n (f n)
+  end).
+Proof. 
+  cbn; intros. repeat equiv_elim.
+Defined.
+
+
+Definition test_sequence__conv :  { opt :  (N -> nat -> N) & test_sequence_ ≈ opt}.
+  eexists. cbn; intros. unfold test_sequence_. 
+  refine (fix_nat_3 _ _ compat_nat_N _ _ _ _ _ _ _ _ _ (fun _ X => Nat.pow X x) _ _ _ _ _); tc.
+Defined. 
+
 Hint Extern 0 => progress (unfold test_sequence) : typeclass_instances.
 
 Hint Extern 0 (nat_rect ?P _ _ _ = _)
 => refine (FP_nat_rect_cst _ _ compat_nat_N _ _ _ _ _ _ _ _ _) ;
      try eassumption : typeclass_instances.
+
 
 Definition test_sequence_conv := ltac: (convert test_sequence : (N -> nat -> N)).
 
