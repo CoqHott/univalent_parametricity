@@ -107,35 +107,6 @@ Proof.
 Defined.
 
 
-Instance is_equiv_alt_ur_coh_inv {A B:Type}  (e:A ≃ B) (H:UR A B) : IsEquiv (alt_ur_coh e H). 
-Proof.
-  unshelve refine (isequiv_adjointify _ _ _ _).
-  - intro. apply alt_ur_coh_inv. assumption.
-  - intros [f]. apply (ap (Build_UR_Coh _ _ _ _)).
-    apply funext. intro a. apply funext. intro a'. unfold alt_ur_coh, alt_ur_coh_inv.
-    apply path_Equiv. apply funext. intro E.
-    rewrite transport_inverse. rewrite <- transport_e_fun. cbn.
-    unfold univalent_transport. rewrite transport_paths_r. cbn.
-    change (Equiv_inverse (transport_eq (fun X : B => (a ≈ X) ≃ (a = e_inv e (e a'))) (e_retr e (e a')) (Equiv_inverse (f a (e_inv e (e a')))))
-    (E @ (e_sect e a')^) = (f a a') E).
-    rewrite transport_inverse'.
-    rewrite Equiv_inverse_inverse. 
-    rewrite e_adj. rewrite transport_ap. rewrite <- (transport_e_fun' _ _ (fun x => (a ≈ e x))). 
-    rewrite (transport_fun_eq A a (fun x : A => (a ≈ e x)) (fun a' => e_fun (f a a'))).
-    rewrite <- concat_p_pp. rewrite inv_inv. rewrite concat_refl. reflexivity.
-  - intros f. apply funext. intro a. apply funext. intro a'.
-    apply path_Equiv. apply funext. intro E. unfold alt_ur_coh, alt_ur_coh_inv. 
-    cbn. rewrite Equiv_inverse_inverse.
-    rewrite other_adj. rewrite transport_ap. unfold univalent_transport.
-    rewrite (transport_double _ (fun X X' => (a ≈ X) ≃ (a = e_inv e X'))).
-    reflexivity. 
-Defined.
-
-
-Definition ur_coh_equiv {A B:Type} (e:A ≃ B) (H:UR A B) (einv := Equiv_inverse e):
-  UR_Coh A B e H ≃ forall (a:A) (b:B), (a ≈ b) ≃ (a = ↑ b)
-  := BuildEquiv _ _ (alt_ur_coh e H) _.
-
 (* Definition of univalent relation for basic type constructors *)
 
 (*! Universe !*)

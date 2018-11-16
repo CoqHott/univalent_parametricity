@@ -8,6 +8,8 @@ Set Universe Polymorphism.
 
 Require Import HoTT HoTT_axioms URTactics ADT String UR.
 
+
+
 (*! Establishing FP for Type !*)
 
 Definition transport_UR_Type A B C (e: B = C) e1 e2 e3 e4 e5 :
@@ -27,6 +29,139 @@ Definition transport_UR_Type' A B C (e: A = C) e1 e2 e3 e4 e5:
                 (e # e4) e5
   :=
   match e with eq_refl => eq_refl end.
+
+Definition ap2_inv {A A' B:Type} (f:A -> A' -> B) {x y:A} (p:x = y)
+  {x' y':A'} (q:x' = y') : (ap2 f p q)^ = ap2 f p^ q^.
+  destruct p, q. reflexivity.
+Defined. 
+
+Definition ap2_pp {A A' B:Type} (f:A -> A' -> B) {x y z:A} (p:x = y) (p':y = z)
+           {x' y' z' :A'} (q:x' = y') (q':y' = z') :
+  ap2 f p q @ ap2 f p' q' =  ap2 f (p @ p') (q @ q').
+  destruct p, q. reflexivity.
+Defined. 
+
+Definition ap2_slide {A A' B:Type} (f:A -> A' -> B) {x y:A} (p:x = y)
+           {x' y':A'} (q:x' = y') : ap2 f p eq_refl @ ap2 f eq_refl q =
+                                    ap2 f eq_refl q @ ap2 f p eq_refl.
+  etransitivity. apply ap2_pp. eapply inverse. etransitivity. apply ap2_pp.
+  eapply (ap2 (fun X Y => ap2 f X Y)). eapply inverse. all : apply concat_refl. 
+Defined.
+
+Definition IsEquiv_eq A B (f : A -> B) (e e' : IsEquiv f)
+           (Hinv  : forall x, @e_inv _ _ _ e x = @e_inv _ _ _ e' x)
+           (Hsect : forall x, (Hinv (f x))^ @ (@e_sect _ _ _ e x) = @e_sect _ _ _ e' x)
+           (Hretr : forall y, ap f (Hinv y)^ @ (@e_retr _ _ _ e y) = @e_retr _ _ _ e' y)
+           (Hadj  : forall x, (Hretr (f x))^ @ (ap2 HoTT.concat eq_refl (@e_adj _ _ _ e x)) @ (ap_pp _ _ _)^ @ ap (ap f) (Hsect x) =  (@e_adj _ _ _ e' x))
+  : e = e'.
+  destruct e, e'. pose (Hinv' := HoTT.e_inv apD10 Hinv).
+  unshelve refine (let Hsect' := _ : (fun x : A => ((apD10 Hinv' (f x))^ @ HoTT.e_sect f x)) = HoTT.e_sect f in _). apply funext. intros x.
+  etransitivity. eapply ap2. eapply ap. 
+  unshelve eapply (@apD10 _ _ _ Hinv _ (f x)). apply (HoTT.e_retr apD10). 
+  reflexivity. apply Hsect.
+  unshelve refine (let Hretr' := _ : (fun y : B => ap f (apD10 Hinv' y)^ @ HoTT.e_retr f y) = HoTT.e_retr f in _). apply funext. intros y.
+  etransitivity. eapply ap2. eapply ap. eapply ap. 
+  unshelve eapply (@apD10 _ _ _ Hinv _ y). apply (HoTT.e_retr apD10). 
+  reflexivity. apply Hretr.
+  unshelve refine (let Hadj' := _ : (fun x : A =>
+         (((apD10 Hretr' (f x))^ @ ap2 HoTT.concat eq_refl (HoTT.e_adj f x)) @
+                                                                             (ap_pp f (apD10 Hinv' (f x))^ (HoTT.e_sect f x))^) @ ap (ap f) (apD10 Hsect' x)) = HoTT.e_adj f in _). apply funext. intros x.
+  cbn in Hretr', Hsect'. unfold Hretr', Hsect', Hinv'. rewrite (HoTT.e_retr apD10 (fun y : B =>
+        ap2 HoTT.concat (ap (ap f) (ap inverse (apD10 (HoTT.e_retr apD10 Hinv) y)))
+          eq_refl @ Hretr y)). rewrite (HoTT.e_retr apD10 (fun x0 : A =>
+           ap2 HoTT.concat (ap inverse (apD10 (HoTT.e_retr apD10 Hinv) (f x0)))
+               eq_refl @ Hsect x0)). rewrite <- Hadj. rewrite concat_inv.
+  repeat rewrite <- concat_p_pp. apply ap.
+  rewrite (ap_pp (ap f)). repeat rewrite concat_p_pp. apply (ap (fun X => X @ (ap (ap f) (Hsect x)))) . rewrite <- (concat_p_pp (ap2 HoTT.concat (ap (ap f) (ap inverse (apD10 (HoTT.e_retr apD10 Hinv) (f x)))) eq_refl)^).
+  rewrite concat_p_pp. rewrite ap2_inv. Opaque ap2. cbn. Transparent ap2.
+  rewrite ap2_slide. repeat rewrite <- concat_p_pp. apply ap.
+  pose (X := (ap inverse (apD10 (HoTT.e_retr apD10 Hinv) (f x)))).
+    
+  assert (ap2 HoTT.concat (ap (ap f) X)^ eq_refl @
+            (ap_pp f (apD10 (HoTT.e_inv apD10 Hinv) (f x))^ (e_sect x))^ =
+          (ap_pp f (Hinv (f x))^ (e_sect x))^ @ ap (ap f) (ap2 HoTT.concat X^ eq_refl)). clear. destruct X. cbn. eapply inverse. apply concat_refl.
+  rewrite concat_p_pp. unfold X in X0. etransitivity. eapply ap2. 
+  exact X0. reflexivity. rewrite <- concat_p_pp. rewrite <- (ap_pp (ap f)).
+  unfold X. rewrite ap2_pp. rewrite inv_inv. apply concat_refl. 
+  Opaque ap2. cbn in *. rewrite <- Hadj'. clear Hadj' Hadj. Transparent ap2. 
+  rewrite <- Hsect'. clear Hsect' Hsect.
+  rewrite <- Hretr'. clear Hretr' Hretr.
+  destruct Hinv'. cbn. 
+  match goal with | |- (_ = {|
+  e_inv := e_inv;
+  e_sect := fun x : A => e_sect x;
+  e_retr := fun y : B => e_retr y;
+  e_adj := ?e |}) =>  
+                    assert (e_adj = e) end.
+  apply funext. intro. repeat rewrite concat_refl.
+  destruct (e_adj x). reflexivity. destruct X. reflexivity. 
+Defined.
+
+Definition hprop_isequiv {A B} {f: A -> B} : forall e e' : IsEquiv f, e = e'.
+  intros e e'.
+  destruct e, e'; unshelve eapply IsEquiv_eq.
+  - intro y. etransitivity. apply (e_sect0 _)^. apply ap. exact (e_retr _).
+  - cbn. intro x. etransitivity. eapply ap2. etransitivity. 
+    eapply concat_inv. eapply ap2. reflexivity. etransitivity.
+    apply inv2. reflexivity. reflexivity. etransitivity.
+    apply (concat_p_pp _ _ _)^. etransitivity. eapply ap2. reflexivity.
+    apply (transport_paths_naturality' (e_sect x) e_sect0). etransitivity.
+    apply concat_p_pp. etransitivity. eapply (ap2 HoTT.concat).
+    etransitivity. eapply ap2. apply (ap_inv _ _)^. etransitivity.
+    apply ap_compose. apply (ap _ (e_adj _)^). etransitivity.
+    apply (ap_pp _ _ _)^. apply ap. apply inv_inv. reflexivity. reflexivity. 
+  - cbn. intro y. etransitivity. eapply ap2. eapply ap.
+    apply concat_inv. reflexivity. etransitivity. eapply ap2.
+    apply ap_pp. reflexivity. etransitivity.
+    apply (concat_p_pp _ _ _)^. etransitivity. eapply ap2. reflexivity.
+    eapply ap2. etransitivity. eapply ap. etransitivity. apply inv2. reflexivity.
+    apply (e_adj0 _)^. reflexivity. etransitivity. eapply ap2. reflexivity.
+    apply (transport_paths_naturality' (e_retr y) e_retr0).
+    etransitivity. apply concat_p_pp. etransitivity. eapply ap2. etransitivity.
+    eapply ap2. reflexivity. apply ap_compose. etransitivity. apply (ap_pp _ _ _)^.
+    eapply ap. etransitivity. reflexivity. reflexivity. 
+  - Opaque ap2. cbn. Transparent ap2. intro x. repeat rewrite concat_refl.
+    repeat rewrite <- concat_p_pp.
+    (* give up for now *)
+Admitted. 
+
+Definition path_Equiv {A B} {f g: A ≃  B} : e_fun f = e_fun g -> f = g.
+  destruct f, g. cbn. intro e. destruct e.
+  assert (e_isequiv = e_isequiv0). apply hprop_isequiv.
+  destruct X; reflexivity.
+Defined.
+
+Definition Equiv_inverse_inverse A B (e : A ≃ B) : Equiv_inverse (Equiv_inverse e) = e.
+  intros. apply path_Equiv. reflexivity.
+Defined. 
+
+Instance is_equiv_alt_ur_coh_inv {A B:Type}  (e:A ≃ B) (H:UR A B) : IsEquiv (alt_ur_coh e H). 
+Proof.
+  unshelve refine (isequiv_adjointify _ _ _ _).
+  - intro. apply alt_ur_coh_inv. assumption.
+  - intros [f]. apply (ap (Build_UR_Coh _ _ _ _)).
+    apply funext. intro a. apply funext. intro a'. unfold alt_ur_coh, alt_ur_coh_inv.
+    apply path_Equiv. apply funext. intro E.
+    rewrite transport_inverse. rewrite <- transport_e_fun. cbn.
+    unfold univalent_transport. rewrite transport_paths_r. cbn.
+    change (Equiv_inverse (transport_eq (fun X : B => (a ≈ X) ≃ (a = e_inv e (e a'))) (e_retr e (e a')) (Equiv_inverse (f a (e_inv e (e a')))))
+    (E @ (e_sect e a')^) = (f a a') E).
+    rewrite transport_inverse'.
+    rewrite Equiv_inverse_inverse. 
+    rewrite e_adj. rewrite transport_ap. rewrite <- (transport_e_fun' _ _ (fun x => (a ≈ e x))). 
+    rewrite (transport_fun_eq A a (fun x : A => (a ≈ e x)) (fun a' => e_fun (f a a'))).
+    rewrite <- concat_p_pp. rewrite inv_inv. rewrite concat_refl. reflexivity.
+  - intros f. apply funext. intro a. apply funext. intro a'.
+    apply path_Equiv. apply funext. intro E. unfold alt_ur_coh, alt_ur_coh_inv. 
+    cbn. rewrite Equiv_inverse_inverse.
+    rewrite other_adj. rewrite transport_ap. unfold univalent_transport.
+    rewrite (transport_double _ (fun X X' => (a ≈ X) ≃ (a = e_inv e X'))).
+    reflexivity. 
+Defined.
+
+Definition ur_coh_equiv {A B:Type} (e:A ≃ B) (H:UR A B) (einv := Equiv_inverse e):
+  UR_Coh A B e H ≃ forall (a:A) (b:B), (a ≈ b) ≃ (a = ↑ b)
+  := BuildEquiv _ _ (alt_ur_coh e H) _.
 
 Definition path_UR_Type A B (X Y:UR_Type A B) (e1:X.(equiv) = Y.(equiv))
            (e2 : X.(Ur) = Y.(Ur))

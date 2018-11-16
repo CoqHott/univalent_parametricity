@@ -654,16 +654,6 @@ End EquivInverse.
 
 Definition Equiv_inverse {A B : Type} (e: A ≃ B) : B ≃ A := BuildEquiv _ _ (e_inv (e_fun e)) (isequiv_inverse _).  
 
-(* this is a lemma of the HoTT library *)
-(* in HoTT/theories/Types/Equiv.v *)
-Definition hprop_isequiv {A B} {f: A -> B} : forall e e' : IsEquiv f, e = e'.
-Admitted. 
-
-Definition path_Equiv {A B} {f g: A ≃  B} : e_fun f = e_fun g -> f = g.
-  destruct f, g. cbn. intro e. destruct e.
-  assert (e_isequiv0 = e_isequiv1). apply hprop_isequiv.
-  destruct X; reflexivity.
-Defined.
 
 Definition Move_equiv {A B} (e : A ≃ B) x y : x = e_inv' e y -> e_fun e x = y.
 Proof.
@@ -956,10 +946,4 @@ Definition transport_fun_eq A (a:A) P (f : forall a', a = a' -> P a') b c (e : b
 Proof.
   destruct e. cbn. rewrite concat_refl. reflexivity.
 Defined.
-
-
-Definition Equiv_inverse_inverse A B (e : A ≃ B) : Equiv_inverse (Equiv_inverse e) = e.
-  intros. apply path_Equiv. reflexivity.
-Defined. 
-
 
