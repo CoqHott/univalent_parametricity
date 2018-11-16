@@ -523,12 +523,11 @@ Definition square_prop : forall n, square (2 * n) = 4 * square n.
   repeat rewrite nat_distrib'. repeat rewrite plus_assoc. reflexivity.
 Defined. 
 
-Opaque N.mul mult.
+Arguments N.mul : simpl never.
+Arguments mult : simpl never.
 
 Definition N_square_prop : forall n, (N_square (2 * n) = 4 * N_square n)%N :=
   ↑ square_prop. 
-
-Transparent N.mul mult.
 
 (* we can even convert dependent functions *)
 
@@ -578,10 +577,11 @@ Definition divide_dep_p := fun n m => (divide_dep n m).2.
 
 (* Approach 1: start from divide_dep, convert first proj, lift second proj... *)
 
-Hint Extern 1000 (@ur ?A ?B _ divide_dep_p _) => solve_with_lift A B : typeclass_instances.
-Hint Extern 1000 (divide_dep_p _ _ ≈ ?f _ _) => assert (X : divide_dep_p ≈ f); 
+(* Hint Extern 1000 (@ur ?A ?B _ divide_dep_p _) => solve_with_lift A B : typeclass_instances. *)
+Hint Extern 1000 (divide_dep_p _ _ ≈ ?g _ _) => assert (X : divide_dep_p ≈ g); 
    [match goal with | |- @ur ?A ?B _ divide_dep_p _ => solve_with_lift A B end | eapply X] : typeclass_instances.
-Arguments divide_dep_p : simpl never. 
+
+Arguments divide_dep_p : simpl never.
 
 Definition N_divide_dep_f_conv :=
   ltac: (convert divide_dep_f : (forall (n:N) (m: {m : N & (0 < m)%N}), N)).
@@ -654,6 +654,8 @@ Defined.
 Definition avg (x y: nat) := divide (x + y) two.
 
 (* first, make sure that TC resolution exploits the correspondance *)
+
+Arguments divide : simpl never.
 Hint Extern 0 (_ = _) => eapply N_divide_conv.2 : typeclass_instances.
 
 Definition N_two_lift := ltac: (lift two : {n:N & (0 < n)%N}).
@@ -664,11 +666,10 @@ Hint Extern 0 { _ : _ & _ }  => eapply N_two_lift.2 : typeclass_instances.
 (* instruct resolution to dive into avg if helpful *)
 Hint Extern 0 => progress (unfold avg) :  typeclass_instances.
 
-(* now convert (making divide opaque in order to stop conversion at
-   that level, and use the correspondance with N_divide *)
-Opaque divide. 
+(* now convert  *)
+
 Definition N_avg_conv := ltac: (convert avg : (N -> N -> N)).
-Transparent divide.
+
 Definition N_avg := N_avg_conv.1.
 
 (* it works... *)
@@ -676,8 +677,6 @@ Eval lazy in N_avg 10%N 30%N.
 
 (* and is needed the same as the hand-written N-based version *)
 Check eq_refl : N_avg = (fun x y => N_divide (x + y) N_two).
-
-
 
 (* Test with polynomials *)
 
@@ -689,11 +688,10 @@ Hint Extern 0 => progress (unfold poly) :  typeclass_instances.
 
 Hint Extern 100 (_ = _ ) => eapply (@ur_refl _ _ compat_nat_N):  typeclass_instances.
 
-Opaque mult.
-
 Definition poly_conv := ltac: (convert poly : (N -> N)).
 
 Hint Extern 0 (poly _ = _ )  => eapply poly_conv.2 : typeclass_instances.
+Arguments poly : simpl never.
 
 Tactic Notation "solve_eq" :=
   eapply concat; [tc | reflexivity]. 
@@ -701,14 +699,11 @@ Tactic Notation "solve_eq" :=
 Tactic Notation "solve_eq_abstract" :=
   eexists; solve_eq.
 
-Opaque poly.
 Lemma poly_50_abstract : { n : N & poly 50 = ↑ n}.
   solve_eq_abstract.
 Defined. 
 
 Eval lazy in poly_50_abstract.1.
-
-Transparent poly. 
 
 (* Test for sequences *)
 
@@ -793,10 +788,9 @@ Hint Extern 0 (nat_rect ?P _ _ _ = _)
 Definition test_sequence_conv := ltac: (convert test_sequence : (N -> nat -> N)).
 
 Hint Extern 0 (test_sequence _ _ = _ )  => eapply test_sequence_conv.2 : typeclass_instances.
+Arguments test_sequence : simpl never.
 
 Eval cbn in test_sequence_conv.1. 
-
-Transparent Nat.pow mult. 
 
 (* Time Eval compute in test_sequence 2 5. *)
 
@@ -806,8 +800,6 @@ Ltac replace_goal :=
                     pose (X := ltac: (convert P : Prop));
                     apply (e_inv' (equiv X.2)); cbn; clear X
   end.
-
-Opaque test_sequence.
 
 Goal test_sequence 2 5 >= 1000.
   replace_goal. compute. inversion 1. 
