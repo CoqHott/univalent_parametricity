@@ -7,7 +7,10 @@ Set Universe Polymorphism.
 Tactic Notation "convert" constr(function) ":" constr(T) :=
   let X := fresh "X" in
   assert (X : { opt : T & function ≈ opt});
-  [eexists; tc | exact X].
+  [ first [  refine (let f := _ in let g := _ in existT _ (fun x y => existT _ (f x y) (g x y)) _) |
+             refine (let f := _ in let g := _ in existT _ (fun x => existT _ (f x) (g x)) _) | 
+             eexists] ; tc
+  | exact X].
 
 Ltac optimize f := let T := type of f in convert f : T. 
 
@@ -576,6 +579,8 @@ Definition divide_dep_p := fun n m => (divide_dep n m).2.
 (* Approach 1: start from divide_dep, convert first proj, lift second proj... *)
 
 Hint Extern 1000 (@ur ?A ?B _ divide_dep_p _) => solve_with_lift A B : typeclass_instances.
+Hint Extern 1000 (divide_dep_p _ _ ≈ ?f _ _) => assert (X : divide_dep_p ≈ f); 
+   [match goal with | |- @ur ?A ?B _ divide_dep_p _ => solve_with_lift A B end | eapply X] : typeclass_instances.
 Arguments divide_dep_p : simpl never. 
 
 Definition N_divide_dep_f_conv :=
@@ -615,29 +620,16 @@ Definition N_divide_dep_comp' : {function : forall (n:N) (m : {m : N & (0 < m)%N
 Defined.
 Eval lazy in (N_divide_dep_comp'.1 10%N N_two).1.
 
-(* Approach 3: more automatic, ad-hoc to the { conv & lift } setting *)
-
-(* with a small tactic to do the job... *)
-Tactic Notation "conv&lift" constr(function) :=
-  let opt := fresh "opt" in
-  match goal with | |-
-    forall x:?A, forall y : ?B , @sigT ?T1 ?P =>
-      unshelve refine (let opt : { opt : forall x:A, forall y : B, T1 & (fun a b => (function a b).1) ≈ opt} := _ in _) ;
-      [ convert (fun a b => (function a b).1) : (forall x:A, forall y : B, T1) |
-        intros a b; 
-        exact (opt.1 a b ; (↑ (fun n  m => (function n m).2) : forall x:A, forall y : B,
-                               P (opt.1 x y) ) a b)]
-   | |- forall x:?A, @sigT ?T1 ?P =>
-      unshelve refine (let opt : { opt : forall x:A, T1 & (fun a => (function a).1) ≈ opt} := _ in _) ;
-      [ convert (fun a => (function a).1) : (forall x:A, T1) |
-        intros a; 
-        exact (opt.1 a ; (↑ (fun n => (function n).2) : forall (x:A),
-                               P (opt.1 x) ) a)] 
-  end.
-
+(* Approach 3: more automatic *)
 (* ... it's direct! *)
-Definition N_divide_dep_auto : forall (n:N) (m : {m : N & (0 < m)%N}), {res:N & (res <= n)%N} :=
-  ltac: (conv&lift divide_dep).
+
+Hint Extern 0 (sigT _) => unshelve refine (existT _ _ _): typeclass_instances.
+
+Definition N_divide_dep_auto_conv :=  
+  ltac: (convert (fun n m => (divide_dep_f n m; divide_dep_p n m)) : (forall (n:N) (m : {m : N & (0 < m)%N}),
+    {res:N & (res <= n)%N})). 
+
+Definition N_divide_dep_auto := N_divide_dep_auto_conv.1.
 
 Eval lazy in (N_divide_dep_auto 10%N N_two).1.
 
