@@ -3,13 +3,13 @@ Require Import BinInt BinNat Nnat Vector Arith.Plus Omega.
 
 Set Universe Polymorphism.
 
-
 Tactic Notation "convert" constr(function) ":" constr(T) :=
   let X := fresh "X" in
   assert (X : { opt : T & function ≈ opt});
   [ first [  refine (let f := _ in let g := _ in existT _ (fun x y => existT _ (f x y) (g x y)) _) |
              refine (let f := _ in let g := _ in existT _ (fun x => existT _ (f x) (g x)) _) | 
-             eexists] ; tc
+             refine (let f := _ in let g := _ in existT _ (existT _ f g) _) | 
+             eexists] ; try unfold function; tc
   | exact X].
 
 Ltac optimize f := let T := type of f in convert f : T. 
@@ -51,7 +51,6 @@ Instance Transportable_DType : Transportable (fun A:DType => A) :=
 Instance Canonical_eq_Forall A (B: A -> Type) : Canonical_eq (forall x:A, B x) := Canonical_eq_gen _.
 
 Hint Extern 0 (sigT _) => unshelve refine (existT _ _ _): typeclass_instances.
-
 
 (* This file contains 3 examples: Lib, Monoid, and pow. 
    Lib and pow are mentioned in the paper. Monoid is not. *)
@@ -437,13 +436,13 @@ End Alt_LE.
 
 Definition compat_le : le ≈ N.le. Admitted.
 
-Hint Extern 0 (_ = _) => eapply compat_add : typeclass_instances.
-Hint Extern 0 (_ = _) => eapply compat_mul : typeclass_instances.
-Hint Extern 0 (_ = _) => eapply compat_div : typeclass_instances.
-Hint Extern 0 (_ = _) => eapply compat_pow : typeclass_instances.
-Hint Extern 0 (_ = _) => eapply compat_sub : typeclass_instances.
-Hint Extern 0 (_ ⋈ _) => eapply compat_le : typeclass_instances. 
-Hint Extern 0 (_ ≃ _) => eapply compat_le : typeclass_instances. 
+Hint Extern 0 (plus _ _ = _) => eapply compat_add : typeclass_instances.
+Hint Extern 0 (mult _ _ = _) => eapply compat_mul : typeclass_instances.
+Hint Extern 0 (Nat.div _ _ = _) => eapply compat_div : typeclass_instances.
+Hint Extern 0 (Nat.pow _ _ = _) => eapply compat_pow : typeclass_instances.
+Hint Extern 0 (Nat.sub _ _ = _) => eapply compat_sub : typeclass_instances.
+Hint Extern 0 (le _ _ ≃ _) => eapply compat_le : typeclass_instances. 
+Hint Extern 0 (le _ _ ⋈ _) => eapply compat_le : typeclass_instances. 
 
 (* Definition compat_add' : N.add ≈ plus eapply compat_inverse2 compat_add. *)
 (* Definition compat_add' : N.add ≈ plus := compat_inverse2 compat_add. *)
@@ -462,13 +461,13 @@ Definition compat_pow' : N.pow ≈ Nat.pow. Admitted.
 Definition compat_sub' : N.sub ≈ Nat.sub. Admitted.
 Definition compat_le' : N.le ≈ le. Admitted.
 
-Hint Extern 0 (_ = _) => eapply compat_add' : typeclass_instances.
-Hint Extern 0 (_ = _) => eapply compat_mul' : typeclass_instances.
-Hint Extern 0 (_ = _) => eapply compat_div' : typeclass_instances.
-Hint Extern 0 (_ = _) => eapply compat_pow' : typeclass_instances.
-Hint Extern 0 (_ = _) => eapply compat_sub' : typeclass_instances.
-Hint Extern 0 (_ ⋈ _) => eapply compat_le' : typeclass_instances.
-Hint Extern 0 (_ ≃ _) => eapply compat_le' : typeclass_instances.
+Hint Extern 0 (N.add _ _ = _) => eapply compat_add' : typeclass_instances.
+Hint Extern 0 (N.mul _ _ = _) => eapply compat_mul' : typeclass_instances.
+Hint Extern 0 (N.div _ _ = _) => eapply compat_div' : typeclass_instances.
+Hint Extern 0 (N.pow _ _ = _) => eapply compat_pow' : typeclass_instances.
+Hint Extern 0 (N.sub _ _ = _) => eapply compat_sub' : typeclass_instances.
+Hint Extern 0 (N.le _ _ ≃ _) => eapply compat_le' : typeclass_instances.
+Hint Extern 0 (N.le _ _ ⋈ _) => eapply compat_le' : typeclass_instances.
 
 (* we can lift properties up to the correspondance table *)
 
@@ -494,12 +493,13 @@ Eval compute in (N_distrib 1 2 3).
 Definition square : nat -> nat := fun n => n * n.  
 
 Definition N_square_def := ltac: (convert square : (N -> N)).
+Hint Extern 0 (square _ = _) => eapply N_square_def.2 : typeclass_instances.
+Arguments square : simpl never.
 
 Definition N_square := N_square_def.1.
 
 Check eq_refl : N_square = (fun x => (x * x)%N).
 
-Hint Extern 0 (N_square_def.1 _ ≈ square _) => eapply N_square_def.2 : typeclass_instances. 
 
 (* not that a direct lifting does not using the correspondance table *)
 
@@ -515,7 +515,7 @@ Proof.
 Defined.
 
 Definition square_prop : forall n, square (2 * n) = 4 * square n.
-  intro n. cbn. repeat rewrite plus_0_r. repeat rewrite nat_distrib.
+  unfold square. intro n. cbn. repeat rewrite plus_0_r. repeat rewrite nat_distrib.
   repeat rewrite nat_distrib'. repeat rewrite plus_assoc. reflexivity.
 Defined. 
 
@@ -546,9 +546,13 @@ Hint Extern 0 => progress (unfold lt_N) :  typeclass_instances.
 Instance Decidable_leq_N n m : DecidableEq (n <= m)%N.
 apply (DecidableEq_equiv (↑n <= ↑m) (n <= m)%N); tc. 
 Defined.
- 
+
+
 Definition N_divide_conv :=
   ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), N)).
+Arguments divide : simpl never.
+Hint Extern 0 => eapply N_divide_conv.2 : typeclass_instances.
+
 Definition N_divide := N_divide_conv.1.
 
 (* N_divide is really the division on N *)
@@ -563,32 +567,25 @@ Definition divide_dep_p n (m : {m : nat & 0 < m }) : divide n m <= n.
     + apply Nat.neq_succ_0.
     + rewrite <- Nat.mul_1_l at 1.
       apply Nat.mul_le_mono_r. apply le_n_S. apply Nat.le_0_l.
-Defined.
+Qed.
 
 Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n} :=
   (divide n m ; divide_dep_p n m).
 
 (* divide_dep_p is a proof with no computational meaning, so we want to lift it globally *)
 
-Arguments divide_dep_p : simpl never.
-
 Hint Extern 0 (divide_dep_p _ _ ≈ ?g _ _) => direct_lifting divide_dep_p g : typeclass_instances.
 
-(* Approach 1: start from divide_dep, convert first proj, lift second proj... *)
+(* Approach 1: start from divide, N_divide and divide_dep, convert first proj, lift second proj... *)
 
-Definition N_divide_dep_f_conv :=
-  ltac: (convert divide : (forall (n:N) (m: {m : N & (0 < m)%N}), N)).
-
-Definition N_divide_dep_f := N_divide_dep_f_conv.1.
-
-Definition N_divide_dep_p_conv := ltac: (convert divide_dep_p : (forall (n:N) (m : {m : N & (0 < m)%N}), (N_divide_dep_f n m <= n)%N)).
+Definition N_divide_dep_p_conv := ltac: (convert divide_dep_p : (forall (n:N) (m : {m : N & (0 < m)%N}), (N_divide n m <= n)%N)).
 
 Definition N_divide_dep_p := N_divide_dep_p_conv.1.
 
 (* ... and put the pieces together *)
 Definition N_divide_dep_comp : forall (n:N) (m : {m : N & (0 < m)%N}),
     {res:N & (res <= n)%N} :=
-  fun n m => (N_divide_dep_f n m; N_divide_dep_p n m).
+  fun n m => (N_divide n m; N_divide_dep_p n m).
 
 Definition N_two : {m : N & (0 < m)%N}.
   apply (existT _) with (x:=N.succ (N.succ 0)). unfold lt_N.
@@ -597,23 +594,7 @@ Defined.
 
 Eval lazy in (N_divide_dep_comp 10%N N_two).1.
 
-(* Approach 2: working with N_divide: lift the property wrt N_divide *)
-
-Definition N_divide_dep_p'_lift := 
-  ltac: (convert divide_dep_p : 
-           (forall (n:N) (m : {m : N & (0 < m)%N}), (N_divide n m <= n)%N)).
-
-Definition N_divide_dep_p' := N_divide_dep_p'_lift.1.
-
-(* ... and basically lifting "by hand"... *)
-Definition N_divide_dep_comp' : {function : forall (n:N) (m : {m : N & (0 < m)%N}),
-                                  {res:N & (res <= n)%N} & divide_dep ≈ function}.
-  exists (fun n m => (N_divide n m ; N_divide_dep_p' n m)).
-  intros. unshelve eexists. cbn; tc. apply N_divide_dep_p'_lift.2.
-Defined.
-Eval lazy in (N_divide_dep_comp'.1 10%N N_two).1.
-
-(* Approach 3: more automatic *)
+(* Approach 2: more automatic *)
 (* ... it's direct! *)
 
 Definition N_divide_dep_auto_conv :=
@@ -623,10 +604,7 @@ Definition N_divide_dep_auto := N_divide_dep_auto_conv.1.
 
 Eval lazy in (N_divide_dep_auto 10%N N_two).1.
 
-(* the two versions we derive manually are indeed equal *)
-Check eq_refl : N_divide_dep_comp'.1 = N_divide_dep_comp.
-(* can't prove it directly for the auto version (does not seem to terminate) *)
-(* Check eq_refl : N_divide_dep_comp = N_divide_dep_auto. *)
+(* the two versions we derive are indeed equal *)
 
 Goal N_divide_dep_comp = N_divide_dep_auto.
   reflexivity.
@@ -636,25 +614,23 @@ Defined.
 (* Now, we can exploit the new divide - N_divide correspondance 
 to efficiently convert nat functions that use divide, such as avg below *)
 
-Definition two : {n:nat & 0 < n}.
-  apply (existT _) with (x:=2).
+Definition two_zero : 0 < 2.
   apply -> Nat.succ_le_mono. apply Nat.le_succ_diag_r.
-Defined.
+Qed.
+
+Definition two : {n:nat & 0 < n} := (2 ; two_zero).
 
 Definition avg (x y: nat) := divide (x + y) two.
 
 (* first, make sure that TC resolution exploits the correspondance *)
 
-Arguments divide : simpl never.
-Hint Extern 0 (_ = _) => eapply N_divide_conv.2 : typeclass_instances.
-
-Arguments two : simpl never.
-Hint Extern 0 (two ≈ ?n) => direct_lifting two n : typeclass_instances.
+Hint Extern 0 (2 = _) => exact (ur_refl (e:=compat_nat_N) 2) : typeclass_instances.
+Hint Extern 0 (two_zero = ?n) => direct_lifting two n : typeclass_instances.
 
 Definition N_two_lift := ltac: (convert two : {n:N & (0 < n)%N}).
 
 (* here also, feed the TC resolution *)
-Hint Extern 0 { _ : _ & _ }  => eapply N_two_lift.2 : typeclass_instances.
+Hint Extern 0  => eapply N_two_lift.2 : typeclass_instances.
 
 (* instruct resolution to dive into avg if helpful *)
 Hint Extern 0 => progress (unfold avg) :  typeclass_instances.
@@ -679,11 +655,10 @@ Definition poly : nat -> nat := fun n => 4 * n + 12 * (Nat.pow n 4) - 11 * (Nat.
 
 Hint Extern 0 => progress (unfold poly) :  typeclass_instances.
 
-Hint Extern 100 (_ = _ ) => eapply (@ur_refl _ _ compat_nat_N):  typeclass_instances.
+Hint Extern 100 => eapply (@ur_refl _ _ compat_nat_N):  typeclass_instances.
 
 Definition poly_conv := ltac: (convert poly : (N -> N)).
-
-Hint Extern 0 (poly _ = _ )  => eapply poly_conv.2 : typeclass_instances.
+Hint Extern 0  => eapply poly_conv.2 : typeclass_instances.
 Arguments poly : simpl never.
 
 Tactic Notation "solve_eq" :=
@@ -771,15 +746,12 @@ Definition test_sequence__conv :  { opt :  (N -> nat -> N) & test_sequence_ ≈ 
   refine (fix_nat_3 _ _ compat_nat_N _ _ _ _ _ _ _ _ _ (fun _ X => Nat.pow X x) _ _ _ _ _); tc.
 Defined. 
 
-Hint Extern 0 => progress (unfold test_sequence) : typeclass_instances.
-
 Hint Extern 0 (nat_rect ?P _ _ _ = _)
 => refine (FP_nat_rect_cst _ _ compat_nat_N _ _ _ _ _ _ _ _ _) ;
      try eassumption : typeclass_instances.
 
 
 Definition test_sequence_conv := ltac: (convert test_sequence : (N -> nat -> N)).
-
 Hint Extern 0 (test_sequence _ _ = _ )  => eapply test_sequence_conv.2 : typeclass_instances.
 Arguments test_sequence : simpl never.
 
@@ -791,8 +763,11 @@ Ltac replace_goal :=
   let X := fresh "X" in
   match goal with | |- ?P =>
                     pose (X := ltac: (convert P : Prop));
-                    apply (e_inv' (equiv X.2)); cbn; clear X
+                    apply (e_inv' (equiv X.2)); simpl; clear X
   end.
+
+Hint Extern 0 => progress (unfold ge) : typeclass_instances. 
+
 
 Goal test_sequence 2 5 >= 1000.
   replace_goal. compute. inversion 1. 
@@ -800,4 +775,4 @@ Defined.
   
 Time Eval compute in test_sequence_conv.1 2%N 5.
 
-Eval compute in test_sequence_conv.2  2 2%N eq_refl 4 4 eq_refl.
+Eval compute in test_sequence_conv.2 2 2%N eq_refl 4 4 eq_refl.
