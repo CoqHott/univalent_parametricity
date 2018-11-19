@@ -823,6 +823,9 @@ Proof.
   rewrite (Nat2N_id _). apply Equiv_id.
 Defined. 
 
+Definition refl_nat_N (n:nat) : n ≈ (↑ n : N) := ur_refl (e:=compat_nat_N) n.
+Hint Extern 0 (?n = _) => unshelve refine (refl_nat_N _) : typeclass_instances.
+
 (* Instance compat_nat_N : nat ⋈ N := UR_Type_Inverse _ _ compat_N_nat. *)
 
 Definition le_rect : forall (n : nat) (P : forall n0 : nat, le n n0 -> Prop),
@@ -886,4 +889,3 @@ induction le_mn1 using le_rect; intros.
 Defined. 
 
 
-  

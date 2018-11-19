@@ -624,10 +624,9 @@ Definition avg (x y: nat) := divide (x + y) two.
 
 (* first, make sure that TC resolution exploits the correspondance *)
 
-Hint Extern 0 (2 = _) => exact (ur_refl (e:=compat_nat_N) 2) : typeclass_instances.
-Hint Extern 0 (two_zero = ?n) => direct_lifting two n : typeclass_instances.
-
 Definition N_two_lift := ltac: (convert two : {n:N & (0 < n)%N}).
+
+Eval compute in N_two_lift.1.
 
 (* here also, feed the TC resolution *)
 Hint Extern 0  => eapply N_two_lift.2 : typeclass_instances.
