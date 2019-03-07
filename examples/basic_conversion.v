@@ -53,27 +53,27 @@ Arguments poly : simpl never.
 
 Fail Eval compute in poly 50.
 
-
+(* Set Printing Universes.  *)
 
 Definition poly_conv := ltac: (convert poly : (N -> N)).
 
-Hint Extern 0 => eapply poly_conv.2 : typeclass_instances.
+Hint Extern 0 (poly _ = _) => eapply poly_conv.2 : typeclass_instances.
 
 Lemma poly_50_abstract : { n : N & poly 50 = ↑ n}.
-  eexists. 
+  eexists.
   eapply concat.
   - tc.
   - reflexivity.
-Defined. 
+Defined.
 
 Eval lazy in poly_50_abstract.1.
 
 Fail Eval lazy in (↑ poly_50_abstract.1 : nat).
 
 Goal poly 50 >= 1000.
-  Fail compute. 
-  replace_goal; compute -[N.le]. inversion 1. 
-Defined.   
+  Fail compute.
+  replace_goal; compute -[N.le]. inversion 1.
+Defined.
 
 
 
@@ -88,27 +88,25 @@ Defined.
 
 (* Test for sequences *)
 
+Definition g x := fun (n:nat) X => Nat.pow X x.
+
+Hint Extern 0 => progress (unfold g) : typeclass_instances. 
+
 Definition test_sequence acc := fix f (n : nat) :=
   match n with
     0 => acc
   | 1 => 2 * acc
   | 2 => 3 * acc
-  | S n => Nat.pow (f n) acc
+  | S n => g acc n (f n)
+    (* Nat.pow (f n) acc would be better ... *)
   end.
 
 Goal test_sequence 2 5 >= 1000.
   Fail compute. 
 Abort. 
 
-(* missing some automation (for match -- works with nat_rect) *)
-Fail Definition test_sequence_conv := ltac: (convert test_sequence : (N -> nat -> N)).
+Definition test_sequence_conv := ltac: (convert test_sequence : (N -> nat -> N)).
 
-Definition test_sequence_conv :  { opt :  (N -> nat -> N) & test_sequence ≈ opt}.
-  eexists. intros x y H x0 y0 H0.
-  Fail refine (fix_nat_3 _ _ _ _ _ _ _ _ _ _ _ _ (fun _ X => Nat.pow X x) _ _ _ _ _); tc.
-Defined. 
-
-(* Opaque Nat.pow.  *)
 Goal test_sequence 2 5 >= 1000.
   replace_goal; compute -[N.le]. inversion 1. 
 Defined.
