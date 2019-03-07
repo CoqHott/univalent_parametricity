@@ -1,5 +1,5 @@
 Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable .
-Require Import BinInt BinNat Nnat Vector Arith.Plus Omega.
+Require Import BinInt BinNat Nnat Vector Arith.Plus Omega ZArith.
 
 Set Universe Polymorphism.
 
@@ -52,6 +52,13 @@ Instance Canonical_eq_Forall A (B: A -> Type) : Canonical_eq (forall x:A, B x) :
 
 Hint Extern 0 (sigT _) => unshelve refine (existT _ _ _): typeclass_instances.
 
+
+
+
+
+
+
+
 (* This file contains 3 examples: Lib, Monoid, and pow. 
    Lib and pow are mentioned in the paper. Monoid is not. *)
 
@@ -94,6 +101,8 @@ Defined.
 Hint Extern 0 (Lib _ ≃ Lib _) => erefine (ur_type FP_Lib _ _ _).(equiv); simpl
 :  typeclass_instances.
 
+
+
 (* we now define an instance of Lib for vectors *)
 
 Definition lib_vector_prop : forall n A (B:DType) (f : A -> B) (v : t A (S n)),
@@ -124,13 +133,18 @@ Notation "[[ ]]" := ([ ]; eq_refl).
 Notation "[[ x ]]" := ([x]; eq_refl).
 Notation "[[ x ; y ; .. ; z ]]" := ((FP.cons x (FP.cons y .. (FP.cons z FP.nil) ..)) ;eq_refl).
 
-(* Eval compute in (lib_list.(lib_prop)). *)
 
-Time Eval lazy in (lib_list.(lib_prop) S [[1; 2; 3 ; 4 ; 5 ; 6]]).
+(* the lib_prop theorem has been lifted as expected. *)
+
+Check lib_list.(lib_prop).
+
+(* and can be effectively used *)
+
+Time Eval lazy in (lib_list.(lib_prop) S [[1; 2; 3 ; 4 ; 5 ; 6 ; 7 ; 8]]).
 
 (* the induced lib_list.(map) function behaves as map on sized lists. *)
 
-Time Eval compute in lib_list.(map) S [[1;2]].
+Time Eval lazy in lib_list.(map) S [[1; 2; 3 ; 4 ; 5 ; 6 ; 7 ; 8]].
 
 (* Some more tests using the append function *)
 
@@ -153,7 +167,7 @@ Definition app_list {A:Type} {n n'} `{A ⋈ A} :
 Definition app_list' {A:Type} {n n'} `{A ⋈ A} :
   {l: list A & length l = n} -> {l: list A & length l = n'}
   -> {l: list A & length l = n+n'}.
-   intros l l'. exists (app l.1 l'.1). etransitivity. apply app_length. apply ap2; [exact l.2 | exact l'.2].
+   intros l l'. exists (app l.1 l'.1). eapply concat. apply app_length. apply ap2; [exact l.2 | exact l'.2].
 Defined.
 
 Eval compute in (app_list [[1;2]] [[1;2]]).
@@ -163,14 +177,6 @@ Eval compute in (app_list' [[1;2]] [[1;2]]).
 Eval compute in (lib_list.(map) S (app_list [[1;2]] [[5;6]])).
 
 Eval compute in (lib_list.(map) neg (app_list [[true;false]] [[true;false]])).
-
-(* the lib_prop theorem has been lifted as expected. *)
-
-Check lib_list.(lib_prop).
-
-(* and can be effectively used *)
-
-(* Eval compute in (lib_list.(lib_prop) S [[1; 2; 3]]). *)
 
 
 (*****************************)
@@ -239,7 +245,10 @@ Definition nat_pow_ : nat -> nat -> nat := ↑ N.pow.
 
 Definition nat_pow : nat -> nat -> nat := Eval compute in ↑ N.pow.
 
-
+Goal forall n m, nat_pow n (S m) = n * nat_pow n m.
+  intros. simpl. unfold nat_pow at 1. 
+Abort. 
+  
 (* (the use of [Eval compute] in the definition above is to 
    force reduction of some noise produced by the lifting.) *)
 
@@ -273,13 +282,13 @@ Print Assumptions lib_map_noeff.
 Definition const0 {A} : A -> nat := fun _ => 0. 
 
 (* with the standard nat function: *)
-(* Time Eval vm_compute in let x := Nat.pow 3 18 in const0 x. *)
+Time Eval vm_compute in let x := Nat.pow 3 15 in const0 x.
 (* 26:  8.221u *)
 (* 27: 28.715u *)
 (* 28: 83.669u *)
 
 (* with the lifted function *)
-(* Time Eval vm_compute in let x := nat_pow 2 26 in const0 x. *)
+Time Eval vm_compute in let x := nat_pow 3 15 in const0 x.
 (* 26:  5.086u *)
 (* 27: 12.173u *)
 (* 28: 37.205u *)
@@ -353,7 +362,20 @@ Definition compat_inverse2 {A A' B B' C C' :Type} {eA: A ≈ A'} (eA' := UR_Type
   tc. 
 Defined.
 
-Definition compat_add : plus ≈ N.add. Admitted.
+Lemma  to_nat_succ n : S (N.to_nat n) = N.to_nat (N.succ n).
+Admitted. 
+
+
+Definition compat_add : plus ≈ N.add.
+  cbn; intros. revert y y0 x0 H H0. induction x; cbn; intros.
+  + assert (y = 0%N). admit.
+    rewrite X. exact H0.
+  + assert (y = (N.succ (N.of_nat x))). admit.
+    rewrite X. rewrite N.add_succ_l. rewrite <- to_nat_succ.
+    apply ap. apply IHx. apply eq_sym. apply (e_sect' Equiv_N_nat).
+    auto.
+Admitted. 
+  
 Definition compat_mul : mult ≈ N.mul. Admitted. 
 Definition compat_div : Nat.div ≈ N.div. Admitted.
 Definition compat_pow : Nat.pow ≈ N.pow. Admitted.
@@ -469,9 +491,48 @@ Hint Extern 0 (N.sub _ _ = _) => eapply compat_sub' : typeclass_instances.
 Hint Extern 0 (N.le _ _ ≃ _) => eapply compat_le' : typeclass_instances.
 Hint Extern 0 (N.le _ _ ⋈ _) => eapply compat_le' : typeclass_instances.
 
+
+
+
+
+
+
+
+
+(* we can also convert functions from one setting to another *)
+
+Definition square : nat -> nat := fun n => n * n.  
+
+(* not that a direct lifting does not using the correspondance table *)
+
+Fail Check eq_refl : (↑ square : N -> N) = (fun x:N => (x * x)%N).
+
+Check eq_refl : (↑ square : N -> N) = (fun x:N => ↑ (square (↑ x))).
+
+
+
+Definition N_square_def := ltac: (convert square : (N -> N)).
+
+Check (N_square_def :{opt : N -> N & square ≈ opt}). 
+
+Definition N_square := N_square_def.1.
+
+Check eq_refl : N_square = (fun x => (x * x)%N).
+
+(* add square and N_square in the conversion table *)
+
+Hint Extern 0 (square _ = _) => eapply N_square_def.2 : typeclass_instances.
+
+Arguments square : simpl never.
+
+
+
+
+
+
+
 (* we can lift properties up to the correspondance table *)
 
-Local Open Scope nat_scope.
 
 Lemma nat_distrib : forall (c a b: nat), c * (a + b) = c * a + c * b.
 Proof.
@@ -488,22 +549,6 @@ Definition N_distrib : forall (c a b: N), (c * (a + b) = c * a + c * b)%N :=
 
 Eval compute in (N_distrib 1 2 3).
 
-(* we can also convert functions from one setting to another *)
-
-Definition square : nat -> nat := fun n => n * n.  
-
-Definition N_square_def := ltac: (convert square : (N -> N)).
-Hint Extern 0 (square _ = _) => eapply N_square_def.2 : typeclass_instances.
-Arguments square : simpl never.
-
-Definition N_square := N_square_def.1.
-
-Check eq_refl : N_square = (fun x => (x * x)%N).
-
-
-(* not that a direct lifting does not using the correspondance table *)
-
-Fail Check eq_refl : ↑ square = (fun x:N => (x * x)%N).
 
 (* And after adding the relation in the correspondance table, 
    we can convert proofs over converted functions *)
@@ -513,6 +558,8 @@ Proof.
   intros. rewrite mult_comm. rewrite nat_distrib.
   rewrite mult_comm. rewrite (mult_comm c b). reflexivity. 
 Defined.
+
+
 
 Definition square_prop : forall n, square (2 * n) = 4 * square n.
   unfold square. intro n. cbn. repeat rewrite plus_0_r. repeat rewrite nat_distrib.
@@ -646,19 +693,7 @@ Eval lazy in N_avg 10%N 30%N.
 (* and is needed the same as the hand-written N-based version *)
 Check eq_refl : N_avg = (fun x y => N_divide (x + y) N_two).
 
-(* Test with polynomials *)
-
-Definition poly : nat -> nat := fun n => 4 * n + 12 * (Nat.pow n 4) - 11 * (Nat.pow n 4).
-
-(* Fail Eval compute in poly 50.  *)
-
-Hint Extern 0 => progress (unfold poly) :  typeclass_instances.
-
 Hint Extern 100 => eapply (@ur_refl _ _ compat_nat_N):  typeclass_instances.
-
-Definition poly_conv := ltac: (convert poly : (N -> N)).
-Hint Extern 0  => eapply poly_conv.2 : typeclass_instances.
-Arguments poly : simpl never.
 
 Tactic Notation "solve_eq" :=
   eapply concat; [tc | reflexivity]. 
@@ -666,30 +701,42 @@ Tactic Notation "solve_eq" :=
 Tactic Notation "solve_eq_abstract" :=
   eexists; solve_eq.
 
+
+
+
+(* Test with polynomials *)
+
+Definition poly : nat -> nat := fun n => 4 * n + 12 * (Nat.pow n 4) - 11 * (Nat.pow n 4).
+
+
+Fail Eval compute in poly 50.
+
+
+
+Hint Extern 0 => progress (unfold poly) :  typeclass_instances.
+
+Definition poly_conv := ltac: (convert poly : (N -> N)).
+Hint Extern 0  => eapply poly_conv.2 : typeclass_instances.
+Arguments poly : simpl never.
+
 Lemma poly_50_abstract : { n : N & poly 50 = ↑ n}.
-  solve_eq_abstract.
+  eexists. 
+  eapply concat.
+  - tc.
+  - reflexivity.
 Defined. 
 
 Eval lazy in poly_50_abstract.1.
 
-(* Test for sequences *)
+Check (poly_50_abstract.2 : poly 50 = ↑ 6250200%N).
 
-Definition test_sequence_ acc := fix f (n : nat) :=
-  match n with
-    0 => acc
-  | 1 => 2 * acc
-  | 2 => 3 * acc
-  | S n => Nat.pow (f n) acc
-  end.
 
-Definition test_sequence : nat -> nat -> nat := fun acc => 
-  nat_rect (fun _ => nat) acc 
-           (fun n res => nat_rect (fun _ => nat) (2 * acc) 
-                                  (fun m res' =>
-                                     nat_rect (fun _ => nat) (3 * acc) 
-                                              (fun _ res'' => Nat.pow res acc) m) n).
 
-(* Definition FP_nat_rect : nat_rect ≈ nat_rect. *)
+
+
+
+
+
 
 Definition fix_nat_1 : (fun P X0 XS => fix f (n : nat) {struct n} : P :=
   match n with
@@ -740,24 +787,6 @@ Proof.
 Defined.
 
 
-Definition test_sequence__conv :  { opt :  (N -> nat -> N) & test_sequence_ ≈ opt}.
-  eexists. cbn; intros. unfold test_sequence_. 
-  refine (fix_nat_3 _ _ compat_nat_N _ _ _ _ _ _ _ _ _ (fun _ X => Nat.pow X x) _ _ _ _ _); tc.
-Defined. 
-
-Hint Extern 0 (nat_rect ?P _ _ _ = _)
-=> refine (FP_nat_rect_cst _ _ compat_nat_N _ _ _ _ _ _ _ _ _) ;
-     try eassumption : typeclass_instances.
-
-
-Definition test_sequence_conv := ltac: (convert test_sequence : (N -> nat -> N)).
-Hint Extern 0 (test_sequence _ _ = _ )  => eapply test_sequence_conv.2 : typeclass_instances.
-Arguments test_sequence : simpl never.
-
-Eval cbn in test_sequence_conv.1. 
-
-(* Time Eval compute in test_sequence 2 5. *)
-
 Ltac replace_goal :=
   let X := fresh "X" in
   match goal with | |- ?P =>
@@ -768,10 +797,64 @@ Ltac replace_goal :=
 Hint Extern 0 => progress (unfold ge) : typeclass_instances. 
 
 
+Hint Extern 0 (nat_rect ?P _ _ _ = _)
+=> refine (FP_nat_rect_cst _ _ compat_nat_N _ _ _ _ _ _ _ _ _) ;
+     try eassumption : typeclass_instances.
+
+
+
+
+
+(* Test for sequences *)
+
+Definition test_sequence acc := fix f (n : nat) :=
+  match n with
+    0 => acc
+  | 1 => 2 * acc
+  | 2 => 3 * acc
+  | S n => Nat.pow (f n) acc
+  end.
+
 Goal test_sequence 2 5 >= 1000.
-  replace_goal. compute. inversion 1. 
+  Fail compute. 
+Abort. 
+
+Definition test_sequence_conv :  { opt :  (N -> nat -> N) & test_sequence ≈ opt}.
+  eexists. cbn; intros. unfold test_sequence.
+  (* missing some automation *)
+  refine (fix_nat_3 _ _ compat_nat_N _ _ _ _ _ _ _ _ _ (fun _ X => Nat.pow X x) _ _ _ _ _); tc.
+Defined. 
+
+
+Goal test_sequence 2 5 >= 1000.
+  replace_goal; compute -[N.le]. compute. inversion 1. 
 Defined. 
   
-Time Eval compute in test_sequence_conv.1 2%N 5.
 
-Eval compute in test_sequence_conv.2 2 2%N eq_refl 4 4 eq_refl.
+
+
+
+
+
+(* with eliminator instead of pattern matching *)
+
+Definition test_sequence_ : nat -> nat -> nat := fun acc =>
+  nat_rect (fun _ => nat) acc
+           (fun n res => nat_rect (fun _ => nat) (2 * acc)
+                                  (fun m res' =>
+                                     nat_rect (fun _ => nat) (3 * acc)
+                                              (fun _ res'' => Nat.pow res acc) m) n).
+
+
+Definition test_sequence__conv := ltac: (convert test_sequence_ : (N -> nat -> N)).
+
+
+Hint Extern 0 (test_sequence_ _ _ = _ )  => eapply test_sequence__conv.2 : typeclass_instances.
+Arguments test_sequence_ : simpl never.
+
+Definition dummy_property : test_sequence_ 2 5 >= 1000.
+  replace_goal. compute. inversion 1. 
+Defined. 
+
+
+

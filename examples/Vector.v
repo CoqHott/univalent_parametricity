@@ -301,12 +301,12 @@ End VECTORLIST.
 Module VectorNotations.
 Delimit Scope vector_scope with vector.
 Notation "[ ]" := [] (format "[ ]") : vector_scope.
-Notation "[]" := [] (compat "8.6") : vector_scope.
+Notation "[]" := [] (format "[]") : vector_scope.
 Notation "h :: t" := (h :: t) (at level 60, right associativity)
   : vector_scope.
-Notation "[ x ]" := (x :: []) : vector_scope.
+Notation "[ x ]" := (x :: [ ]) : vector_scope.
 Notation "[ x ; y ; .. ; z ]" := (cons _ x _ (cons _ y _ .. (cons _ z _ (nil _)) ..)) : vector_scope.
-Notation "[ x ; .. ; y ]" := (cons _ x _ .. (cons _ y _ (nil _)) ..) (compat "8.6") : vector_scope.
+Notation "[ x ; .. ; y ]" := (cons _ x _ .. (cons _ y _ (nil _)) ..) : vector_scope.
 Notation "v [@ p ]" := (nth v p) (at level 1, format "v [@ p ]") : vector_scope.
 Open Scope vector_scope.
 End VectorNotations.

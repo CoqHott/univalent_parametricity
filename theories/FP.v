@@ -123,6 +123,7 @@ Definition hprop_isequiv {A B} {f: A -> B} : forall e e' : IsEquiv f, e = e'.
   - Opaque ap2. cbn. Transparent ap2. intro x. repeat rewrite concat_refl.
     repeat rewrite <- concat_p_pp.
     (* give up for now *)
+    
 Admitted. 
 
 Definition path_Equiv {A B} {f g: A ≃  B} : e_fun f = e_fun g -> f = g.
@@ -318,7 +319,7 @@ Proof.
   - apply HA.    
 Defined.
 
-Instance URType_Refl_decidable A (dec:DecidableEq A)
+Definition URType_Refl_decidable A (dec:DecidableEq A)
   : A ⋈ A :=
   URType_Refl_can A (@Canonical_eq_decidable  _ dec).
 
@@ -439,10 +440,8 @@ Defined.
 Instance UR_Prop : UR Prop Prop :=
   {| ur := fun (A B :Prop) => A ⋈ B |}.
 
-Instance URProp_Refl : URRefl Prop Prop (Equiv_id _) _ :=
-  {| ur_refl_ := _ |}.
-Proof.
-  intro A. cbn. unshelve eexists.
+Instance URProp_Refl : URRefl Prop Prop (Equiv_id _) _.
+Proof. refine {| ur_refl_ := _ |}. intro A. cbn. unshelve eexists.
   - apply Equiv_id.
   - apply UR_gen.
   - constructor. intros;apply Equiv_id.
@@ -478,8 +477,7 @@ Proof.
     destruct p.
     assert (Ur_Can_A = Canonical_eq_gen A) by apply Canonical_contr.
     assert (Ur_Can_B = Canonical_eq_gen A) by apply Canonical_contr.
-    destruct X, X0. 
-    reflexivity.
+    destruct X, X0. reflexivity. 
 Defined.
 
 Instance Canonical_eq_Prop : Canonical_eq Prop := Canonical_eq_gen _.
@@ -529,11 +527,11 @@ Defined.
 
 (* (*! FP for nat, canonical !*) *)
 
-(* Instance FP_nat : nat ⋈ nat := _ URType_Refl_decidable nat DecidableEq_eq_nat. *)
+Instance FP_nat : nat ⋈ nat := _ URType_Refl_decidable nat DecidableEq_eq_nat.
 
 (* (*! FP for bool, canonical !*) *)
 
-(* Instance FP_bool : bool ⋈ bool := URType_Refl_decidable bool DecidableEq_eq_bool. *)
+Instance FP_bool : bool ⋈ bool := URType_Refl_decidable bool DecidableEq_eq_bool.
 
 (*! FP for Product !*)
 
@@ -607,7 +605,7 @@ Arguments cons {_} _ _.
 Notation "[ ]" := nil (format "[ ]").
 Notation "[ x ]" := (cons x nil).
 Notation "[ x ; y ; .. ; z ]" := (cons x (cons y .. (cons z nil) ..)).
-Notation "[ x ; .. ; y ]" := (cons x .. (cons y nil) ..) (compat "8.6").
+Notation "[ x ; .. ; y ]" := (cons x .. (cons y nil) ..).
 
 Infix "::" := cons (at level 60, right associativity). 
 
@@ -1150,7 +1148,7 @@ Definition equiv_path_sigma {A : Type} {P : A -> Type} (u v : {x : A & P x}) :
 Definition FP_Sigma : @sigT ≈ @sigT.
   cbn in *; intros.
   split ; [typeclasses eauto | ].
-  intros. unshelve eexists. 
+  intros. unshelve eexists.
   - eapply URSigma. typeclasses eauto.
   - econstructor. intros a a'.
     assert ((a = a') ≃ {p : a.1 = a'.1 & a.2 = p^# a'.2}).
@@ -1323,7 +1321,7 @@ Defined.
 Definition FP_eq : @eq ≈ @eq.
   cbn. intros.
   split ; [typeclasses eauto| ]. 
-  unshelve eexists. 
+  unshelve eexists.
   - econstructor. exact (UR_eq x y _ x0 y0 H0 x1 y1 H1).
   - econstructor. intros e e'. cbn. 
     eapply equiv_compose. Focus 2. apply Equiv_inverse.

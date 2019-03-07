@@ -1,6 +1,7 @@
 Require Import HoTT HoTT_axioms UR URTactics ADT FP Record.
 
 Set Universe Polymorphism.
+Unset Universe Minimization ToSet. 
   
 Ltac tc := typeclasses eauto with typeclass_instances.
 
@@ -209,7 +210,7 @@ Defined.
   
 Definition UR_Type_canonical_eq (A A' : Type) (eA : A ⋈ A') :
   eA = @Canonical_UR A A' (equiv eA).
-  unshelve eapply UR_Type_eq.
+  unshelve eapply UR_Type_eq. 
   destruct eA, Ur, Ur_Coh. cbn; apply ap.
   apply funext; intro a. 
   apply funext; intro a'.
@@ -379,7 +380,7 @@ Definition tl {A} (l:list A) : list A:=
 Definition S_length :
   forall (A : Type) (l : list A) (n: nat),
     length l = S n -> length (tl l) = n.
-  intros; induction l; inversion H; simpl; reflexivity.
+  intros; induction l; inversion X; simpl; reflexivity.
 Defined.
 
 Instance IsEquiv_vector_list A B e n m en  : IsEquiv (vector_to_list A B e n m en).
@@ -411,6 +412,8 @@ Proof.
       specialize (IHn (l;X)).
       destruct X. simpl. cbn. exact (IHn..1). apply is_hset.
 Defined.
+
+Set Printing Universes. 
 
 Typeclasses Opaque vector_to_list list_to_vector.
 
@@ -555,7 +558,7 @@ Definition index_Expr@{i j} (E : Expr_p) (EType : Set) : Type@{i} :=
     (fun E X E' X' EType => ((X nat) * (X' nat) * (@eq@{i} Set bool EType))%type)
     E EType.
 
-Definition Expr'@{i j} A := { E : Expr_p & index_Expr@{i j} E A}.
+Definition Expr' A := { E : Expr_p@{} & index_Expr E A}.
 
 Definition I' : nat -> Expr' nat := fun n => (I_p n ; eq_refl). 
 Definition B' : bool -> Expr' bool := fun b => (B_p b ; eq_refl). 

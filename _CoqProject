@@ -9,4 +9,8 @@ theories/Record.v
 theories/Transportable.v
 examples/Vector.v
 examples/MoreInductive.v
+examples/Conversion_table.v
+examples/Lib.v
+examples/Nat_binnat.v
+examples/Basic_conversion.v
 examples/Examples.v
