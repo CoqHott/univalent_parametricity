@@ -84,13 +84,33 @@ Definition to_Z_modulo : int63 -> ZwB := fun x => (to_Z x; to_Z_bounded x).
 
 Notation "[| x |]" := (to_Z_modulo x)  (at level 0, x at level 99) : int63_scope.
 
-Axiom IsEquiv_to_Z_ : IsEquiv to_Z_modulo.
+Fixpoint of_pos_rec (n:nat) (p:positive) : int63 :=
+  match n, p with 
+  | O, _ => 0%int63
+  | S n, xH => 1%int63
+  | S n, xO p => (of_pos_rec n p) << 1%int63
+  | S n, xI p => (of_pos_rec n p) << 1%int63 lor 1%int63
+  end.
 
+Definition of_pos := of_pos_rec size.
+
+Definition of_Z (z:ZwB) : int63 := 
+  match z.1 with
+  | Zpos p => of_pos p
+  | Z0 => 0%int63
+  | Zneg p => (0%int63 - (of_pos p))%int63
+  end.
+
+Notation "|] x [|" := (of_Z x)  (at level 0, x at level 99) : int63_scope.
+
+Axiom to_Z_section : forall x, of_Z (to_Z_modulo x) = x.
+Axiom to_Z_retraction : forall x, to_Z_modulo (of_Z x) = x.
+
+Definition IsEquiv_to_Z_ : IsEquiv to_Z_modulo := isequiv_adjointify _ of_Z to_Z_section to_Z_retraction.
+  
 (* now instrumenting type class resolution *)
 
 Instance IsEquiv_to_Z : IsEquiv to_Z_modulo := IsEquiv_to_Z_.
-
-Notation "|] x [|" := (e_inv to_Z_modulo x)  (at level 0, x at level 99) : int63_scope.
 
 Instance equiv_int63_ZwB : int63 ≃ ZwB := BuildEquiv _ _ to_Z_modulo _.
 
