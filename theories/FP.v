@@ -384,7 +384,7 @@ Canonical Structure Dbool : DType := Build_DType bool _.
 (* Notation "∥ A ∥" := (A.(carrier)) : type_scope. *)
 
 Instance UR_DType_def@{i j} : UR@{j j j} DType@{i} DType@{i} :=
-  {| ur := fun A B => UR_Type@{i i i} A.(carrier) B.(carrier) |}.
+  Build_UR@{j j j} _ _ (fun A B => UR_Type@{i i i} A.(carrier) B.(carrier)).
 
 Program Definition URDType_Refl : URRefl DType DType (Equiv_id _) _ :=
    {| ur_refl_ := fun a : DType => URType_Refl_decidable a.(carrier) (DTypeDec a) |}.

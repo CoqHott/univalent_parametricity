@@ -68,7 +68,7 @@ Definition ur_refl {A B: Type} {e : A ⋈ B} : forall a : A,  a ≈ ↑ a := fun
 Hint Extern 100 (_ ≈ _) => unshelve notypeclasses refine  (ur_refl _): typeclass_instances.
 
 
-Definition URIsEq@{i j k} A B (e : A ≃ B) (H: UR A B) (H:URRefl@{i j k} A B e H)
+Definition URIsEq@{i j k} A B (e : A ≃ B) (H: UR@{i j k} A B) (H:URRefl@{i j k} A B e H)
   :=  forall (a a':A), @IsEquiv (a = a') (a ≈ (↑ a'))
                                 (fun e => transport_eq (fun X => a ≈ (↑ X)) e (ur_refl_ a)).
 
@@ -113,7 +113,7 @@ Defined.
 (*! Universe !*)
 
 Instance UR_Type_def@{i j} : UR@{j j j} Type@{i} Type@{i} :=
-  {| ur := UR_Type@{i i i} |}.
+  Build_UR@{j j j} _ _ UR_Type@{i i i}.
 
 (*! Forall !*)
 
