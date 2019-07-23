@@ -2,53 +2,23 @@ Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Tra
 Require Import BinInt BinNat Nnat. 
 
 Require Import Utf8.
-Require Export Zdiv. 
+Require Export Zdiv.
+
+Require Export DoubleType.
 
 (* axiomatization of int63 and its operations *)
 
-Axiom int63 : Type.
+Definition size : nat  := 63.
 
-Delimit Scope int63_scope with int63.
+Require Import Int63.
 
-Axiom zero : int63. 
-Axiom one : int63. 
-Axiom lsl : int63 -> int63 -> int63. 
-Axiom lsr : int63 -> int63 -> int63. 
-Axiom land : int63 -> int63 -> int63. 
-Axiom lor : int63 -> int63 -> int63. 
-Axiom add : int63 -> int63 -> int63. 
-Axiom sub : int63 -> int63 -> int63. 
-Axiom mul : int63 -> int63 -> int63. 
-Axiom div : int63 -> int63 -> int63. 
-Axiom eqb : int63 -> int63 -> bool. 
-Axiom is_even : int63 -> bool. 
-
-Infix "<<" := lsl (at level 30, no associativity) : int63_scope.
-
-Infix ">>" := lsr (at level 30, no associativity) : int63_scope.
-
-Infix "land" := land (at level 40, left associativity) : int63_scope.
-
-Infix "lor" := lor (at level 40, left associativity) : int63_scope.
-
-Notation "n + m" := (add n m) : int63_scope.
-
-Notation "n - m" := (sub n m) : int63_scope.
-
-Notation "n * m" := (mul n m) : int63_scope.
-
-Notation "0" := zero : int63_scope.
-Notation "1" := one : int63_scope.
-
-Notation "n / m" := (div n m) : int63_scope.
-
-Notation "m '==' n" := (eqb m n) (at level 3, no associativity) : int63_scope.
+Definition int63 : Type := int. 
 
 Local Open Scope Z_scope.
 
 (* Axiomatization of the equivalence with Z modulo 2^62*)
 
-Definition size : nat  := 63.
+Require Import BinInt Zpow_facts.
 
 Definition wB := (Z.pow 2 (Z_of_nat size)).
 
@@ -62,12 +32,10 @@ Fixpoint to_Z_rec (n:nat) (i:int63) :=
   match n with 
   | O => 0%Z
   | S n => 
-    (if is_even i then Zdouble else Zdouble_plus_one) (to_Z_rec n (i >> 1))
+    (if is_even i then Z.double else Zdouble_plus_one) (to_Z_rec n (i >> 1))
   end.
 
 Definition to_Z := to_Z_rec size.
-
-Require Import Zpow_facts.
 
 Lemma to_Z_bounded : forall x, 0 <= to_Z x < wB.
 Proof.
@@ -106,19 +74,36 @@ Notation "|] x [|" := (of_Z x)  (at level 0, x at level 99) : int63_scope.
 Axiom to_Z_section : forall x, of_Z (to_Z_modulo x) = x.
 Axiom to_Z_retraction : forall x, to_Z_modulo (of_Z x) = x.
 
+Program Definition mod_inj : Z -> ZwB := fun z => (z mod wB; _).
+Next Obligation.
+  apply Z.mod_pos_bound. compute. reflexivity.
+Defined. 
+
+Definition isHProp_leq_Z : forall (n m p : Z) (e e': n <= m < p), e = e'. 
+(* to be done *)
+Admitted. 
+
+Definition to_Z_inj x y : to_Z_modulo x = to_Z_modulo y -> x = y.
+Proof.
+  intro e. assert (to_Z_modulo x = to_Z_modulo y).
+  unfold to_Z_modulo. apply path_sigma_uncurried. unshelve eexists.
+  apply isHProp_leq_Z. etransitivity. apply inverse. apply to_Z_section.
+  rewrite X. apply to_Z_section.
+Defined. 
+  
 Definition IsEquiv_to_Z_ : IsEquiv to_Z_modulo := isequiv_adjointify _ of_Z to_Z_section to_Z_retraction.
   
 (* now instrumenting type class resolution *)
 
 Instance IsEquiv_to_Z : IsEquiv to_Z_modulo := IsEquiv_to_Z_.
 
-Instance equiv_int63_ZwB : int63 ≃ ZwB := BuildEquiv _ _ to_Z_modulo _.
+Instance equiv_int_ZwB : int63 ≃ ZwB := BuildEquiv _ _ to_Z_modulo _.
 
-Instance equiv_ZwB_int63 : ZwB ≃ int63 := Equiv_inverse _.
+Instance equiv_ZwB_int : ZwB ≃ int63 := Equiv_inverse _.
 
-Instance compat_int63_ZwB : int63 ⋈ ZwB := @Canonical_UR _ _ _.
+Instance compat_int_ZwB : int ⋈ ZwB := @Canonical_UR _ _ _.
 
-Instance compat_ZwB_int63 : ZwB ⋈ int63 := UR_Type_Inverse _ _ compat_int63_ZwB.
+Instance compat_ZwB_int : ZwB ⋈ int := UR_Type_Inverse _ _ compat_int_ZwB.
 
 (* addition on Z modulo 2^63 *)
 
@@ -148,8 +133,8 @@ Definition compat_add' : ZwB_add ≈ add := compat_inverse2 compat_add.
 Hint Extern 0 (add _ _ = _) => eapply compat_add : typeclass_instances.
 Hint Extern 0 (ZwB_add _ _ = _) => eapply compat_add' : typeclass_instances.
 
-(* now property on 2wB_add can be lifted to add on int63 *)
+(* now property on 2wB_add can be lifted to add on int *)
 
-Definition int63_comm : forall (n m: int63), n + m = m + n := ↑ ZwB_comm. 
+Definition add_comm : forall (n m: int), n + m = m + n := ↑ ZwB_comm. 
 
 
