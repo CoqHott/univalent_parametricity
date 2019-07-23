@@ -66,7 +66,6 @@ Defined.
 Lemma  to_nat_succ n : S (N.to_nat n) = N.to_nat (N.succ n).
 Admitted. 
 
-
 Definition compat_add : plus ≈ N.add.
   cbn; intros. revert y y0 x0 H H0. induction x; cbn; intros.
   + assert (y = 0%N). admit.

@@ -483,27 +483,34 @@ erefine (ur_type (Equiv_list_vector_ _ _ _) _ _ _) : typeclass_instances.
 Hint Extern 0 (UR_Type _ (t ?A ?n)) =>
 erefine (ur_type (Equiv_list_vector_ _ _ _) _ _ _) : typeclass_instances.
 
+Inductive UR_vector {A B} (R : A -> B -> Type) : forall (n n':nat) (en : n ≈ n'),
+  Vector.t A n -> Vector.t B n' -> Type :=
+  UR_vector_nil : UR_vector R 0 0 eq_refl (nil A) (nil B) 
+| UR_vector_cons : forall {a b n n' v v'},
+    (R a b) -> forall (en : n ≈ n'), (UR_vector R n n' en v v') ->
+    UR_vector R (S n) (S n') (ap S en) (vcons a v) (vcons b v').
+
 Definition FP_Vector : Vector.t ≈ Vector.t.
   intros A B e. cbn in e. split.
   typeclasses eauto. 
   
   intros n n' en.
   unshelve eexists.
-  - pose (Equiv_inverse (equiv e)). eapply UR_Equiv. apply Equiv_vector_list; typeclasses eauto.
-    apply Equiv_vector_list_. apply (@ur_refl_ _ _ _ _ URType_Refl). typeclasses eauto.
-  - econstructor. intros v v'.
-    cbn. unfold univalent_transport.
-    assert (Equiv_vector_list A A (H:=Equiv_id A) n n' en v'=
-             (vector_to_list B A (Equiv_inverse (equiv e)) n' n' eq_refl
-                             ((Equiv_Vector A B (equiv e) n n' en) v'))).
-    clear. destruct en. cbn. unfold univalent_transport.
-    induction v'. reflexivity. cbn. 
-    apply path_sigma_uncurried. unshelve eexists.
-    cbn. apply ap2. apply eq_sym. apply e_sect.
-    apply ap. exact IHv'. cbn. apply is_hset. cbn in X. 
-    rewrite <- X.  
-    pose (@Ur_Coh _ _ (@ur_type nat nat _ _ _ (Equiv_vector_list_ A A (ur_refl A)) _ _ en)).
-    exact (@ur_coh _ _ _ _ u v v'). 
+  - unshelve econstructor. refine (UR_vector ur n n' en).  
+  - apply admit. 
+    (* econstructor. intros v v'. *)
+    (* cbn. unfold univalent_transport. *)
+    (* assert (Equiv_vector_list A A (H:=Equiv_id A) n n' en v'= *)
+    (*          (vector_to_list B A (Equiv_inverse (equiv e)) n' n' eq_refl *)
+    (*                          ((Equiv_Vector A B (equiv e) n n' en) v'))). *)
+    (* clear. destruct en. cbn. unfold univalent_transport. *)
+    (* induction v'. reflexivity. cbn.  *)
+    (* apply path_sigma_uncurried. unshelve eexists. *)
+    (* cbn. apply ap2. apply eq_sym. apply e_sect. *)
+    (* apply ap. exact IHv'. cbn. apply is_hset. cbn in X.  *)
+    (* rewrite <- X.   *)
+    (* pose (@Ur_Coh _ _ (@ur_type nat nat _ _ _ (Equiv_vector_list_ A A (ur_refl A)) _ _ en)). *)
+    (* exact (@ur_coh _ _ _ _ u v v').  *)
   - apply Canonical_eq_gen.
   - apply Canonical_eq_gen.
 Defined.
@@ -790,9 +797,9 @@ Proof.
   - cbn; intro. exact (N2Nat_id _).
 Defined. 
 
-Instance Equiv_N_nat : Equiv nat N := BuildEquiv _ _ N.of_nat _. 
+Instance Equiv_N_nat : nat ≃ N := BuildEquiv _ _ N.of_nat _. 
 
-Instance Equiv_nat_N : Equiv N nat := Equiv_inverse _.
+Instance Equiv_nat_N : N ≃ nat := Equiv_inverse _.
 
 Instance UR_N : UR N N := UR_gen N. 
 
@@ -828,6 +835,10 @@ Defined.
 
 Definition refl_nat_N (n:nat) : n ≈ (↑ n : N) := ur_refl (e:=compat_nat_N) n.
 Hint Extern 0 (?n = _) => unshelve refine (refl_nat_N _) : typeclass_instances.
+
+Goal N -> nat-> N ⋈ nat -> nat -> nat.
+  tc.
+Qed. 
 
 (* Instance compat_nat_N : nat ⋈ N := UR_Type_Inverse _ _ compat_N_nat. *)
 

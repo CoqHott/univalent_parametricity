@@ -61,8 +61,9 @@ Class URRefl@{i j k} A B (e : Equiv@{i j} A B) (H: UR@{i j k} A B) := {
 
 Arguments ur_refl_ {_ _ _ _ _} _.
 
-Definition ur_refl {A B: Type} {e : A ⋈ B} : forall a : A,  a ≈ ↑ a := fun a => 
-  e_fun (ur_coh a a) eq_refl. 
+(* This is the Black Box Property *)
+
+Definition ur_refl {A B: Type} {e : A ⋈ B} : forall a : A,  a ≈ ↑ a := fun a => (ur_coh a a) eq_refl. 
 
 Hint Extern 100 (_ ≈ _) => unshelve notypeclasses refine  (ur_refl _): typeclass_instances.
 
@@ -245,3 +246,7 @@ Proof.
     rewrite X. reflexivity.
     destruct (f eq_refl).
 Defined.
+  
+  
+  
+  

@@ -4,8 +4,6 @@ Require Import BinInt BinNat Nnat Vector Arith.Plus Omega ZArith.
 Set Universe Polymorphism.
 
 
-
-
 (*****************************)
 
 (* As mentioned in Sections 1 and 6, we can lift functions on 
@@ -40,13 +38,8 @@ Abort.
 
 
 Definition diff n (e : 0 = S n) : False :=
-  match e in eq _ _ n' return
-        nat_rect (fun _ => Type)
-                 (0 = 0)
-                 (fun n _ => False) n'
-  with
-    | eq_refl => eq_refl
-  end.
+  let P := nat_rect (fun _ => Type) (0 = 0) (fun n _ => False) in
+  eq_rect nat 0 (fun n' _ => P n') eq_refl (S n) e.
 
 Definition N0 : N := ↑ 0.
 Definition NS : N -> N := ↑ S.
@@ -105,3 +98,72 @@ Definition diff' n (e : N0 = NS n) : False.
   lazy in foo'. subst foo'. cbv beta iota fix in foo.
   set (foo' := equiv _) in foo.
 Abort.
+
+
+Definition plus (n m : nat) : nat := nat_rect (fun _ => nat) m (fun _ res => S res) n.
+
+Definition plus_N (n m : N) : N := nat'_rect (fun _ => N) m (fun _ res => NS res) n.
+
+Definition plus_N' : N -> N -> N := ↑ plus.  
+
+Eval lazy in plus_N' (2%N) (3%N).
+
+
+Definition funvector A n := Fin.t n -> A.
+
+Fixpoint vector_to_funvector A n (v : vector A n) : funvector A n.
+  destruct v.
+  - intro bot. inversion bot.
+  - intro k. inversion k.
+    + exact h.
+    + subst. exact (vector_to_funvector _ _ v H0).
+Defined.
+
+Fixpoint funvector_to_vector A n (f : funvector A n) {struct n} : vector A n.
+  destruct n.
+  - exact (nil _).
+  - refine (vcons _ _).
+    + exact (f Fin.F1).
+    + exact (funvector_to_vector _ _ (fun k =>  f (Fin.FS k))).
+Defined.
+
+Instance isequiv_vector_to_funvector A n : IsEquiv (vector_to_funvector A n).
+Proof.
+  unshelve refine (isequiv_adjointify _ (funvector_to_vector A n) _ _).
+  - induction x; cbn.
+    + reflexivity.
+    + now apply ap. 
+  - intro f. apply funext. intro k. induction k; cbn.
+    + reflexivity.
+    + apply IHk.
+Defined.
+
+Instance Equiv_vector_funvector A n : Equiv (vector A n) (funvector A n)
+  := BuildEquiv _ _ (vector_to_funvector A n) _. 
+
+Instance Equiv_funvector_vector A n : Equiv (funvector A n) (vector A n)
+ := Equiv_inverse _.
+
+Instance UR_Fin n n' (e : n = n') : UR (Fin.t n) (Fin.t n').
+destruct e. exact (UR_gen (Fin.t n)).
+Defined. 
+
+Definition FP_finvector : funvector ≈ funvector. 
+  cbn. intros. econstructor. tc. intros n n' e.
+  erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type
+                                                             := _|}); cbn in *.
+  destruct e. apply  URType_Refl_can. econstructor. reflexivity. tc.
+  intros. exact H.
+Defined. 
+
+Instance Equiv_funvector_instance : forall x y : Type, x ⋈ y -> forall
+  n n' (e:n=n'), (funvector x n) ⋈ (funvector y n') :=
+  fun x y e n n' en => ur_type (FP_finvector x y e) n n' en. 
+
+Definition compat_vector_funvector : vector ≈ funvector.
+Proof.
+  cbn; intros. econstructor. tc. intros.
+  eapply UR_Type_Equiv. apply Equiv_funvector_vector. tc. 
+Defined. 
+
+
