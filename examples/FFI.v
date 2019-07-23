@@ -54,7 +54,7 @@ Definition size : nat  := 63.
 
 Definition wB := (Z.pow 2 (Z_of_nat size)).
 
-Definition ZwB := { n : Z & n < wB }.
+Definition ZwB := { n : Z & 0 <= n < wB }.
 
 Delimit Scope zwB_scope with ZwB.
 
@@ -67,9 +67,20 @@ Fixpoint to_Z_rec (n:nat) (i:int63) :=
 
 Definition to_Z := to_Z_rec size.
 
-Axiom _to_Z_modulo : forall (x:int63), to_Z x < wB.
+Require Import Zpow_facts.
 
-Definition to_Z_modulo : int63 -> ZwB := fun x => (to_Z x; _to_Z_modulo x).
+Lemma to_Z_bounded : forall x, 0 <= to_Z x < wB.
+Proof.
+ unfold to_Z, wB;induction size;intros.
+ simpl;auto with zarith.
+ rewrite inj_S;simpl;assert (W:= IHn (x >> 1)%int63).
+ rewrite Zpower_Zsucc;auto with zarith.
+ destruct (is_even x).
+ rewrite Zdouble_mult;auto with zarith.
+ rewrite Zdouble_plus_one_mult;auto with zarith.
+Qed.
+
+Definition to_Z_modulo : int63 -> ZwB := fun x => (to_Z x; to_Z_bounded x).
 
 Notation "[| x |]" := (to_Z_modulo x)  (at level 0, x at level 99) : int63_scope.
 
