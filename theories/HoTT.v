@@ -1,4 +1,5 @@
 (************************************************************************)
+
 (* This files introduced basic ingredients of HoTT, most of them already *)
 (* presents in https://github.com/HoTT. We have created our own library *)
 (* to be independent from their framework which requires a tailored version of Coq  *)
@@ -55,7 +56,7 @@ Notation "x .1" := (projT1 x) (at level 3).
 Notation "x .2" := (projT2 x) (at level 3).
 Notation " ( x ; p ) " := (existT _ x p).
 
-Notation "f == g" := (forall x, f x = g x) (at level 3).
+Notation "f == g" := (forall x, f x = g x) (at level 70).
 
 Definition ap {A B:Type} (f:A -> B) {x y:A} (p:x = y) : f x = f y
   := match p with eq_refl => eq_refl end.
