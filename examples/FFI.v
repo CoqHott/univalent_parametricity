@@ -44,8 +44,6 @@ Notation "n / m" := (div n m) : int63_scope.
 
 Notation "m '==' n" := (eqb m n) (at level 3, no associativity) : int63_scope.
 
-Local Open Scope int63_scope.
-
 Local Open Scope Z_scope.
 
 (* Axiomatization of the equivalence with Z modulo 2^62*)
@@ -58,11 +56,13 @@ Definition ZwB := { n : Z & 0 <= n < wB }.
 
 Delimit Scope zwB_scope with ZwB.
 
+Local Open Scope int63_scope.
+
 Fixpoint to_Z_rec (n:nat) (i:int63) :=
   match n with 
-  | O => 0%Z 
+  | O => 0%Z
   | S n => 
-    (if is_even i then Zdouble else Zdouble_plus_one) (to_Z_rec n (i >> 1%int63))
+    (if is_even i then Zdouble else Zdouble_plus_one) (to_Z_rec n (i >> 1))
   end.
 
 Definition to_Z := to_Z_rec size.
@@ -73,7 +73,7 @@ Lemma to_Z_bounded : forall x, 0 <= to_Z x < wB.
 Proof.
  unfold to_Z, wB;induction size;intros.
  simpl;auto with zarith.
- rewrite inj_S;simpl;assert (W:= IHn (x >> 1)%int63).
+ rewrite inj_S;simpl;assert (W:= IHn (x >> 1)).
  rewrite Zpower_Zsucc;auto with zarith.
  destruct (is_even x).
  rewrite Zdouble_mult;auto with zarith.
@@ -86,10 +86,10 @@ Notation "[| x |]" := (to_Z_modulo x)  (at level 0, x at level 99) : int63_scope
 
 Fixpoint of_pos_rec (n:nat) (p:positive) : int63 :=
   match n, p with 
-  | O, _ => 0%int63
-  | S n, xH => 1%int63
-  | S n, xO p => (of_pos_rec n p) << 1%int63
-  | S n, xI p => (of_pos_rec n p) << 1%int63 lor 1%int63
+  | O, _ => 0
+  | S n, xH => 1
+  | S n, xO p => (of_pos_rec n p) << 1
+  | S n, xI p => (of_pos_rec n p) << 1 lor 1
   end.
 
 Definition of_pos := of_pos_rec size.
@@ -97,8 +97,8 @@ Definition of_pos := of_pos_rec size.
 Definition of_Z (z:ZwB) : int63 := 
   match z.1 with
   | Zpos p => of_pos p
-  | Z0 => 0%int63
-  | Zneg p => (0%int63 - (of_pos p))%int63
+  | Z0 => 0
+  | Zneg p => (0 - (of_pos p))
   end.
 
 Notation "|] x [|" := (of_Z x)  (at level 0, x at level 99) : int63_scope.
@@ -138,6 +138,8 @@ Proof.
   rewrite (Z.add_comm n.1 m.1). reflexivity. 
 Defined.
 
+Local Open Scope int63_scope.
+
 (* Axiomatization of compatibility with add *)
 
 Axiom compat_add : add ≈ ZwB_add.
@@ -148,6 +150,6 @@ Hint Extern 0 (ZwB_add _ _ = _) => eapply compat_add' : typeclass_instances.
 
 (* now property on 2wB_add can be lifted to add on int63 *)
 
-Definition int63_comm : forall (n m: int63), (n + m = m + n)%int63 := ↑ ZwB_comm. 
+Definition int63_comm : forall (n m: int63), n + m = m + n := ↑ ZwB_comm. 
 
 
