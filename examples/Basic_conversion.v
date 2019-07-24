@@ -71,39 +71,10 @@ Arguments poly : simpl never.
 
 Fail Eval compute in poly 50.
 
-(* Set Printing Universes.  *)
-
-(* Definition poly_conv := ltac: (convert poly : (N -> N)). *)
-
-(* Hint Extern 0 (poly _ = _) => eapply poly_conv.2 : typeclass_instances. *)
-
-(* Lemma poly_50_abstract : { n : N & poly 50 = ↑ n}. *)
-(*   eexists. *)
-(*   eapply concat. *)
-(*   - tc. *)
-(*   - reflexivity. *)
-(* Defined. *)
-
-(* Eval lazy in poly_50_abstract.1. *)
-
-(* Fail Eval lazy in (↑ poly_50_abstract.1 : nat). *)
-
 Goal poly 50 >= 1000.
-  unfold poly.
-  (* match goal with | |- ?P => let X := fresh "X" in *)
-  (*   unshelve refine (let X := _ : { opt : Prop & P ≈ opt} in _); *)
-  (*     [ eexists; intros; typeclasses eauto | *)
-  (*       apply (e_inv' (equiv X.2))]; simpl; clear X *)
-  (* end. *)
-  replace_goal; compute. inversion 1. 
+  unfold poly. replace_goal; compute. inversion 1. 
 Defined.
 
-Definition FP_append :
-  (forall A (n p : nat), t A n -> t A p -> t A (n + p)) ≈
-(forall A (n p : nat), t A n -> t A p -> t A (n + p)).
-  tc. 
-Defined.
-  
 (* Test for sequences *)
 
 Definition g x := fun (n:nat) X => Nat.pow X x.
@@ -126,7 +97,7 @@ Fixpoint test_sequence (n : nat) :=
 End sequence. 
 
 Goal test_sequence 2 5 >= 1000.
-  Fail compute. 
+  Fail compute.
 Abort. 
 
 (* Definition test_sequence_conv := ltac: (convert test_sequence : (N -> nat -> N)). *)

@@ -30,35 +30,35 @@ Ltac etransitivity := refine (concat _ _).
 
 
 Hint Extern 0 (e_inv' ?e (e_fun ?e ?x) = _ ) =>
-etransitivity ; [unshelve notypeclasses refine (e_sect (e_fun e) x) | idtac ] : equiv.
+etransitivity ; [exact (e_sect (e_fun e) x) | idtac ] : equiv.
 
 Hint Extern 0 (e_fun ?e (e_inv' ?e ?x) = _ ) =>
-etransitivity ; [unshelve notypeclasses refine (e_retr (e_fun e) x) | idtac ] : equiv.
+etransitivity ; [exact (e_retr (e_fun e) x) | idtac ] : equiv.
 
 Hint Extern 0 ((e_inv' ?e) ∘ (e_fun ?e) ?x = _ ) =>
-etransitivity ; [unshelve notypeclasses refine (e_sect (e_fun e) x) | idtac ] : equiv.
+etransitivity ; [exact (e_sect (e_fun e) x) | idtac ] : equiv.
 
 Hint Extern 0 ((e_fun ?e) ∘ (e_inv' ?e) ?x = _ ) =>
-etransitivity ; [unshelve notypeclasses refine (e_retr (e_fun e) x) | idtac ] : equiv.
+etransitivity ; [exact (e_retr (e_fun e) x) | idtac ] : equiv.
 
 Hint Extern 0 (e_inv (e_fun ?e) (e_fun ?e ?x) = _ ) =>
-etransitivity ; [unshelve notypeclasses refine (e_sect (e_fun e) x) | idtac ] : equiv.
+etransitivity ; [exact (e_sect (e_fun e) x) | idtac ] : equiv.
 
 Hint Extern 0 (e_fun ?e (e_inv (e_fun ?e) ?x) = _ ) =>
-etransitivity ; [unshelve notypeclasses refine (e_retr (e_fun e) x) | idtac ] : equiv.
+etransitivity ; [exact (e_retr (e_fun e) x) | idtac ] : equiv.
 
 Hint Extern 0 ((e_inv (e_fun ?e)) ∘ (e_fun ?e) ?x = _ ) =>
-etransitivity ; [unshelve notypeclasses refine (e_sect (e_fun e) x) | idtac ] : equiv.
+etransitivity ; [exact (e_sect (e_fun e) x) | idtac ] : equiv.
 
 Hint Extern 0 ((e_fun ?e) ∘ (e_inv (e_fun ?e)) ?x = _ ) =>
-etransitivity ; [unshelve notypeclasses refine (e_retr (e_fun e) x) | idtac ] : equiv.
+etransitivity ; [exact (e_retr (e_fun e) x) | idtac ] : equiv.
 
 
 Hint Extern 0 (?g (?f ?n) = _ ) =>
-etransitivity ; [unshelve notypeclasses refine (e_sect f n) | idtac ] : equiv.
+etransitivity ; [exact (e_sect f n) | idtac ] : equiv.
 
 Hint Extern 0 (?f (?g ?n) = _ ) =>
-etransitivity ; [unshelve notypeclasses refine (e_retr f n) | idtac ] : equiv.
+etransitivity ; [exact (e_retr f n) | idtac ] : equiv.
 
 Hint Extern 0 (_ = ?g (?f ?n)) => exact (e_sect f n)^ : equiv.
 
