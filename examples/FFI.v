@@ -239,5 +239,5 @@ eapply ap2; try reflexivity. change_eq_to_eq.
 auto with zarith. 
 Defined. 
   
-Definition lsr_add_distr : forall x y n, eq int63 ((x + y) << n) ((x << n) + (y << n)) :=
+Definition lsr_add_distr : forall x y n, (x + y) << n = (x << n) + (y << n) :=
   ↑ ZwB_lsr_add_distr.
