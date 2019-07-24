@@ -101,9 +101,9 @@ Instance equiv_int_ZwB : int63 ≃ ZwB := BuildEquiv _ _ to_Z_modulo _.
 
 Instance equiv_ZwB_int : ZwB ≃ int63 := Equiv_inverse _.
 
-Instance compat_int_ZwB : int ⋈ ZwB := @Canonical_UR _ _ _.
+Instance compat_ZwB_int : ZwB ⋈ int := @Canonical_UR _ _ _.
 
-Instance compat_ZwB_int : ZwB ⋈ int := UR_Type_Inverse _ _ compat_int_ZwB.
+Instance compat_int_ZwB : int ⋈ ZwB := UR_Type_Inverse _ _ compat_ZwB_int.
 
 (* addition on Z modulo 2^63 *)
 
@@ -137,4 +137,66 @@ Hint Extern 0 (ZwB_add _ _ = _) => eapply compat_add' : typeclass_instances.
 
 Definition add_comm : forall (n m: int), n + m = m + n := ↑ ZwB_comm. 
 
+(* multiplication on Z modulo 2^63 *)
 
+Program Definition ZwB_mul : ZwB -> ZwB -> ZwB :=
+  fun n m => ((n.1 * m.1) mod wB ; _).
+Next Obligation.
+  now apply Z.mod_pos_bound. 
+Defined. 
+
+Notation "n * m" := (ZwB_mul n m) : ZwB_scope.
+
+(* Axiomatization of compatibility with mul *)
+
+Axiom compat_mul : mul ≈ ZwB_mul.
+Definition compat_mul' : ZwB_mul ≈ mul := compat_inverse2 compat_mul. 
+  
+Hint Extern 0 (mul _ _ = _) => eapply compat_mul : typeclass_instances.
+Hint Extern 0 (ZwB_mul _ _ = _) => eapply compat_mul' : typeclass_instances.
+
+(* substraction on Z modulo 2^63 *)
+
+Program Definition ZwB_sub : ZwB -> ZwB -> ZwB :=
+  fun n m => ((n.1 - m.1) mod wB ; _).
+Next Obligation.
+  now apply Z.mod_pos_bound. 
+Defined. 
+
+Notation "n - m" := (ZwB_sub n m) : ZwB_scope.
+
+(* Axiomatization of compatibility with sub *)
+
+Axiom compat_sub : sub ≈ ZwB_sub.
+Definition compat_sub' : ZwB_sub ≈ sub := compat_inverse2 compat_sub. 
+  
+Hint Extern 0 (sub _ _ = _) => eapply compat_sub : typeclass_instances.
+Hint Extern 0 (ZwB_sub _ _ = _) => eapply compat_sub' : typeclass_instances.
+
+(* Test with polynomials *)
+
+Local Open Scope Z_scope.
+Local Open Scope ZwB_scope.
+
+Coercion mod_inj : Z >-> ZwB.
+
+Definition poly : ZwB -> ZwB :=
+  fun n => 12 * n + 51 * n * n * n * n - (n * n * n * n * n).
+
+Arguments poly : simpl never.
+
+(* Fail Eval compute in poly 50. *)
+
+(* comparison on Z modulo 2^63 *)
+
+Definition compat_eq_int : @eq int63 ≈ @eq ZwB := ltac:(tc). 
+Definition compat_eq_ZwB : @eq ZwB ≈ @eq int63 := ltac:(tc). 
+
+Hint Extern 0 (eq ZwB _ _ ≃ _) => eapply compat_eq_ZwB : typeclass_instances.
+Hint Extern 0 (eq int63 _ _ ≃ _) => eapply compat_eq_int : typeclass_instances.
+Hint Extern 0 (eq ZwB _ _ ⋈ _) => eapply compat_eq_ZwB : typeclass_instances.
+Hint Extern 0 (eq int63 _ _ ⋈ _) => eapply compat_eq_int : typeclass_instances.
+
+Goal eq ZwB 6250600 (poly 50).
+  unfold poly. replace_goal. compute. reflexivity. 
+Defined.

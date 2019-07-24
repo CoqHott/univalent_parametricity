@@ -230,11 +230,9 @@ Definition lt (n m : nat) := (S n <= m)%nat.
 Notation "n < m" := (lt n m) : nat_scope.
 Hint Extern 0 => progress (unfold lt) :  typeclass_instances.
 
-Definition divide n (m : {m : nat & 0 < m }) : nat := n / m.1.
-
 Hint Extern 0 => progress (unfold projT1) :  typeclass_instances.
 
-(* the original definition of N.lt is using compare and is more compicated to deal with *)
+(* the original definition of N.lt is using compare and is more complicated to deal with *)
 
 Definition lt_N (n m : N) := (N.succ n <= m)%N. 
 Notation "n < m" := (lt_N n m) : N_scope.
@@ -301,7 +299,7 @@ Tactic Notation "convert" constr(function) ":" constr(T) :=
              refine (let f := _ in let g := _ in existT _ (fun x => existT _ (f x) (g x)) _) | 
              refine (let f := _ in let g := _ in existT _ (existT _ f g) _) | 
              eexists] ; try unfold function; cbn; intros;
-    first [pose (F := fix_nat_3); simpl in F; refine (F _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) | idtac ]; tc
+    first [pose (F := fix_nat_3); simpl in F; eapply F (* refine (F _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) *) | idtac ]; tc
   | exact X].
 
 Ltac optimize f := let T := type of f in convert f : T. 
@@ -309,7 +307,9 @@ Ltac optimize f := let T := type of f in convert f : T.
 Ltac replace_goal :=
   let X := fresh "X" in
   match goal with | |- ?P =>
-                    pose (X := ltac: (convert P : Prop));
+                    first [
+                        pose (X := ltac: (convert P : Prop)) |
+                        pose (X := ltac: (convert P : Type))]; 
                     apply (e_inv' (equiv X.2)); simpl; clear X
   end.
 
