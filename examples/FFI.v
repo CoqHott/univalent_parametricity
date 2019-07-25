@@ -103,6 +103,16 @@ Instance compat_ZwB_int : ZwB ⋈ int := @Canonical_UR _ _ _.
 
 Instance compat_int_ZwB : int ⋈ ZwB := UR_Type_Inverse _ _ compat_ZwB_int.
 
+Definition compat_eq_int : @eq int63 ≈ @eq ZwB := ltac:(tc). 
+Definition compat_eq_ZwB : @eq ZwB ≈ @eq int63 := ltac:(tc). 
+
+Hint Extern 0 (eq ZwB _ _ ≃ _) => eapply compat_eq_ZwB : typeclass_instances.
+Hint Extern 0 (eq int _ _ ≃ _) => eapply compat_eq_int : typeclass_instances.
+Hint Extern 0 (eq int63 _ _ ≃ _) => eapply compat_eq_int : typeclass_instances.
+Hint Extern 0 (eq ZwB _ _ ⋈ _) => eapply compat_eq_ZwB : typeclass_instances.
+Hint Extern 0 (eq int _ _ ⋈ _) => eapply compat_eq_int : typeclass_instances.
+Hint Extern 0 (eq int63 _ _ ⋈ _) => eapply compat_eq_int : typeclass_instances.
+
 (* addition on Z modulo 2^63 *)
 
 Program Definition ZwB_add : ZwB -> ZwB -> ZwB :=
@@ -210,34 +220,18 @@ Arguments poly : simpl never.
 
 (* Fail Eval compute in poly 50. *)
 
-(* comparison on Z modulo 2^63 *)
-
-Definition compat_eq_int : @eq int63 ≈ @eq ZwB := ltac:(tc). 
-Definition compat_eq_ZwB : @eq ZwB ≈ @eq int63 := ltac:(tc). 
-
-Hint Extern 0 (eq ZwB _ _ ≃ _) => eapply compat_eq_ZwB : typeclass_instances.
-Hint Extern 0 (eq int _ _ ≃ _) => eapply compat_eq_int : typeclass_instances.
-Hint Extern 0 (eq int63 _ _ ≃ _) => eapply compat_eq_int : typeclass_instances.
-Hint Extern 0 (eq ZwB _ _ ⋈ _) => eapply compat_eq_ZwB : typeclass_instances.
-Hint Extern 0 (eq int _ _ ⋈ _) => eapply compat_eq_int : typeclass_instances.
-Hint Extern 0 (eq int63 _ _ ⋈ _) => eapply compat_eq_int : typeclass_instances.
-
-Goal eq ZwB 6250600 (poly 50).
+Goal poly 50 = 6250600.
   unfold poly. replace_goal. compute. reflexivity. 
 Defined.
-
-Local Open Scope int63_scope.
-
-Ltac change_eq_to_eq := let e := fresh "e" in
-                       match goal with | |- ?X = ?Y => assert (e : Logic.eq X Y) ; [idtac | now destruct e] end.
 
 Definition ZwB_lsr_add_distr x y n :
   ZwB_lsl (ZwB_add x y) n = ZwB_add (ZwB_lsl x n) (ZwB_lsl y n).
 apply eqZ_ZwB. unfold ZwB_lsl. simpl. 
 rewrite -> Zmult_mod_idemp_l. rewrite <-Zplus_mod.
-eapply ap2; try reflexivity. change_eq_to_eq. 
-auto with zarith. 
+eapply ap2; try reflexivity. change_eq_to_Logic_eq; auto with zarith. 
 Defined. 
-  
+
+Local Open Scope int63_scope.
+
 Definition lsr_add_distr : forall x y n, (x + y) << n = (x << n) + (y << n) :=
   ↑ ZwB_lsr_add_distr.

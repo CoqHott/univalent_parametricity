@@ -79,3 +79,8 @@ Hint Extern 0 => eassumption : typeclass_instances.
 
 Tactic Notation "erefine" uconstr(c) := unshelve notypeclasses refine c.
 
+Ltac change_eq_to_Logic_eq :=
+  let e := fresh "e" in
+  match goal with | |- ?X = ?Y =>
+                    assert (e : Logic.eq X Y) ; [idtac | now destruct e]
+  end.
