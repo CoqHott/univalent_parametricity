@@ -8,8 +8,6 @@ Require Export DoubleType.
 
 (* axiomatization of int63 and its operations *)
 
-Definition size : nat  := 63.
-
 Require Import Int63.
 
 Definition int63 : Type := int. 
@@ -19,8 +17,6 @@ Local Open Scope Z_scope.
 (* Axiomatization of the equivalence with Z modulo 2^62*)
 
 Require Import BinInt Zpow_facts.
-
-Definition wB := (Z.pow 2 (Z_of_nat size)).
 
 Definition ZwB := { n : Z & 0 <= n < wB }.
 
@@ -206,19 +202,20 @@ Local Open Scope ZwB_scope.
 
 Coercion mod_inj : Z >-> ZwB.
 
+Fixpoint ZwB_pow z (n:nat) : ZwB := match n with 0%nat => 1 | S n => z * ZwB_pow z n end.  
+
 Definition poly : ZwB -> ZwB :=
-  fun n => 12 * n + 51 * n * n * n * n - (n * n * n * n * n).
+  fun n => 12 * n + 51 * ZwB_pow n 4 - (ZwB_pow n 5).
 
-Arguments poly : simpl never.
-
-(* Fail Eval compute in poly 50. *)
+Arguments mod_inj : simpl never.
+Typeclasses Opaque mod_inj.
 
 Goal poly 50 = 6250600.
-  unfold poly. replace_goal. compute. reflexivity. 
+  unfold poly; simpl. Opaque mod_inj. replace_goal. Transparent mod_inj.
+  compute. reflexivity. 
 Defined.
 
-Definition ZwB_lsl_add_distr x y n :
-  ZwB_lsl (ZwB_add x y) n = ZwB_add (ZwB_lsl x n) (ZwB_lsl y n).
+Definition ZwB_lsl_add_distr x y n : (x + y) << n = (x << n) + (y << n).
 apply eqZ_ZwB. unfold ZwB_lsl. simpl. 
 rewrite -> Zmult_mod_idemp_l. rewrite <-Zplus_mod.
 eapply ap2; try reflexivity. change_eq_to_Logic_eq; auto with zarith. 
