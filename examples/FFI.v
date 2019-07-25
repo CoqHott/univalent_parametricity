@@ -28,15 +28,6 @@ Delimit Scope zwB_scope with ZwB.
 
 Local Open Scope int63_scope.
 
-Fixpoint to_Z_rec (n:nat) (i:int63) :=
-  match n with 
-  | O => 0%Z
-  | S n => 
-    (if is_even i then Z.double else Zdouble_plus_one) (to_Z_rec n (i >> 1))
-  end.
-
-Definition to_Z := to_Z_rec size.
-
 Lemma to_Z_bounded : forall x, 0 <= to_Z x < wB.
 Proof.
  unfold to_Z, wB;induction size;intros.
@@ -48,54 +39,42 @@ Proof.
  rewrite Zdouble_plus_one_mult;auto with zarith.
 Qed.
 
-Definition to_Z_modulo : int63 -> ZwB := fun x => (to_Z x; to_Z_bounded x).
+Definition to_ZwB : int63 -> ZwB := fun x => (to_Z x; to_Z_bounded x).
 
-Notation "[| x |]" := (to_Z_modulo x)  (at level 0, x at level 99) : int63_scope.
+Definition of_ZwB (z:ZwB) : int63 := of_Z z.1.
 
-Fixpoint of_pos_rec (n:nat) (p:positive) : int63 :=
-  match n, p with 
-  | O, _ => 0
-  | S n, xH => 1
-  | S n, xO p => (of_pos_rec n p) << 1
-  | S n, xI p => (of_pos_rec n p) << 1 lor 1
-  end.
-
-Definition of_pos := of_pos_rec size.
-
-Definition of_Z (z:ZwB) : int63 := 
-  match z.1 with
-  | Zpos p => of_pos p
-  | Z0 => 0
-  | Zneg p => (0 - (of_pos p))
-  end.
-
-Notation "|] x [|" := (of_Z x)  (at level 0, x at level 99) : int63_scope.
-
-Axiom to_Z_section : forall x, of_Z (to_Z_modulo x) = x.
-Axiom to_Z_retraction : forall x, to_Z_modulo (of_Z x) = x.
-
-Program Definition mod_inj : Z -> ZwB := fun z => (z mod wB; _).
-Next Obligation.
-  apply Z.mod_pos_bound. compute. reflexivity.
+Lemma to_ZwB_section : forall x, of_ZwB (to_ZwB x) = x.
+  unfold of_ZwB, to_ZwB; simpl. intro. rewrite of_to_Z. reflexivity.
 Defined. 
+
 
 Definition isHProp_leq_Z : forall (n m p : Z) (e e': n <= m < p), e = e'. 
 (* to be done *)
-Admitted. 
+Admitted.
 
 Definition eqZ_ZwB (x y:ZwB) : x.1 = y.1 -> x = y.
 Proof.
   intro e. apply path_sigma_uncurried. unshelve eexists.
   apply isHProp_leq_Z. 
+Defined.
+
+Definition to_ZwB_retraction : forall x, to_ZwB (of_ZwB x) = x.
+  unfold of_ZwB, to_ZwB; destruct x; apply eqZ_ZwB; simpl.
+  rewrite of_Z_spec. now rewrite Z.mod_small.
 Defined. 
   
-Definition IsEquiv_to_Z_ : IsEquiv to_Z_modulo := isequiv_adjointify _ of_Z to_Z_section to_Z_retraction.
+Program Definition mod_inj : Z -> ZwB := fun z => (z mod wB; _).
+Next Obligation.
+  apply Z.mod_pos_bound. compute. reflexivity.
+Defined. 
+  
+Definition IsEquiv_to_Z_ : IsEquiv to_ZwB := isequiv_adjointify _ of_ZwB to_ZwB_section to_ZwB_retraction.
   
 (* now instrumenting type class resolution *)
 
-Instance IsEquiv_to_Z : IsEquiv to_Z_modulo := IsEquiv_to_Z_.
+Instance IsEquiv_to_Z : IsEquiv to_ZwB := IsEquiv_to_Z_.
 
-Instance equiv_int_ZwB : int63 ≃ ZwB := BuildEquiv _ _ to_Z_modulo _.
+Instance equiv_int_ZwB : int63 ≃ ZwB := BuildEquiv _ _ to_ZwB _.
 
 Instance equiv_ZwB_int : ZwB ≃ int63 := Equiv_inverse _.
 
@@ -133,14 +112,18 @@ Defined.
 
 Local Open Scope int63_scope.
 
-(* Axiomatization of compatibility with add *)
+(* ompatibility with add *)
 
-Axiom compat_add : add ≈ ZwB_add.
+Definition compat_add : add ≈ ZwB_add.
+  simpl; intros. apply eqZ_ZwB. simpl. 
+  now rewrite add_spec, H, H0. 
+Defined.
+
 Definition compat_add' : ZwB_add ≈ add := compat_inverse2 compat_add. 
 
 Hint Extern 0 (add _ _ = _) => eapply compat_add : typeclass_instances.
 Hint Extern 0 (ZwB_add _ _ = _) => eapply compat_add' : typeclass_instances.
-Hint Extern 0 (_ = to_Z_modulo (add _ _)) => eapply compat_add' : typeclass_instances.
+Hint Extern 0 (_ = to_ZwB (add _ _)) => eapply compat_add' : typeclass_instances.
 
 (* now property on 2wB_add can be lifted to add on int *)
 
@@ -156,9 +139,13 @@ Defined.
 
 Notation "n * m" := (ZwB_mul n m) : ZwB_scope.
 
-(* Axiomatization of compatibility with mul *)
+(* compatibility with mul *)
 
-Axiom compat_mul : mul ≈ ZwB_mul.
+Definition compat_mul : mul ≈ ZwB_mul.
+  simpl; intros. apply eqZ_ZwB. simpl. 
+  now rewrite mul_spec, H, H0. 
+Defined.
+
 Definition compat_mul' : ZwB_mul ≈ mul := compat_inverse2 compat_mul. 
   
 Hint Extern 0 (mul _ _ = _) => eapply compat_mul : typeclass_instances.
@@ -174,9 +161,13 @@ Defined.
 
 Notation "n - m" := (ZwB_sub n m) : ZwB_scope.
 
-(* Axiomatization of compatibility with sub *)
+(* compatibility with sub *)
 
-Axiom compat_sub : sub ≈ ZwB_sub.
+Definition compat_sub : sub ≈ ZwB_sub.
+  simpl; intros. apply eqZ_ZwB. simpl. 
+  now rewrite sub_spec, H, H0. 
+Defined.
+
 Definition compat_sub' : ZwB_sub ≈ sub := compat_inverse2 compat_sub. 
   
 Hint Extern 0 (sub _ _ = _) => eapply compat_sub : typeclass_instances.
@@ -194,17 +185,19 @@ Notation "n << m" := (ZwB_lsl n m) : ZwB_scope.
 
 Arguments ZwB_lsl : simpl never.
 
-(* Axiomatization of compatibility with mul *)
+(* compatibility with mul *)
 
-Axiom compat_lsl : lsl ≈ ZwB_lsl.
+Definition compat_lsl : lsl ≈ ZwB_lsl.
+  simpl; intros. apply eqZ_ZwB. simpl. 
+  now rewrite lsl_spec, H, H0. 
+Defined.
+
 Definition compat_lsl' : ZwB_lsl ≈ lsl := compat_inverse2 compat_lsl. 
   
 Hint Extern 0 (lsl _ _ = _) => eapply compat_lsl : typeclass_instances.
 Hint Extern 0 (ZwB_lsl _ _ = _) => eapply compat_lsl' : typeclass_instances.
-Hint Extern 0 (_ = to_Z_modulo (lsl _ _)) => eapply compat_lsl : typeclass_instances.
+Hint Extern 0 (_ = to_ZwB (lsl _ _)) => eapply compat_lsl : typeclass_instances.
 Hint Extern 0 (ZwB_lsl _ _ = _) => eapply compat_lsl' : typeclass_instances.
-
-
 
 (* Test with polynomials *)
 
@@ -234,4 +227,4 @@ Defined.
 Local Open Scope int63_scope.
 
 Definition lsl_add_distr : forall x y n, (x + y) << n = (x << n) + (y << n) :=
-  ↑ ZwB_lsr_add_distr.
+  ↑ ZwB_lsl_add_distr.
