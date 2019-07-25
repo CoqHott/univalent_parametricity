@@ -14,3 +14,4 @@ examples/Lib.v
 examples/Nat_binnat.v
 examples/Basic_conversion.v
 examples/Examples.v
+examples/FFI.v
