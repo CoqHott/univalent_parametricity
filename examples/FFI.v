@@ -224,7 +224,7 @@ Goal poly 50 = 6250600.
   unfold poly. replace_goal. compute. reflexivity. 
 Defined.
 
-Definition ZwB_lsr_add_distr x y n :
+Definition ZwB_lsl_add_distr x y n :
   ZwB_lsl (ZwB_add x y) n = ZwB_add (ZwB_lsl x n) (ZwB_lsl y n).
 apply eqZ_ZwB. unfold ZwB_lsl. simpl. 
 rewrite -> Zmult_mod_idemp_l. rewrite <-Zplus_mod.
@@ -233,5 +233,5 @@ Defined.
 
 Local Open Scope int63_scope.
 
-Definition lsr_add_distr : forall x y n, (x + y) << n = (x << n) + (y << n) :=
+Definition lsl_add_distr : forall x y n, (x + y) << n = (x << n) + (y << n) :=
   ↑ ZwB_lsr_add_distr.
