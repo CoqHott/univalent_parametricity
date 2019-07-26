@@ -212,7 +212,7 @@ Typeclasses Opaque mod_inj.
 
 Goal poly 50 = 6250600.
   unfold poly; simpl. Opaque mod_inj. replace_goal. Transparent mod_inj.
-  compute. reflexivity. 
+  now compute.  
 Defined.
 
 Definition ZwB_lsl_add_distr x y n : (x + y) << n = (x << n) + (y << n).

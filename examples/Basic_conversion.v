@@ -72,7 +72,7 @@ Arguments poly : simpl never.
 Fail Eval compute in poly 50.
 
 Goal poly 50 >= 1000.
-  unfold poly. replace_goal; compute. inversion 1. 
+  unfold poly. replace_goal; now compute. 
 Defined.
 
 (* Test for sequences *)
@@ -103,7 +103,7 @@ Abort.
 (* Definition test_sequence_conv := ltac: (convert test_sequence : (N -> nat -> N)). *)
 
 Goal test_sequence 2 5 >= 1000.
-  replace_goal; inversion 1. 
+  replace_goal. now compute.
 Defined.
 
 (* with eliminator instead of pattern matching *)
@@ -125,4 +125,3 @@ Arguments test_sequence_ : simpl never.
 Goal test_sequence_ 2 5 >= 1000.
   replace_goal; inversion 1. 
 Defined. 
- 
