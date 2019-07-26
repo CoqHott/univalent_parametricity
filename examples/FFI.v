@@ -41,12 +41,24 @@ Definition of_ZwB (z:ZwB) : int63 := of_Z z.1.
 
 Lemma to_ZwB_section : forall x, of_ZwB (to_ZwB x) = x.
   unfold of_ZwB, to_ZwB; simpl. intro. rewrite of_to_Z. reflexivity.
-Defined. 
+Defined.
 
+Definition IsHProp_le_Z (n m : Z) : IsHProp (n <= m)%Z.
+Proof.
+  apply IsHProp_forall. intro. exact IsHProp_False.
+Defined.
 
-Definition isHProp_leq_Z : forall (n m p : Z) (e e': n <= m < p), e = e'. 
-(* to be done *)
-Admitted.
+Definition IsHProp_lt_Z (n m : Z) : IsHProp (n < m)%Z.
+Proof.
+  intros x y. unfold Z.lt in *.
+  pose (is_hset (n ?= m)%Z Lt (logic_eq_is_eq x) (logic_eq_is_eq y)).
+  refine (logic_eq_is_eq_inj x y e). 
+Defined.
+
+Definition isHProp_leq_Z (n m p : Z): IsHProp (n <= m < p).
+Proof.
+  apply IsHProp_conj. apply IsHProp_le_Z. apply IsHProp_lt_Z. 
+Defined.
 
 Definition eqZ_ZwB (x y:ZwB) : x.1 = y.1 -> x = y.
 Proof.

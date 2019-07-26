@@ -39,6 +39,10 @@ Proof.
   rewrite transport_apD10. rewrite e_retr. reflexivity.
 Defined.
 
+Definition IsHProp_forall A (B:A ->Type) : (forall a, IsHProp (B a)) -> IsHProp (forall a, B a).
+  intros H f g. apply funext; intro. apply H. 
+Defined.
+
 
 (* for minor differences between Prop and Type (coming from impredicativity)  *)
 (* we need to state again univalence for Prop, even if in principle Prop is  *)

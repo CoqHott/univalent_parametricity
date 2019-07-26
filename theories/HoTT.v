@@ -948,3 +948,56 @@ Proof.
   destruct e. cbn. rewrite concat_refl. reflexivity.
 Defined.
 
+
+
+
+Definition IsHProp A := forall x y : A, x = y. 
+
+Definition IsHProp_False : IsHProp False. 
+  intro e; destruct e.
+Defined. 
+
+Instance IsHSet_compare : HSet comparison.
+  apply Hedberg.
+  econstructor. destruct a, b; try solve [now left]; solve [now right].
+Defined.
+
+Definition eq_is_logic_eq {A:Set} {x y:A} : x = y -> Logic.eq x y.
+  now destruct 1.
+Defined.
+
+Instance isEquiv_logic_eq_is_eq {A:Set} {x y:A} : IsEquiv (@logic_eq_is_eq A x y).
+Proof.
+  unshelve eapply isequiv_adjointify.
+  - apply eq_is_logic_eq.
+  - intro e; now destruct e.  
+  - intro e; now destruct e.  
+Defined.
+
+Instance Equiv_eq_is_logic_eq {A:Set} {x y:A} : Equiv (Logic.eq x y) (x = y) := BuildEquiv _ _ (@logic_eq_is_eq A x y) _.
+
+Definition logic_eq_is_eq_inj {A : Set} {x y:A} (e e': Logic.eq x y) :
+  logic_eq_is_eq e = logic_eq_is_eq e' -> e = e'.
+Proof.
+  exact (e_inv (isequiv_ap _ _  e e')). 
+Defined. 
+
+Definition proj1 {A B : Prop} : A /\ B -> A.
+  destruct 1; assumption.
+Defined. 
+
+Definition proj2 {A B : Prop} : A /\ B -> B.
+  destruct 1; assumption.
+Defined. 
+
+Definition path_conj_uncurried {A B : Prop} (u v : A /\ B)
+           (pq : (proj1 u = proj1 v) * (proj2 u = proj2 v))
+: u = v.
+Proof.
+  destruct pq as [p q]. destruct u, v. simpl in *. simpl in p. destruct p.
+  simpl in q; destruct q; reflexivity.
+Defined.
+
+Definition IsHProp_conj (A B:Prop) : IsHProp A -> IsHProp B -> IsHProp (A /\ B).
+  intros HA HB x y. apply path_conj_uncurried. split; [apply HA | apply HB].
+Defined.
