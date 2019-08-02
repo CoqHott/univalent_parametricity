@@ -207,25 +207,11 @@ Hint Extern 0 (ZwB_lsl _ _ = _) => eapply compat_lsl' : typeclass_instances.
 Hint Extern 0 (_ = to_ZwB (lsl _ _)) => eapply compat_lsl : typeclass_instances.
 Hint Extern 0 (ZwB_lsl _ _ = _) => eapply compat_lsl' : typeclass_instances.
 
-(* Test with polynomials *)
-
 Local Open Scope Z_scope.
 Local Open Scope ZwB_scope.
 
 Coercion mod_inj : Z >-> ZwB.
 
-Fixpoint ZwB_pow z (n:nat) : ZwB := match n with 0%nat => 1 | S n => z * ZwB_pow z n end.  
-
-Definition poly : ZwB -> ZwB :=
-  fun n => 12 * n + 51 * ZwB_pow n 4 - (ZwB_pow n 5).
-
-Arguments mod_inj : simpl never.
-Typeclasses Opaque mod_inj.
-
-Goal poly 50 = 6250600.
-  unfold poly; simpl. Opaque mod_inj. replace_goal. Transparent mod_inj.
-  now compute.  
-Defined.
 
 Definition ZwB_lsl_add_distr x y n : (x + y) << n = (x << n) + (y << n).
 apply eqZ_ZwB. unfold ZwB_lsl. simpl. 
@@ -237,3 +223,59 @@ Local Open Scope int63_scope.
 
 Definition lsl_add_distr : forall x y n, (x + y) << n = (x << n) + (y << n) :=
   ↑ ZwB_lsl_add_distr.
+
+(* Test with polynomials *)
+
+Local Open Scope Z_scope.
+
+Definition poly : Z -> Z :=
+  fun n =>  45 + Z.pow n 100 - Z.pow n 99 * 16550. 
+
+Goal poly 16550 = 45.
+  Time compute. reflexivity.  
+Defined.
+
+Local Open Scope ZwB_scope.
+
+Fixpoint ZwB_pow z (n:nat) : ZwB := match n with 0%nat => 1 | S n => z * ZwB_pow z n end.  
+
+Local Open Scope Z_scope.
+
+Local Open Scope ZwB_scope.
+
+Definition poly_ZwB : ZwB -> ZwB :=
+  fun n => 45 + ZwB_pow n 100 - ZwB_pow n 99 * 16550.
+
+Goal poly_ZwB 16550 = 45.
+  Time reflexivity. 
+Defined.
+
+Fixpoint pow z (n:nat) : int := match n with 0%nat => 1 | S n => z * pow z n end.  
+
+Lemma succ_spec x : Z.succ (Z.of_nat x) = Z.pos (Pos.of_succ_nat x).
+  destruct x. easy. cbn. apply ap.
+  now rewrite Pos.add_1_r.
+Defined. 
+
+Definition compat_pow : pow ≈ ZwB_pow.
+  simpl; intros. destruct H0. apply eqZ_ZwB. induction x0.
+  - easy.
+  - simpl. rewrite IHx0. simpl. rewrite mul_spec. now rewrite H.
+Defined.
+
+Definition compat_pow' : ZwB_pow ≈ pow.
+  simpl; intros. destruct H0. apply eqZ_ZwB. induction x0.
+  - easy.
+  - simpl. rewrite IHx0. simpl. rewrite mul_spec. now rewrite H.
+Defined.
+
+Hint Extern 0 (pow _ _ = _) => eapply compat_pow : typeclass_instances.
+Hint Extern 0 (ZwB_pow _ _ = _) => eapply compat_pow' : typeclass_instances.
+Hint Extern 0 (_ = to_ZwB (pow _ _)) => eapply compat_pow : typeclass_instances.
+Hint Extern 0 (ZwB_pow _ _ = _) => eapply compat_pow' : typeclass_instances.
+
+Opaque pow ZwB_pow. 
+
+Goal poly_ZwB 16550 = 45.
+  unfold poly_ZwB. Opaque mod_inj. replace_goal. Transparent mod_inj. Time reflexivity. 
+Defined.
