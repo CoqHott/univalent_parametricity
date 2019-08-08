@@ -2,28 +2,6 @@ Require Import HoTT HoTT_axioms UR URTactics FP.
  
 Set Universe Polymorphism.
 
-Definition inversion_cons {A} {l l':list A} {a a'} : a :: l = a' :: l' -> (a = a') * (l = l').
-  inversion 1. split; reflexivity.
-Defined. 
-
-Instance Transportable_list A (P: list A -> Type)
-         (HP : forall (P:A->Type), Transportable P) : Transportable P.
-Proof.
-  unshelve econstructor.
-  - intros n m. revert P; revert m.
-    induction n; intro m; destruct m; intros P e. 
-    + apply Equiv_id.
-    + inversion e.
-    + inversion e.
-    + pose (inversion_cons e). specialize (IHn _ (fun n => P (a :: n)) (snd p)).
-      cbn in IHn. eapply equiv_compose; try exact IHn. apply (HP (fun x => P (x :: m))).
-      exact (fst p). 
-  - cbn. intro n; revert P; induction n; cbn; intro P. 
-    + reflexivity.
-    + rewrite transportable_refl. rewrite (IHn (fun n => P (a :: n))).
-      apply path_Equiv. reflexivity.
-Defined. 
-
 Instance Transportable_Sigma (A:Type) B (P : A -> B -> Type)
          (HP: forall a, Transportable (P a))
          (HP_can : forall x y, Canonical_eq (P x y))

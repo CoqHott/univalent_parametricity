@@ -84,6 +84,11 @@ Definition eq_sym {A} {x y : A} (H : x = y) : y = x :=
   match H with eq_refl => eq_refl end.
 
 
+(* HSet *)
+
+Class HSet A := {is_hset : forall (x y : A) (e e' : x = y), e = e'}.
+
+
 (* From HoTT/Coq *)
 
 Definition apD10 {A} {B:A->Type} {f g : forall x, B x} (h:f=g)
@@ -388,6 +393,7 @@ Proof.
 Defined.
 
 
+
 (* Equivalences *)
 
 Class IsEquiv {A : Type} {B : Type} (f : A -> B) := BuildIsEquiv {
@@ -429,6 +435,8 @@ Definition issect'  {A B : Type} (f : A -> B) (g : B -> A)
            (issect : g ∘ f == id) (isretr : f  ∘ g == id) :=
   fun x =>
     ap g (ap f (issect x)^)  @  ap g (isretr (f x))  @  issect x.
+
+
 
 Definition moveR_M1 {A : Type} {x y : A} (p q : x = y) :
   eq_refl = p^ @ q -> p = q.
@@ -763,39 +771,6 @@ Proof.
   refine (transport_eq (fun X =>  ap (concat p) (ap inverse (moveL_M1 eq_refl p e)^)  = inv_inv' A x x p @ X) (e_sect (moveL_M1 eq_refl p) e) _).
   generalize (moveL_M1 eq_refl p e). clear e; intro e.
   destruct e. reflexivity.
-Defined. 
-
-(**
-Hedberg theorem is a standard theorem of HoTT: it states that if a
-type [A] has decle equality, then it is a hSet, i.e. its equality
-is proof-irrelevant. See the proof at [https://github.com/HoTT] in
-[HoTT/theories/Basics/Decidable.v] *)
-
-Class DecidableEq A := { dec_paths : forall a b : A, (a = b) + (a = b -> False)}.
-
-Class HSet A := {is_hset : forall (x y : A) (e e' : x = y), e = e'}.
-
-Instance Hedberg A `{DecidableEq A} : HSet A.
-Proof.
-  econstructor. 
-  intros a b.
-  assert (lemma: forall p: a = b,  
-             match dec_paths a a, dec_paths a b with
-             | inl r, inl s => p = r^ @ s
-             | _, _ => False
-             end).
-  {
-    destruct p.
-    destruct (dec_paths a a) as [pr | f].
-    - apply inverse_left_inverse.
-    - exact (f eq_refl).
-  }
-  intros p q.
-  assert (p_given_by_dec := lemma p).
-  assert (q_given_by_dec := lemma q).
-  destruct (dec_paths a b); try contradiction.
-  destruct (dec_paths a a); try contradiction.
-  apply (p_given_by_dec @ q_given_by_dec ^).
 Defined.
 
 Definition logic_eq_is_eq {A} {x y:A} : @Logic.eq A x y -> x = y.
@@ -803,28 +778,6 @@ Proof.
   destruct 1. reflexivity.
 Defined. 
  
-Instance DecidableEq_eq_nat : DecidableEq nat.
-constructor. intros x y; revert y. 
-induction x.
-- destruct y.
- + left ;reflexivity.
- + right; intro H; inversion H.
-- induction y.
-  + right; intro H; inversion H.
-  + case (IHx y). intro H. left. exact (ap S H).
-    intro H; right. intro e. inversion e. apply (H (logic_eq_is_eq H1)).
-Defined.
-
-Instance DecidableEq_eq_bool : DecidableEq bool.
-constructor. intros x y; revert y. induction x.
-- destruct y.
- + left ;reflexivity.
- + right; intro H; inversion H.
-- destruct y.
- + right; intro H; inversion H.
- + left ;reflexivity.
-Defined.
-
 Definition isequiv_ap (A B:Type) {H : A ≃ B} a a' :
   (a= a') ≃ (e_fun H a = e_fun H a').
 Proof.
@@ -842,27 +795,6 @@ Proof.
     apply (concat_pA1 (fun b => (e_retr (e_fun H) b)^)).
     reflexivity. rewrite <- concat_p_pp. rewrite e_adj. rewrite inv_inv.
     apply concat_refl.
-Defined.
-
-Definition DecidableEq_equiv A B (eB : A ≃ B) `{DecidableEq A} : DecidableEq B. 
-Proof.
-  constructor. pose (eB' := Equiv_inverse eB).
-  intros x y. destruct (dec_paths (↑ x) (↑ y)). 
-  - left. apply (@isequiv_ap _ _ eB'). exact e.
-  - right. intro e. apply f. exact (ap _ e).
-Defined. 
-
-
-Instance DecidableEq_Sigma A (B : A -> Type) `{DecidableEq A} `{forall a, DecidableEq (B a)} :
-  DecidableEq {a : A & B a}.
-Proof.
-  constructor. intros [a b] [a' b' ].
-  destruct (dec_paths a a').
-  - destruct e. destruct (dec_paths b b').
-    + apply inl. apply path_sigma_uncurried. exists eq_refl. exact e.
-    + apply inr; intro Hf; apply f. pose (Hf..2).
-      assert (Hf..1 = eq_refl). apply is_hset. rewrite X in e. exact e.
-  - apply inr; intro Hf; apply f. exact (Hf..1).
 Defined.
                 
 Definition Move_equiv_equiv {A B} (e : A ≃ B) x y : (x = e_inv' e y) ≃ (e_fun e x = y).
@@ -928,11 +860,6 @@ Definition IsHProp_False : IsHProp False.
   intro e; destruct e.
 Defined. 
 
-Instance IsHSet_compare : HSet comparison.
-  apply Hedberg.
-  econstructor. destruct a, b; try solve [now left]; solve [now right].
-Defined.
-
 Definition eq_is_logic_eq {A:Set} {x y:A} : x = y -> Logic.eq x y.
   now destruct 1.
 Defined.
@@ -972,3 +899,4 @@ Defined.
 Definition IsHProp_conj (A B:Prop) : IsHProp A -> IsHProp B -> IsHProp (A /\ B).
   intros HA HB x y. apply path_conj_uncurried. split; [apply HA | apply HB].
 Defined.
+

@@ -1,3 +1,5 @@
+(* ET: rename adt tactics, and move that either to tactic file or URStdLib file *)
+
 Require Import HoTT URTactics.
 
 Set Universe Polymorphism.
@@ -99,8 +101,6 @@ Tactic Notation "equiv_adt3" uconstr(rec) uconstr(pr1) uconstr(pr2) uconstr(pr3)
     simpl; solve_section3 pr1 pr2 pr3]
 end.
 
-
-
 Tactic Notation "solve_section" uconstr(pr1) :=
   let l := fresh "l" in intro l; induction l; solve_cons_eq pr1.
 
@@ -133,7 +133,6 @@ Tactic Notation "equiv_adt" uconstr(rec) uconstr(pr1) :=
     simpl; solve_section pr1 |
     simpl; solve_section pr1 ]
 end.
-
 
 Tactic Notation "equiv_adt2_with_fun" uconstr(rec) uconstr(pr1) uconstr(pr2) constr(f):=
   clear_eq;

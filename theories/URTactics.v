@@ -1,9 +1,17 @@
+(************************************************************************)
+(* This file defines a number of hints for typeclass resolution, as well
+   as few Ltac tactics.
+ *)
+(************************************************************************)
+
 Require Import HoTT.
 
 Set Universe Polymorphism.
 Set Primitive Projections.
 
 Existing Class eq. 
+
+Ltac tc := typeclasses eauto with typeclass_instances.
 
 Ltac resolve_eq := intros; 
                    progress (repeat (try reflexivity;
@@ -67,7 +75,6 @@ Hint Extern 0 (_ = ?f (?g ?n)) => exact (e_retr f n)^ : equiv.
 Typeclasses Transparent e_inv'  univalent_transport. 
 Hint Transparent e_inv'  univalent_transport. 
 Hint Unfold e_inv'  univalent_transport. 
-
 
 Ltac equiv_elim :=
   clear_eq;

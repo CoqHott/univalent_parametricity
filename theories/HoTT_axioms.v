@@ -1,8 +1,13 @@
-Require Import HoTT String.
+Require Import HoTT.
 
 Set Universe Polymorphism.
 Set Primitive Projections.
 
+(* helper *)
+Axiom admit : forall X, X. 
+
+
+(* univalence *)
 
 Definition eq_to_equiv A B : A = B -> A ≃ B :=
   fun e => e # (Equiv_id A).
@@ -27,7 +32,6 @@ Definition transport_apD10 A B (f g : forall x:A, B x)
   destruct e. reflexivity.
 Defined. 
 
-
 Definition transport_funext {A B} {f g : forall x:A, B x}
            (P : forall x:A, B x -> Type) x 
            (v : P x (f x)) (e : forall x, f x = g x)
@@ -42,7 +46,6 @@ Defined.
 Definition IsHProp_forall A (B:A ->Type) : (forall a, IsHProp (B a)) -> IsHProp (forall a, B a).
   intros H f g. apply funext; intro. apply H. 
 Defined.
-
 
 (* for minor differences between Prop and Type (coming from impredicativity)  *)
 (* we need to state again univalence for Prop, even if in principle Prop is  *)

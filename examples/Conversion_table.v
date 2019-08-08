@@ -1,3 +1,6 @@
+(* ET: 
+   this file should be in theories, ALaCarte.v, or something like that, eg. URTactics *)
+
 Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable .
 Require Import BinInt BinNat Nnat Vector Arith.Plus Omega ZArith.
 

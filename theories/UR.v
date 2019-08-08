@@ -1,14 +1,15 @@
-
 (************************************************************************)
-(* This file introduces the univalent logical relation   *)
+(* This file introduces the univalent logical relation framework, and
+   defines the relation for basic type constructors *)
 (************************************************************************)
 
-Require Import HoTT HoTT_axioms URTactics String.
+Require Import HoTT HoTT_axioms URTactics.
 
 Set Universe Polymorphism.
 Set Primitive Projections.
 Set Polymorphic Inductive Cumulativity. 
 
+(* basic classes for univalent relations *)
 
 Class UR A B := {
   ur : A -> B -> Type 
@@ -31,7 +32,6 @@ Definition Canonical_eq_gen A : Canonical_eq A :=
 
 Arguments can_eq {_} _.
 Arguments can_eq_refl {_}.
-
 
 Class UR_Type A B :=
   { equiv :> A ≃ B;
@@ -125,17 +125,6 @@ Class Transportable {A} (P:A -> Type) :=
     transportable_refl : forall x, transportable x x eq_refl = Equiv_id _
   }.
 
-Instance Transportable_decidable {A} (P:A -> Type) `{DecidableEq A} : Transportable P.
-Proof.
-  unshelve econstructor.
-  - intros x y e. destruct (dec_paths x y) as [e0 | n0].
-    destruct e0. apply Equiv_id.
-    destruct (n0 e).
-  - intro x. cbn. destruct (dec_paths x x); cbn.
-    assert (e = eq_refl) by (eapply is_hset).
-    rewrite X. reflexivity.
-    destruct (f eq_refl).
-Defined. 
 
 Definition Transportable_default {A} (P:A -> Type) : Transportable P.
 Proof.
@@ -182,14 +171,6 @@ Definition URSigma A A' (B : A -> Type)(B' : A' -> Type) `{UR A A'}
 Hint Extern 0 (UR ({x:_ & _}) ({x:_ & _})) =>
   erefine (@URSigma _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
 
-(*! nat !*)
-
-Instance UR_nat : UR nat nat := UR_gen nat. 
-
-(*! bool !*)
-
-Instance UR_bool : UR bool bool := UR_gen bool. 
-
 
 (* Lemmas about canonical equality *)
 
@@ -229,24 +210,54 @@ Proof.
   pose (@e_sect _ _ _ (funext _ _  (fun (e0 : eq A x y) => e0) (fun (e0 : eq A x y) => e0)) eq_refl). 
   etransitivity; try apply e0. clear e0. apply ap. apply funext. intros e0. cbn.
   destruct e0. reflexivity.                  
+Defined.
+
+
+(* ET: moved from MoreInductive *)
+Definition ur_hprop A A' (H : A ⋈ A') (HA: forall x y:A, x = y) (x:A) (y:A')
+  : x ≈ y. 
+  intros. apply (alt_ur_coh _ _ _ _ ). apply HA. 
+Defined.   
+
+
+Definition UR_Type_equiv (A A' : Type) (eA : A ⋈ A') (eA': A ≃ A')
+  (e  : equiv eA = eA') : 
+  eA =
+  Build_UR_Type _ _ eA' (Ur eA)
+                (transport_eq (fun X => UR_Coh A A' X _) e (Ur_Coh eA)) _ _. 
+  destruct e. reflexivity.
 Defined. 
 
-Definition Canonical_eq_decidable_ A `{DecidableEq A} :
-  forall x y:A , x = y -> x = y :=
-  fun x y e => match (dec_paths x y) with
-               | inl e0 => e0
-               | inr n => match (n e) with end
-               end. 
+Definition UR_Type_eq (A A' : Type) (eA eA': A ⋈ A')
+           (equiv_eq  : equiv eA = equiv eA')
+           (ur_eq  : Ur eA = Ur eA')
+           (coh_eq  : transport_eq (fun X => UR_Coh A A' _ X) ur_eq (transport_eq (fun X => UR_Coh A A' X _) equiv_eq (Ur_Coh eA))
+                      = Ur_Coh eA')
+           (canonA_eq  : eA.(Ur_Can_A) = eA'.(Ur_Can_A))
+           (canonB_eq  : eA.(Ur_Can_B) = eA'.(Ur_Can_B))
+  : eA = eA'. 
+  destruct eA, eA'.
+  cbn in *. rewrite <- coh_eq. destruct equiv_eq, ur_eq, canonA_eq, canonB_eq.
+  reflexivity.
+Defined.                  
 
-Instance Canonical_eq_decidable A `{DecidableEq A} : Canonical_eq A.
-Proof. 
-  refine {| can_eq := @Canonical_eq_decidable_ A H |}.
-  - unfold Canonical_eq_decidable_. intro x. cbn. destruct (dec_paths x x); cbn.
-    assert (e = eq_refl) by (eapply is_hset).
-    rewrite X. reflexivity.
-    destruct (f eq_refl).
+Definition  transport_Ur_Coh (A A': Type)
+            (equiv : A ≃ A')
+            (_ur _ur' : A -> A' -> Type)
+            (ur_coh : forall a a' : A, (a = a') ≃ (_ur a (equiv a')))
+            (e : _ur = _ur')
+  :   transport_eq (fun X => UR_Coh A A' equiv {| ur := X |}) e
+                   (Build_UR_Coh _ _ equiv {| ur := _ur |} ur_coh)
+      =
+      Build_UR_Coh _ _ equiv {| ur := _ur' |} (fun a a' => transport_eq (fun X =>
+                                               (a = a') ≃ (X a (equiv a'))) e (ur_coh a a')).
+  destruct e. reflexivity.
 Defined.
-  
-  
-  
-  
+
+Definition UR_Equiv_refl (A B:Type) (e:A ≃ B) (e_inv := Equiv_inverse e) `{UR A B} : UR B B :=
+  {| ur := fun b b' => ↑ b ≈  b' |}.
+
+Definition UREq A (x x' y y' : A) (H:x=x') (H':y=y') : UR (x = y) (x' = y') :=
+  {| ur := fun e e' => H^ @ e @ H' = e' |}.
+
+Hint Extern 0 (UR (_ = _)(_ = _)) => erefine (@UREq _ _ _ _ _ _ _) : typeclass_instances.

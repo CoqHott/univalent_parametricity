@@ -56,6 +56,7 @@ Proof.
   issig (BuildEquiv A B) (@e_fun A B) (@e_isequiv A B).
 Defined.
 
+
 (** Here is a version of the [issig] tactic for three-component records, which proves goals that look like
 <<
    { x : A & { y : B x & C x y } } <~> Some_Record.
