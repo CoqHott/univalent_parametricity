@@ -1,13 +1,13 @@
 (************************************************************************)
 
 (* This files introduced basic ingredients of HoTT, most of them already *)
-(* presents in https://github.com/HoTT. We have created our own library *)
-(* to be independent from their framework which requires a tailored version of Coq  *)
+(* present in https://github.com/HoTT. We have created our own library *)
+(* to be independent from the HoTT framework which requires a tailored version of Coq  *)
 (************************************************************************)
 
 Set Universe Polymorphism.
 
-(* Require Import Program Coq.Classes.RelationClasses. *)
+(* Basic notations *)
 
 Inductive sigT {A:Type} (P:A -> Type) : Type :=
     existT : forall x:A, P x -> sigT P.
@@ -49,7 +49,6 @@ Notation id := (fun x => x).
 Notation compose := (fun g f x => g (f x)).
 
 Notation "g ∘ f" := (compose g%function f%function) (at level 1): function_scope.
-(* Notation "g ∘ f" := (compose f g) (at level 1). *)
 
 Notation "{ x : A & P }" := (sigT (A:=A) (fun x => P)) : type_scope.
 Notation "x .1" := (projT1 x) (at level 3).
@@ -57,6 +56,9 @@ Notation "x .2" := (projT2 x) (at level 3).
 Notation " ( x ; p ) " := (existT _ x p).
 
 Notation "f == g" := (forall x, f x = g x) (at level 70).
+
+
+(* Equality-related definitions *)
 
 Definition ap {A B:Type} (f:A -> B) {x y:A} (p:x = y) : f x = f y
   := match p with eq_refl => eq_refl end.
@@ -80,12 +82,7 @@ Definition ap4 {A A' A'' A''' B:Type} (f:A -> A' -> A'' -> A''' -> B) {x y:A} (p
 
 Definition eq_sym {A} {x y : A} (H : x = y) : y = x :=
   match H with eq_refl => eq_refl end.
-(* ET: the [in ... return ...] does not seem needed *)
-(* match H in (_ = y0) return (y0 = x) with *)
-(* | eq_refl => eq_refl *)
-(* end. *)
 
-(* Instance EqSymm A : Symmetric (eq A) := @eq_sym A. *)
 
 (* From HoTT/Coq *)
 
@@ -204,7 +201,6 @@ Proof.
   destruct e. reflexivity.
 Defined.
 
-
 Definition concat_inv {A : Type} {x y z : A} (p : x = y) (q : y = z) :
   (p @ q)^ = q^ @ p^.
              Proof.
@@ -252,8 +248,6 @@ Defined.
     
 Notation "p ..2" := (pr2_path p) (at level 50). 
 
-
-
 Definition path_prod_uncurried {A B : Type} (u v : A * B)
            (pq : (fst u = fst v) * (snd u = snd v))
 : u = v.
@@ -273,8 +267,6 @@ Proof.
   pose (ep := inv_inv _ _ _ p).
   intro e; rewrite e in ep. exact ep.
 Defined.
-
-
 
 Definition unpack_prod {A B} `{P : A * B -> Type} (u : A * B) :
   P (fst u, snd u) -> P u.
@@ -308,7 +300,6 @@ Lemma path_prod_uncurried_inv {A B} {x y : A * B}
 Proof. 
   destruct H, x ,y. cbn in *. destruct e, e0. reflexivity. 
 Defined.
-
 
 Definition transport_prod {A : Type} {P Q : A -> Type} {a a' : A} (p : a = a')
   (z : P a * Q a)
@@ -363,7 +354,6 @@ Definition concat_p_pp {A : Type} {x y z t : A} (p : x = y) (q : y = z) (r : z =
   destruct p, q; reflexivity.
 Defined.
 
-
 Definition ap_compose {A B C : Type} (f : A -> B) (g : B -> C) {x y : A} (p : x = y) :
   ap (g ∘ f) p = ap g (ap f p).
   destruct p. reflexivity. Defined. 
@@ -398,8 +388,7 @@ Proof.
 Defined.
 
 
-
-(* equivalences *)
+(* Equivalences *)
 
 Class IsEquiv {A : Type} {B : Type} (f : A -> B) := BuildIsEquiv {
   e_inv :> B -> A ;
@@ -430,8 +419,6 @@ Coercion e_fun : Equiv >-> Funclass.
 Definition univalent_transport {A B : Type} {e: A ≃ B} : A -> B := e_fun e.  
 
 Notation "↑" := univalent_transport (at level 65, only parsing).
-
-(* Instance IsEquiv_Equiv A B (e:A ≃ B) : IsEquiv (e_fun e) := e_isequiv (Equiv:=e). *)
 
 Definition e_inv' {A B : Type} (e : A ≃ B) : B -> A := e_inv (e_fun e).
 Definition e_sect' {A B : Type} (e : A ≃ B) := e_sect (e_fun e).
@@ -478,7 +465,8 @@ Proof.
 Defined.
 
 Definition is_adjoint' {A B : Type} (f : A -> B) (g : B -> A)
-           (issect : g∘ f == id) (isretr : f  ∘ g == id) (a : A) : isretr (f a) = ap f (issect' f g issect isretr a).
+           (issect : g∘ f == id) (isretr : f  ∘ g == id) (a : A) :
+  isretr (f a) = ap f (issect' f g issect isretr a).
 Proof.
   unfold issect'.
   apply moveL_M1.
@@ -629,7 +617,6 @@ Proof.
     apply moveL_M1'.
     repeat rewrite concat_p_pp.
     (* Now we apply lots of naturality and cancel things. *)
-    
     rewrite <- (concat_pp_A1 (fun a => (e_sect f a)^) _ _).
     rewrite (ap_compose' f (e_inv f)).
     rewrite <- (ap_p_pp _ _ (ap f (ap (e_inv f) (e_retr f (f (e_inv f b))))) _). 
@@ -655,18 +642,15 @@ End EquivInverse.
 
 Definition Equiv_inverse {A B : Type} (e: A ≃ B) : B ≃ A := BuildEquiv _ _ (e_inv (e_fun e)) (isequiv_inverse _).  
 
-
 Definition Move_equiv {A B} (e : A ≃ B) x y : x = e_inv' e y -> e_fun e x = y.
 Proof.
   intro X. apply (ap (e_fun e)) in X. exact (X @ e_retr' e _).
 Defined.
 
-
 Definition Move_equiv' {A B} (e : A ≃ B) x y : e_fun e x = y -> x = e_inv' e y.
 Proof.
   intro X. apply (ap (e_inv' e)) in X. exact ((e_sect' e _)^ @ X).
 Defined.
-
 
 Definition transport_paths_naturality {A : Type} {g : A -> A} {y1 y2 : A} 
   (p : y1 = y2) (q : forall x, x = g x)
@@ -690,7 +674,6 @@ Definition transport_e_fun' A B (P : A -> Type) a a' (e : a = a') (e' : B ≃ P 
 Proof.
   destruct e. reflexivity.
 Defined.
-
 
 Definition ap_inv_equiv {A B} (f : A -> B) `{IsEquiv _ _ f} x y : f x = f y -> x = y.
 Proof.
@@ -721,7 +704,6 @@ Proof.
   - intro e. destruct p. reflexivity. 
 Defined. 
 
-
 Definition concat_VpV_p {A : Type} {x z : A} (p : x = z) (q : x = z) :
   q = p -> p^ @ q = eq_refl.
   destruct p. cbn. apply id.
@@ -737,7 +719,6 @@ Definition concat_Ap1 {A : Type} {f : A -> A} (p : forall x, f x = x) {x y : A} 
   (p x)^ @ (ap f q) = q @ (p y)^.
   destruct q. apply concat_refl.
 Defined.
-
 
 Definition moveR_pV {A : Type} {x y z : A} (p : x = z) (q : z = y) (r : x = y) :
   p^ @ r = q -> r = p @ q.
@@ -785,7 +766,6 @@ Proof.
 Defined. 
 
 (**
-
 Hedberg theorem is a standard theorem of HoTT: it states that if a
 type [A] has decle equality, then it is a hSet, i.e. its equality
 is proof-irrelevant. See the proof at [https://github.com/HoTT] in
@@ -810,7 +790,6 @@ Proof.
     - apply inverse_left_inverse.
     - exact (f eq_refl).
   }
-
   intros p q.
   assert (p_given_by_dec := lemma p).
   assert (q_given_by_dec := lemma q).
@@ -903,7 +882,6 @@ Proof.
   - intro. cbn. apply inv2.
 Defined.
 
-
 Definition transport_equiv A X (a b:A) Q (e : a = b) (x : Q a) (e' : Q b ≃ X):
   e_fun e' (transport_eq Q e x) =
   e_fun
@@ -912,9 +890,6 @@ Definition transport_equiv A X (a b:A) Q (e : a = b) (x : Q a) (e' : Q b ≃ X):
 Proof.
   destruct e. reflexivity.
 Defined.
-
-
-
 
 Definition transport_paths_naturality' {A : Type} {g : A -> A} {y1 y2 : A} 
   (p : y1 = y2) (q : forall x, g x = x)
@@ -928,7 +903,6 @@ Instance isequiv_moveR_M1 {A : Type} {x y : A} (p q : x = y)
 Proof.
   destruct p. apply (@e_isequiv _ _ (Equiv_id _)).
 Defined.
-
 
 Definition transport_inverse A B (a b : A) (c : B) P (EE : a = b) (XX : Type) (XXX : XX ≃ (P c a)):
       Equiv_inverse (transport_eq (fun X : A => XX ≃ (P c X)) EE XXX) =
@@ -947,9 +921,6 @@ Definition transport_fun_eq A (a:A) P (f : forall a', a = a' -> P a') b c (e : b
 Proof.
   destruct e. cbn. rewrite concat_refl. reflexivity.
 Defined.
-
-
-
 
 Definition IsHProp A := forall x y : A, x = y. 
 
