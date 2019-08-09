@@ -1,4 +1,4 @@
-Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable Conversion_table.
+Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable Nat_binnat URStdLib DecidableEq Conversion_table.
 Require Import BinInt BinNat Nnat Vector Arith.Plus Omega ZArith.
 
 Set Universe Polymorphism.
@@ -47,7 +47,7 @@ Qed.
 Lemma nat_comm : forall n m : nat, n + m = m + n.
   intros. rewrite plus_comm. reflexivity.
 Defined. 
-  
+
 Lemma bin_comm : forall n m : N, (n + m = m + n)%N.
   exact (↑ nat_comm).
 Defined.
@@ -106,6 +106,8 @@ Goal test_sequence 2 5 >= 1000.
   replace_goal. now compute.
 Defined.
 
+(* 
+
 (* with eliminator instead of pattern matching *)
 
 Definition test_sequence_ : nat -> nat -> nat := fun acc =>
@@ -115,9 +117,7 @@ Definition test_sequence_ : nat -> nat -> nat := fun acc =>
                                      nat_rect (fun _ => nat) (3 * acc)
                                               (fun _ res'' => Nat.pow res acc) m) n).
 
-
 Definition test_sequence__conv := ltac: (convert test_sequence_ : (N -> nat -> N)).
-
 
 Hint Extern 0 (test_sequence_ _ _ = _ )  => eapply test_sequence__conv.2 : typeclass_instances.
 Arguments test_sequence_ : simpl never.
@@ -125,3 +125,5 @@ Arguments test_sequence_ : simpl never.
 Goal test_sequence_ 2 5 >= 1000.
   replace_goal; inversion 1. 
 Defined. 
+
+*)

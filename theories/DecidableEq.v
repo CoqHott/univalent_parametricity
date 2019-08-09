@@ -39,12 +39,10 @@ Proof.
 Defined.
 
 
-(* Instance IsHSet_compare : HSet comparison. *)
-(*   apply Hedberg. *)
-(*   econstructor. destruct a, b; try solve [now left]; solve [now right]. *)
-(* Defined. *)
-
-
+Instance IsHSet_compare : HSet comparison.
+  apply Hedberg.
+  econstructor. destruct a, b; try solve [now left]; solve [now right].
+Defined.
 
 Definition DecidableEq_equiv A B (eB : A ≃ B) `{DecidableEq A} : DecidableEq B. 
 Proof.

@@ -1,4 +1,4 @@
-Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable Conversion_table.
+Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable DecidableEq.
 Require Import BinInt BinNat Nnat Vector Arith.Plus Omega ZArith.
 
 Set Universe Polymorphism.
@@ -242,11 +242,11 @@ Definition diff' n (e : N0 = NS n) : False.
 Abort.
 
 
-Definition plus (n m : nat) : nat := nat_rect (fun _ => nat) m (fun _ res => S res) n.
+(* Definition my_plus (n m : nat) : nat := nat_rect (fun _ => nat) m (fun _ res => S res) n. *)
 
 Definition plus_N (n m : N) : N := nat'_rect (fun _ => N) m (fun _ res => NS res) n.
 
-Definition plus_N' : N -> N -> N := ↑ plus.  
+Definition plus_N' : N -> N -> N := ↑ plus.
 
 Eval lazy in plus_N' (2%N) (3%N).
 
@@ -307,5 +307,4 @@ Proof.
   cbn; intros. econstructor. tc. intros.
   eapply UR_Type_Equiv. apply Equiv_funvector_vector. tc. 
 Defined. 
-
 

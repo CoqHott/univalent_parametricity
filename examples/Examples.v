@@ -1,4 +1,4 @@
-Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable .
+Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable DecidableEq URStdLib.
 Require Import BinInt BinNat Nnat Vector Arith.Plus Omega ZArith Conversion_table. 
 
 Set Universe Polymorphism.
@@ -75,7 +75,7 @@ Transparent vector_to_list list_to_vector.
 
 Notation "[[ ]]" := ([ ]; eq_refl).
 Notation "[[ x ]]" := ([x]; eq_refl).
-Notation "[[ x ; y ; .. ; z ]]" := ((FP.cons x (FP.cons y .. (FP.cons z FP.nil) ..)) ;eq_refl).
+Notation "[[ x ; y ; .. ; z ]]" := ((URStdLib.cons x (URStdLib.cons y .. (URStdLib.cons z URStdLib.nil) ..)) ;eq_refl).
 
 
 (* the lib_prop theorem has been lifted as expected. *)
@@ -95,7 +95,7 @@ Time Eval lazy in lib_list.(map) S [[1; 2; 3 ; 4 ; 5 ; 6 ; 7 ; 8]].
 Definition app {A} : list A -> list A -> list A :=
   fix app l m :=
   match l with
-   | FP.nil => m
+   | URStdLib.nil => m
    | a :: l1 => a :: app l1 m
   end.
 

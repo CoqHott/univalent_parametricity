@@ -46,18 +46,59 @@ Instance issig_equiv' A B :  (A ≃ B) ≃ { e_fun : A -> B &  IsEquiv e_fun } :
 
 
 (* ET: should be in FP *)
+Definition FP_ap:  @ap ≈ @ap.
+  intros A A' eA B B' eB f f' ef x x' ex y y' ey p p' ep. 
+  cbn in *.
+  induction ep. apply UR_eq_refl. 
+Defined.
+
+Hint Extern 0 (UR_eq _ _ _ _ _ _ _ _ _ _ _ ) => 
+  erefine (FP_ap _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) : typeclass_instances.
+
+
+(* ET: should be in FP *)
+Definition FP_IsEquiv : @IsEquiv ≈ @IsEquiv.
+Proof.
+  cbn. split ; [typeclasses eauto | ]; intros.
+  unshelve refine (UR_Type_Equiv _ _ _). cbn.
+  unshelve refine (UR_Type_Equiv' _ _ _).
+  erefine ((ur_type (@FP_Sigma _ _ _) _ _ _)); cbn ; intros .
+  typeclasses eauto with typeclass_instances.
+  split.
+  typeclasses eauto with typeclass_instances.
+  intros. erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn; intros.
+  typeclasses eauto with typeclass_instances.
+  split.
+  typeclasses eauto with typeclass_instances.
+  intros. erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn; intros.
+  typeclasses eauto with typeclass_instances.
+  split.
+  typeclasses eauto with typeclass_instances.
+  typeclasses eauto with typeclass_instances.
+Defined. 
+
+Hint Extern 0 (IsEquiv _ ⋈ IsEquiv _) => refine (ur_type (FP_IsEquiv _ _ _ _ _ _) _ _ _) : typeclass_instances. 
+
+(* ET: should be in FP *)
 (* ET: BROKEN, sorry... *)
 Definition FP_Equiv : @Equiv ≈ @Equiv.
 Proof.
   cbn;   split ; [typeclasses eauto | ]; intros.
   unshelve refine (UR_Type_Equiv _ _ _). cbn. 
   unshelve refine (UR_Type_Equiv' _ _ _).
-  erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn ; intros .
-  typeclasses eauto with typeclass_instances. 
-  split; tc.
+  erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn ; intros. tc.
+  split; tc. 
 Defined. 
 
 Hint Extern 0 (UR (_ ≃ _) (_ ≃ _)) => refine (Ur (ur_type (FP_Equiv _ _ _) _ _ _)) : typeclass_instances.
+
+
+(* ET: should be in UR? *)
+Definition Isequiv_ur_hprop A A' B B' (H : A ⋈ A')(H' : B ⋈ B') (f:A->B) (g:A'->B')
+           (e : IsEquiv f) (e' : IsEquiv g)
+           (efg:f ≈ g) : e ≈ e'. 
+  intros; apply ur_hprop. apply hprop_isequiv. 
+Defined.   
 
 
 Definition FP_Equiv_id : @Equiv_id ≈ @Equiv_id.
@@ -88,46 +129,6 @@ tc. cbn; intros. refine (ur_type (FP_Equiv _ _ _) _ _ _); tc.
 apply FP_eq_to_equiv.
 Defined.
 
-(* ET: should be in FP *)
-Definition FP_IsEquiv : @IsEquiv ≈ @IsEquiv.
-Proof.
-  cbn. split ; [typeclasses eauto | ]; intros.
-  unshelve refine (UR_Type_Equiv _ _ _). cbn.
-  unshelve refine (UR_Type_Equiv' _ _ _).
-  erefine ((ur_type (@FP_Sigma _ _ _) _ _ _)); cbn ; intros .
-  typeclasses eauto with typeclass_instances.
-  split.
-  typeclasses eauto with typeclass_instances.
-  intros. erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn; intros.
-  typeclasses eauto with typeclass_instances.
-  split.
-  typeclasses eauto with typeclass_instances.
-  intros. erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn; intros.
-  typeclasses eauto with typeclass_instances.
-  split.
-  typeclasses eauto with typeclass_instances.
-  typeclasses eauto with typeclass_instances.
-Defined. 
-
-Hint Extern 0 (IsEquiv _ ⋈ IsEquiv _) => refine (ur_type (FP_IsEquiv _ _ _ _ _ _) _ _ _) : typeclass_instances. 
-
-
-(* ET: should be in UR? *)
-Definition Isequiv_ur_hprop A A' B B' (H : A ⋈ A')(H' : B ⋈ B') (f:A->B) (g:A'->B')
-           (e : IsEquiv f) (e' : IsEquiv g)
-           (efg:f ≈ g) : e ≈ e'. 
-  intros; apply ur_hprop. apply hprop_isequiv. 
-Defined.   
-
-(* ET: should be in FP *)
-Definition FP_ap:  @ap ≈ @ap.
-  intros A A' eA B B' eB f f' ef x x' ex y y' ey p p' ep. 
-  cbn in *.
-  induction ep. apply UR_eq_refl. 
-Defined.
-
-Hint Extern 0 (UR_eq _ _ _ _ _ _ _ _ _ _ _ ) => 
-  erefine (FP_ap _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) : typeclass_instances.
 
 
 (* ET: should be in FP *)
