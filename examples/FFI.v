@@ -1,4 +1,4 @@
-Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable Conversion_table.
+Require Import HoTT Tactics UR URTactics FP Record MoreInductive Transportable Conversion_table.
 Require Import BinInt BinNat Nnat. 
 
 Require Import Utf8.

@@ -6,7 +6,7 @@ Set Polymorphic Inductive Cumulativity.
 
 Set Universe Polymorphism.
 
-Require Import HoTT HoTT_axioms URTactics ADT UR.
+Require Import HoTT URTactics ADT UR.
 
 
 (* Lemmas about canonical equality *)

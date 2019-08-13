@@ -1,6 +1,5 @@
 -arg "-w '-notation-overridden'" -R . UnivalentParametricity
 theories/HoTT.v
-theories/HoTT_axioms.v
 theories/URTactics.v
 theories/UR.v
 theories/ADT.v

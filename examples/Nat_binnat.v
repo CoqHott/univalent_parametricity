@@ -1,4 +1,4 @@
-Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable DecidableEq.
+Require Import HoTT Tactics UR URTactics FP Record MoreInductive Transportable DecidableEq.
 Require Import BinInt BinNat Nnat Vector Arith.Plus Omega ZArith.
 
 Set Universe Polymorphism.

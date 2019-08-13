@@ -2,7 +2,7 @@ Set Polymorphic Inductive Cumulativity.
 
 Set Universe Polymorphism.
 
-Require Import HoTT HoTT_axioms UR FP Coq.Program.Tactics.
+Require Import HoTT UR FP Coq.Program.Tactics.
 
 (* HSet and Hedberg *)
 

@@ -3,7 +3,7 @@
    defines the relation for basic type constructors *)
 (************************************************************************)
 
-Require Import HoTT HoTT_axioms URTactics.
+Require Import HoTT URTactics.
 
 Set Universe Polymorphism.
 Set Primitive Projections.

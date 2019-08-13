@@ -1,4 +1,4 @@
-Require Import HoTT HoTT_axioms UR URTactics ADT FP Record DecidableEq FPStdLib.
+Require Import HoTT UR URTactics ADT FP Record DecidableEq FPStdLib.
 
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet. 

@@ -1,4 +1,4 @@
-Require Import HoTT HoTT_axioms UR URTactics FP.
+Require Import HoTT UR URTactics FP.
  
 Set Universe Polymorphism.
 

@@ -2,7 +2,7 @@
 (* This file contains basic definitions of UR that are helpful for many examples  *)
 (************************************************************************)
 
-Require Import HoTT HoTT_axioms UR URTactics DecidableEq FP ADT.
+Require Import HoTT UR URTactics DecidableEq FP ADT.
 
 (*! nat !*)
 
