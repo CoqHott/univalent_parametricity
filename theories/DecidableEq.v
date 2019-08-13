@@ -156,12 +156,59 @@ Proof.
   econstructor; try typeclasses eauto.
 Defined.
 
-(* ET: this proof does not go through anymore (not needed in theories/* at least *)
-(* 
+(* nat *)
+
+Instance DecidableEq_eq_nat : DecidableEq nat.
+constructor. intros x y; revert y. 
+induction x.
+- destruct y.
+ + left ;reflexivity.
+ + right; intro H; inversion H.
+- induction y.
+  + right; intro H; inversion H.
+  + case (IHx y). intro H. left. exact (ap S H).
+    intro H; right. intro e. inversion e. apply (H (logic_eq_is_eq H1)).
+Defined.
+
+Canonical Structure Dnat : DType := Build_DType nat _.
+
+(*! bool !*)
+
+Instance DecidableEq_eq_bool : DecidableEq bool.
+constructor. intros x y; revert y. induction x.
+- destruct y.
+ + left ;reflexivity.
+ + right; intro H; inversion H.
+- destruct y.
+ + right; intro H; inversion H.
+ + left ;reflexivity.
+Defined.
+
+Canonical Structure Dbool : DType := Build_DType bool _.
+
+Instance Decidable_leq n m : DecidableEq (n <= m).
+constructor. revert m n. intros n m.  
+assert (forall n n'
+(e : n = n'), forall (le_mn1 : m <= n) (le_mn2 : m <= n'), Logic.eq (e # le_mn1) le_mn2).
+clear.
+intros. revert n' e le_mn2.
+induction le_mn1 using le_rect; intros. 
+- destruct le_mn2 using le_rect.
+  + assert (e = eq_refl). apply is_hset. rewrite X. reflexivity.
+  + assert False. clear - e le_mn2. rewrite e in le_mn2. apply (inv_leq _ 0 le_mn2). destruct H.
+- destruct le_mn2 using le_rect; try clear IHle_mn2.
+  + assert False. clear - e le_mn1. rewrite <- e in le_mn1. apply (inv_leq _ 0 le_mn1). destruct H. 
+  + assert (m0 = m1). clear - e. inversion e. reflexivity.
+    specialize (IHle_mn1 _ X le_mn2). rewrite <- IHle_mn1.
+    assert (e = ap S X). apply is_hset. rewrite X0 in *. clear e X0.
+    destruct X. reflexivity. 
+- intros a b; apply inl. destruct (H _ _ eq_refl a b). reflexivity. 
+Defined. 
+
+
 Definition DecidableEq_hprop : forall (A B : DType), A.(carrier) = B.(carrier) -> A = B.
   intros A B e. destruct A as [A decA], B as [B decB]. cbn in *. assert (HSet A). apply Hedberg. auto. 
   apply path_DType. cbn in *. exists e. apply path_DecidableEq. apply funext. intro a. apply funext. intro b.
-  destruct decA, decB. destruct e. cbn. apply path_sum. destruct (dec_paths a b), (dec_paths0 a b); auto. 
+  destruct decA, decB. destruct e. cbn. apply path_sum. destruct (dec_paths0 a b), (dec_paths1 a b); auto. 
   apply is_hset. apply funext. intro e. destruct (f e).
 Defined. 
-*)

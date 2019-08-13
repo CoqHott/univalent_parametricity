@@ -1,126 +1,11 @@
-Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable DecidableEq URStdLib.
+Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable DecidableEq FPStdLib.
 Require Import BinInt BinNat Nnat Vector Arith.Plus Omega ZArith Conversion_table. 
 
 Set Universe Polymorphism.
 
 
-(* This file contains 3 examples: Lib, Monoid, and pow. 
-   Lib and pow are mentioned in the paper. Monoid is not. *)
+(* This file contains 2 examples: Monoid, and pow. *)
 
-(*****************************)
-(* we start with the Lib example (Section 1) *)
-
-Record Lib (C : Type -> nat -> Type) :=
-  { head : forall {A : Type} {n : nat}, C A (S n) -> A;
-    map : forall {A B} (f:A -> B) {n}, C A n -> C B n;
-    lib_prop : forall n A (B : DType) (f : A -> B) (v : C A (S n)), head (map f v) = f (head v) }.
-
-Arguments map {_} _ {_ _} _ {_} _.
-Arguments head {_} _ {_ _} _.
-Arguments lib_prop {_} _ {_ _ _} _ _.
-
-(* the proof that Lib is a univalent type constructor requires to 
-   use an equivalent representation with dependent sums *)
-
-Definition Lib_sig C :=   {hd : forall {A : Type} {n : nat}, C A (S n) -> A  &
-                      {map : forall {A B} (f:A -> B) {n},
-  C A n -> C B n &
-  forall n A (B:DType) (f : A -> B) (v : C A (S n)), hd _ _ (map _ _ f _ v) = f (hd _ _ v) : Type}}.
-
-Instance issig_lib_hd_map C : Lib_sig C ≃ Lib C.
-Proof.
-  issig (Build_Lib C) (@head C) (@map C) (@lib_prop C).
-Defined.
-
-Instance issig_lib_hd_map_inv C : Lib C ≃ Lib_sig C :=
-  Equiv_inverse _.
-
-Hint Extern 0 => progress (unfold Lib_sig) :  typeclass_instances.
-
-(* the proof is automatic using the univ_param_record tactic *)
-
-Definition FP_Lib : Lib ≈ Lib.
-  univ_param_record.
-Defined.
-
-Hint Extern 0 (Lib _ ≃ Lib _) => erefine (ur_type FP_Lib _ _ _).(equiv); simpl
-:  typeclass_instances.
-
-
-(* we now define an instance of Lib for vectors *)
-
-Definition lib_vector_prop : forall n A (B:DType) (f : A -> B) (v : t A (S n)),
-  Vector.hd (Vector.map f v) = f (Vector.hd v).
-Proof.
-  intros.
-  apply (Vector.caseS (fun _ v => Vector.hd (Vector.map f v) = f (Vector.hd v))).
-  intros. reflexivity.
-Defined.
-                                                   
-Definition libvec : Lib Vector.t :=
-  {| head := fun A n x => @Vector.hd A n x;
-     map := fun A B f n => Vector.map f;
-     lib_prop := lib_vector_prop |}.
-
-(* using the equivalence between vectors and sized lists
-   we can automatically infer the Lib structure on sized lists. 
-*)
-
-Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑ libvec.
-
-Notation vect_to_list := (vector_to_list _ _ (Equiv_id _) _ _ _).
-Notation list_to_vect := (list_to_vector _ _ (Equiv_id _) _ _ _).
-
-Transparent vector_to_list list_to_vector.
-
-Notation "[[ ]]" := ([ ]; eq_refl).
-Notation "[[ x ]]" := ([x]; eq_refl).
-Notation "[[ x ; y ; .. ; z ]]" := ((URStdLib.cons x (URStdLib.cons y .. (URStdLib.cons z URStdLib.nil) ..)) ;eq_refl).
-
-
-(* the lib_prop theorem has been lifted as expected. *)
-
-Check lib_list.(lib_prop).
-
-(* and can be effectively used *)
-
-Time Eval lazy in (lib_list.(lib_prop) S [[1; 2; 3 ; 4 ; 5 ; 6 ; 7 ; 8]]).
-
-(* the induced lib_list.(map) function behaves as map on sized lists. *)
-
-Time Eval lazy in lib_list.(map) S [[1; 2; 3 ; 4 ; 5 ; 6 ; 7 ; 8]].
-
-(* Some more tests using the append function *)
-
-Definition app {A} : list A -> list A -> list A :=
-  fix app l m :=
-  match l with
-   | URStdLib.nil => m
-   | a :: l1 => a :: app l1 m
-  end.
-
-Lemma app_length {A} : forall l l' : list A, length (app l l') = length l + length l'.
-Proof.
-  induction l; simpl; intros. reflexivity. apply ap. auto.
-Defined.
-
-Definition app_list {A:Type} {n n'} `{A ⋈ A} :
-  {l: list A & length l = n} -> {l: list A & length l = n'}
-  -> {l: list A & length l = n+n'} := ↑ Vector.append.
-
-Definition app_list' {A:Type} {n n'} `{A ⋈ A} :
-  {l: list A & length l = n} -> {l: list A & length l = n'}
-  -> {l: list A & length l = n+n'}.
-   intros l l'. exists (app l.1 l'.1). eapply concat. apply app_length. apply ap2; [exact l.2 | exact l'.2].
-Defined.
-
-Eval compute in (app_list [[1;2]] [[1;2]]).
-
-Eval compute in (app_list' [[1;2]] [[1;2]]).
-
-Eval compute in (lib_list.(map) S (app_list [[1;2]] [[5;6]])).
-
-Eval compute in (lib_list.(map) neg (app_list [[true;false]] [[true;false]])).
 
 (*****************************)
 (* we now turn to a similar example, the record for Monoid *)
@@ -197,13 +82,6 @@ Abort.
 
 Print Assumptions nat_pow_.
 Print Assumptions nat_pow.
-
-Definition lib_map_eff := Eval compute in lib_list.(@map _).
-Definition lib_map_noeff := lib_list.(@map _).
-
-Print Assumptions lib_map_eff.
-Print Assumptions lib_map_noeff.
-
 
 (* Definition lib_prop_eff := Eval compute in lib_list.(lib_prop) S [[5;6]]. *)
 

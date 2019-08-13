@@ -1,4 +1,4 @@
-Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable Conversion_table DecidableEq URStdLib.
+Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable Conversion_table DecidableEq FPStdLib.
 Require Import BinInt BinNat Nnat Vector Arith.Plus Omega ZArith.
 
 Set Universe Polymorphism.
@@ -17,7 +17,7 @@ Record Lib (C : Type -> nat -> Type) :=
 
 Arguments map {_} _ {_ _} _ {_} _.
 Arguments head {_} _ {_ _} _.
-Arguments lib_prop {_} _ {_ _ _} _ _.
+Arguments lib_prop {_} _ {_ _} _ _ _.
 
 
 
@@ -82,7 +82,7 @@ Transparent vector_to_list list_to_vector.
 
 Notation "[[ ]]" := ([ ]; eq_refl).
 Notation "[[ x ]]" := ([x]; eq_refl).
-Notation "[[ x ; y ; .. ; z ]]" := ((URStdLib.cons x (URStdLib.cons y .. (URStdLib.cons z URStdLib.nil) ..)) ;eq_refl).
+Notation "[[ x ; y ; .. ; z ]]" := ((UR.cons x (UR.cons y .. (UR.cons z UR.nil) ..)) ;eq_refl).
 
 
 (* the lib_prop theorem has been lifted as expected. *)
@@ -91,7 +91,8 @@ Check lib_list.(lib_prop).
 
 (* and can be effectively used *)
 
-Time Eval lazy in (lib_list.(lib_prop) S [[1; 2; 3 ; 4 ; 5 ; 6 ; 7 ; 8]]).
+(* universe issue *)
+(* Time Eval lazy in (lib_list.(lib_prop) Dnat S [[1; 2; 3 ; 4 ; 5 ; 6 ; 7 ; 8]]). *)
 
 (* the induced lib_list.(map) function behaves as map on sized lists. *)
 
@@ -153,5 +154,36 @@ Definition liblist : {hd :forall {A : Type} {n : nat}, sizedList A (S n) -> A  &
   sizedList A n -> sizedList B n &
                    forall n A (B:DType) (f : A -> B) (v : sizedList A (S n)), hd _ _ (map _ _ f _ v) = f (hd _ _ v) : Type}}
   := ↑ libvec_.
+  
 
+(* Some more tests using the append function *)
 
+Definition app {A} : list A -> list A -> list A :=
+  fix app l m :=
+  match l with
+   | UR.nil => m
+   | a :: l1 => a :: app l1 m
+  end.
+
+Lemma app_length {A} : forall l l' : list A, length (app l l') = length l + length l'.
+Proof.
+  induction l; simpl; intros. reflexivity. apply ap. auto.
+Defined.
+
+Definition app_list {A:Type} {n n'} `{A ⋈ A} :
+  {l: list A & length l = n} -> {l: list A & length l = n'}
+  -> {l: list A & length l = n+n'} := ↑ Vector.append.
+
+Definition app_list' {A:Type} {n n'} `{A ⋈ A} :
+  {l: list A & length l = n} -> {l: list A & length l = n'}
+  -> {l: list A & length l = n+n'}.
+   intros l l'. exists (app l.1 l'.1). eapply concat. apply app_length. apply ap2; [exact l.2 | exact l'.2].
+Defined.
+
+Eval compute in (app_list [[1;2]] [[1;2]]).
+
+Eval compute in (app_list' [[1;2]] [[1;2]]).
+
+Eval compute in (lib_list.(map) S (app_list [[1;2]] [[5;6]])).
+
+Eval compute in (lib_list.(map) neg (app_list [[true;false]] [[true;false]])).

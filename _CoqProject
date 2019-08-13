@@ -1,15 +1,15 @@
 -arg "-w '-notation-overridden'" -R . UnivalentParametricity
 theories/HoTT.v
-theories/DecidableEq.v
 theories/HoTT_axioms.v
 theories/URTactics.v
-theories/ADT.v
 theories/UR.v
+theories/ADT.v
 theories/FP.v
+theories/DecidableEq.v
+theories/FPStdLib.v
 theories/Record.v
 theories/Transportable.v
-theories/URStdLib.v
-examples/Vector.v
+theories/Vector.v
 examples/MoreInductive.v
 examples/Nat_binnat.v
 examples/Conversion_table.v

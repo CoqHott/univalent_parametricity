@@ -366,6 +366,8 @@ Proof.
   econstructor; try typeclasses eauto.
 Defined.
 
+Hint Extern 0 (UR_Type Set Set) => exact FP_Type : typeclass_instances. 
+
 (*! Establishing FP for Prop !*)
 
 Instance UR_Prop : UR Prop Prop :=
