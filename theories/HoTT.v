@@ -952,3 +952,159 @@ Definition inv_leq m : forall n, apply_S_n n m <= m -> False.
     + apply (inv_eq_gen _ _ H0).
     + apply (IHm (S n) H0).
 Defined.
+
+Definition ap2_inv {A A' B:Type} (f:A -> A' -> B) {x y:A} (p:x = y)
+  {x' y':A'} (q:x' = y') : (ap2 f p q)^ = ap2 f p^ q^.
+  destruct p, q. reflexivity.
+Defined. 
+
+Definition ap2_pp {A A' B:Type} (f:A -> A' -> B) {x y z:A} (p:x = y) (p':y = z)
+           {x' y' z' :A'} (q:x' = y') (q':y' = z') :
+  ap2 f p q @ ap2 f p' q' =  ap2 f (p @ p') (q @ q').
+  destruct p, q. reflexivity.
+Defined. 
+
+Ltac etransitivity := refine (_ @_).
+
+(* helper *)
+Axiom admit : forall X, X. 
+
+
+(* univalence *)
+
+Definition eq_to_equiv A B : A = B -> A ≃ B :=
+  fun e => e # (Equiv_id A).
+
+Definition Funext := forall (A : Type) (P : A -> Type) f g, IsEquiv (@apD10 A P f g).
+
+(* The frawework relies on the univalence axiom and functional extensionality *)
+
+Axiom univalence : forall A B, IsEquiv (eq_to_equiv A B).
+Axiom funext : Funext. 
+
+Instance funext_isequiv A P (f g : forall x : A, P x) : IsEquiv (@apD10 _ _ f g) := funext _ _ _ _.
+
+Instance univalence_isequiv A B : IsEquiv (eq_to_equiv A B) := univalence _ _.
+
+Definition transport_apD10 A B (f g : forall x:A, B x)
+           (P : forall x:A, B x -> Type)
+           (e : f = g) x v: transport_eq (fun X => P x (X x))
+                                                       e v
+                                          = transport_eq (fun X => P x X)
+                                                (apD10 e x) v.
+  destruct e. reflexivity.
+Defined. 
+
+Definition transport_funext {A B} {f g : forall x:A, B x}
+           (P : forall x:A, B x -> Type) x 
+           (v : P x (f x)) (e : forall x, f x = g x)
+            : transport_eq (fun X => P x (X x))
+                                                       (e_inv apD10 e) v
+                                          = transport_eq (fun X => P x X)
+                                                (e x) v.
+Proof.
+  rewrite transport_apD10. rewrite e_retr. reflexivity.
+Defined.
+
+Definition IsHProp_forall A (B:A ->Type) : (forall a, IsHProp (B a)) -> IsHProp (forall a, B a).
+  intros H f g. apply funext; intro. apply H. 
+Defined.
+
+(* for minor differences between Prop and Type (coming from impredicativity)  *)
+(* we need to state again univalence for Prop, even if in principle Prop is  *)
+(* a subtype iof Type *)
+
+Definition Equiv_id_P (A:Prop) : A ≃ A := 
+  BuildEquiv _ _ id (BuildIsEquiv _ _ _ id (fun _ => eq_refl) (fun _ => eq_refl) (fun _ => eq_refl)).
+
+Definition eq_to_equiv_P (A B:Prop) : A = B -> A ≃ B :=
+  fun e => @transport_eq Prop (fun X => A ≃ X) A B e (Equiv_id_P A).
+             
+Axiom univalence_P : forall (A B:Prop), IsEquiv (eq_to_equiv_P A B).
+
+
+Definition ap2_slide {A A' B:Type} (f:A -> A' -> B) {x y:A} (p:x = y)
+           {x' y':A'} (q:x' = y') : ap2 f p eq_refl @ ap2 f eq_refl q =
+                                    ap2 f eq_refl q @ ap2 f p eq_refl.
+  etransitivity. apply ap2_pp. eapply inverse. etransitivity. apply ap2_pp.
+  eapply (ap2 (fun X Y => ap2 f X Y)). eapply inverse. all : apply concat_refl. 
+Defined.
+
+Definition IsEquiv_eq A B (f : A -> B) (e e' : IsEquiv f)
+           (Hinv  : forall x, @e_inv _ _ _ e x = @e_inv _ _ _ e' x)
+           (Hsect : forall x, (Hinv (f x))^ @ (@e_sect _ _ _ e x) = @e_sect _ _ _ e' x)
+           (Hretr : forall y, ap f (Hinv y)^ @ (@e_retr _ _ _ e y) = @e_retr _ _ _ e' y)
+           (Hadj  : forall x, (Hretr (f x))^ @ (ap2 HoTT.concat eq_refl (@e_adj _ _ _ e x)) @ (ap_pp _ _ _)^ @ ap (ap f) (Hsect x) =  (@e_adj _ _ _ e' x))
+  : e = e'.
+  destruct e, e'. pose (Hinv' := HoTT.e_inv apD10 Hinv).
+  unshelve refine (let Hsect' := _ : (fun x : A => ((apD10 Hinv' (f x))^ @ HoTT.e_sect f x)) = HoTT.e_sect f in _). apply funext. intros x.
+  etransitivity. eapply ap2. eapply ap. 
+  unshelve eapply (@apD10 _ _ _ Hinv _ (f x)). apply (HoTT.e_retr apD10). 
+  reflexivity. apply Hsect.
+  unshelve refine (let Hretr' := _ : (fun y : B => ap f (apD10 Hinv' y)^ @ HoTT.e_retr f y) = HoTT.e_retr f in _). apply funext. intros y.
+  etransitivity. eapply ap2. eapply ap. eapply ap. 
+  unshelve eapply (@apD10 _ _ _ Hinv _ y). apply (HoTT.e_retr apD10). 
+  reflexivity. apply Hretr.
+  unshelve refine (let Hadj' := _ : (fun x : A =>
+         (((apD10 Hretr' (f x))^ @ ap2 HoTT.concat eq_refl (HoTT.e_adj f x)) @
+                                                                             (ap_pp f (apD10 Hinv' (f x))^ (HoTT.e_sect f x))^) @ ap (ap f) (apD10 Hsect' x)) = HoTT.e_adj f in _). apply funext. intros x.
+  cbn in Hretr', Hsect'. unfold Hretr', Hsect', Hinv'. rewrite (HoTT.e_retr apD10 (fun y : B =>
+        ap2 HoTT.concat (ap (ap f) (ap inverse (apD10 (HoTT.e_retr apD10 Hinv) y)))
+          eq_refl @ Hretr y)). rewrite (HoTT.e_retr apD10 (fun x0 : A =>
+           ap2 HoTT.concat (ap inverse (apD10 (HoTT.e_retr apD10 Hinv) (f x0)))
+               eq_refl @ Hsect x0)). rewrite <- Hadj. rewrite concat_inv.
+  repeat rewrite <- concat_p_pp. apply ap.
+  rewrite (ap_pp (ap f)). repeat rewrite concat_p_pp. apply (ap (fun X => X @ (ap (ap f) (Hsect x)))) . rewrite <- (concat_p_pp (ap2 HoTT.concat (ap (ap f) (ap inverse (apD10 (HoTT.e_retr apD10 Hinv) (f x)))) eq_refl)^).
+  rewrite concat_p_pp. rewrite ap2_inv. Opaque ap2. cbn. Transparent ap2.
+  rewrite ap2_slide. repeat rewrite <- concat_p_pp. apply ap.
+  pose (X := (ap inverse (apD10 (HoTT.e_retr apD10 Hinv) (f x)))).
+    
+  assert (ap2 HoTT.concat (ap (ap f) X)^ eq_refl @
+            (ap_pp f (apD10 (HoTT.e_inv apD10 Hinv) (f x))^ (e_sect _ x))^ =
+          (ap_pp f (Hinv (f x))^ (e_sect _ x))^ @ ap (ap f) (ap2 HoTT.concat X^ eq_refl)). clear. destruct X. cbn. eapply inverse. apply concat_refl.
+  rewrite concat_p_pp. unfold X in X0. etransitivity. eapply ap2. 
+  exact X0. reflexivity. rewrite <- concat_p_pp. rewrite <- (ap_pp (ap f)).
+  unfold X. rewrite ap2_pp. rewrite inv_inv. apply concat_refl. 
+  Opaque ap2. cbn in *. rewrite <- Hadj'. clear Hadj' Hadj. Transparent ap2. 
+  rewrite <- Hsect'. clear Hsect' Hsect.
+  rewrite <- Hretr'. clear Hretr' Hretr.
+  destruct Hinv'. cbn. 
+  match goal with | |- (_ = {|
+  e_inv := e_inv0;
+  e_sect := fun x : A => e_sect0 x;
+  e_retr := fun y : B => e_retr0 y;
+  e_adj := ?e |}) =>  
+                    assert (e_adj0 = e) end.
+  apply funext. intro. repeat rewrite concat_refl.
+  destruct (e_adj0 x). reflexivity. destruct X. reflexivity. 
+Defined.
+
+Definition hprop_isequiv {A B} {f: A -> B} : forall e e' : IsEquiv f, e = e'.
+  intros e e'.
+  destruct e as [e_inv e_sect e_retr e_adj], e'. unshelve eapply IsEquiv_eq.
+  - intro y. etransitivity. apply (e_sect0 _)^. apply ap. exact (e_retr _).
+  - cbn. intro x. etransitivity. eapply ap2. etransitivity. 
+    eapply concat_inv. eapply ap2. reflexivity. etransitivity.
+    apply inv2. reflexivity. reflexivity. etransitivity.
+    apply (concat_p_pp _ _ _)^. etransitivity. eapply ap2. reflexivity.
+    apply (transport_paths_naturality' (e_sect x) e_sect0). etransitivity.
+    apply concat_p_pp. etransitivity. eapply (ap2 HoTT.concat).
+    etransitivity. eapply ap2. apply (ap_inv _ _)^. etransitivity.
+    apply ap_compose. apply (ap _ (e_adj _)^). etransitivity.
+    apply (ap_pp _ _ _)^. apply ap. apply inv_inv. reflexivity. reflexivity. 
+  - cbn. intro y. etransitivity. eapply ap2. eapply ap.
+    apply concat_inv. reflexivity. etransitivity. eapply ap2.
+    apply ap_pp. reflexivity. etransitivity.
+    apply (concat_p_pp _ _ _)^. etransitivity. eapply ap2. reflexivity.
+    eapply ap2. etransitivity. eapply ap. etransitivity. apply inv2. reflexivity.
+    apply (e_adj0 _)^. reflexivity.
+    etransitivity. eapply ap2. reflexivity.
+    apply (transport_paths_naturality' (e_retr y) e_retr0).
+    etransitivity. apply concat_p_pp. etransitivity. eapply ap2. etransitivity.
+    eapply ap2. reflexivity. apply ap_compose. etransitivity. apply (ap_pp _ _ _)^.
+    eapply ap. etransitivity. reflexivity. apply inv_inv. reflexivity. reflexivity. 
+  - Opaque ap2. cbn. Transparent ap2. intro x. repeat rewrite concat_refl.
+    repeat rewrite <- concat_p_pp.
+    (* give up for now *)
+    
+Admitted. 

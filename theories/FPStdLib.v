@@ -10,17 +10,6 @@ Instance FP_nat : nat ⋈ nat := _ URType_Refl_decidable nat DecidableEq_eq_nat.
 
 (*! FP for nat_rect !*)
 
-Definition nat_rect : forall P : nat -> Type,
-    P 0 -> (forall n : nat, P n -> P (S n)) -> forall n : nat, P n
-  := 
-    fun (P : nat -> Type) (f : P 0)
-        (f0 : forall n : nat, P n -> P (S n)) =>
-      fix F (n : nat) : P n :=
-      match n as n0 return (P n0) with
-      | 0 => f
-      | S n0 => f0 n0 (F n0)
-      end.
-
 Definition FP_nat_rect : nat_rect ≈ nat_rect.
   intros X X' [H H'] P P' e0 Q Q' e_S n n' en.    
   equiv_elim. exact (e_S n n eq_refl _ _ IHn).
@@ -31,11 +20,9 @@ Definition FP_nat_rect_cst (P Q:Type) (e : P ≈ Q) :
   FP_nat_rect (fun _ => P) (fun _ => Q)
               {| transport_ := Transportable_cst nat P ; ur_type := fun _ _ _ => e |}.
 
-
 (*! bool !*)
 
 Instance FP_bool : bool ⋈ bool := URType_Refl_decidable bool DecidableEq_eq_bool.
-
 
 (*! List !*)
 
@@ -137,19 +124,8 @@ Definition FP_List : list ≈ list.
   intros A B e. 
   econstructor; try typeclasses eauto. econstructor.
   intros a b. apply URIsUR_list.
-  (* to be improved *)
   - apply Canonical_eq_gen.
   - apply Canonical_eq_gen.    
-Defined.
-
-(* ET: why do we keep this one? *)
-(* non-effective FP for list *)
-Definition FP_List' : list ≈ list.
-  cbn. split; [apply Transportable_default | ].
-  intros A B e.
-  destruct (e_inv (eq_to_equiv _ _) (equiv e)).
-  apply Canonical_UR.
-  apply Equiv_id.
 Defined.
 
 
