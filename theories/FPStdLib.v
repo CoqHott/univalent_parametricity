@@ -26,9 +26,10 @@ Instance FP_bool : bool ⋈ bool := URType_Refl_decidable bool DecidableEq_eq_bo
 
 (*! List !*)
 
-Definition inversion_cons {A} {l l':list A} {a a'} : a :: l = a' :: l' -> (a = a') * (l = l').
-  inversion 1. split; reflexivity.
-Defined. 
+Definition inversion_cons {A a a'} {l l':list A} (X: a::l = a'::l') :
+  {p : (a = a') * (l = l') & X = ap2 cons (fst p) (snd p)}
+  := match X with
+       | eq_refl => ((eq_refl ,eq_refl) ; eq_refl) end.
 
 Instance Transportable_list A (P: list A -> Type)
          (HP : forall (P:A->Type), Transportable P) : Transportable P.
@@ -39,7 +40,7 @@ Proof.
     + apply Equiv_id.
     + inversion e.
     + inversion e.
-    + pose (inversion_cons e). specialize (IHn _ (fun n => P (a :: n)) (snd p)).
+    + pose (inversion_cons e).1. specialize (IHn _ (fun n => P (a :: n)) (snd p)).
       cbn in IHn. eapply equiv_compose; try exact IHn. apply (HP (fun x => P (x :: m))).
       exact (fst p). 
   - cbn. intro n; revert P; induction n; cbn; intro P. 
@@ -53,19 +54,12 @@ Proof.
     equiv_adt2 (@list_rect _) (@nil _) (@cons _).
 Defined.
 
-
 Instance Equiv_UR_list A B (R R' : A -> B -> Type)
          (e:forall a b, R a b ≃ R' a b) : forall l l' , UR_list R l l' ≃ UR_list R' l l'.
 Proof.
   intros. 
   equiv_adt2 (@UR_list_rect _ _ _) (@UR_list_nil _ _ _) (@UR_list_cons _ _ _).
 Defined.
-
-(* ET: renamed that one since inversion_cons already exists, in a different form, above *)
-Definition inversion_cons' {A a a'} {l l':list A} (X: a::l = a'::l') :
-  {p : (a = a') * (l = l') & X = ap2 cons (fst p) (snd p)}
-  := match X with
-       | eq_refl => ((eq_refl ,eq_refl) ; eq_refl) end.
 
 Definition eq_nil_refl {A} {l:list A} (e : [] = l) :
   match l return [] = l -> Type with [] => fun e => e = eq_refl | _ => fun _ => False end e.
@@ -100,7 +94,7 @@ Proof.
   induction l; cbn; intro l'; destruct l'; intro X.
   cbn. pose (X0 := eq_nil_refl X). cbn in X0. rewrite X0. reflexivity. 
   inversion X. inversion X. 
-  cbn in *. pose (inversion_cons' X). destruct s as [s s']. 
+  cbn in *. pose (inversion_cons X). destruct s as [s s']. 
   rewrite s'. etransitivity. apply ap. apply transport_UR_list_cons.
   cbn. apply (ap2 (fun e e' => ap2 cons e e')).
   rewrite transport_paths_l. rewrite concat_refl. apply inv2.
