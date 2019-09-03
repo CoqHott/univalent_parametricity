@@ -9,7 +9,7 @@ Require Import HoTT UR URTactics DecidableEq FP ADT.
 (*! nat !*)
 
 Instance FP_nat : nat ⋈ nat := URType_Refl_decidable nat DecidableEq_eq_nat.
-  
+
 (*! FP for nat_rect !*)
 
 Definition FP_nat_rect : nat_rect ≈ nat_rect.
@@ -291,30 +291,6 @@ Definition Equiv_vector_list_
   - apply Canonical_eq_gen.
 Defined. 
 
-(* Instance Equiv_UR_vector A B (R R' : A -> B -> Type) n n' en *)
-(*          (e:forall a b, R a b ≃ R' a b) : forall l l' , UR_vector R n n' en l l' ≃ UR_vector R' n n' en l l'. *)
-(* Proof. *)
-(*   intros.  *)
-(*   clear_eq.  *)
-(*   let e' := fresh in set (e' := fun a b => Equiv_inverse (e a b)). *)
-(*   unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)); try ( *)
-(*   refine (@UR_vector_rect _ _ _ (fun n n' e l l' _ => UR_vector _ n n' e l l') _ _ _ _ _ _ _); *)
-(*   repeat (let l := fresh in *)
-(*           intros l; *)
-(*           first [apply univalent_transport in l | *)
-(*                  idtac]); *)
-(*   econstructor; eassumption). *)
-(*   let l := fresh "l" in intro l; induction l ; cbn in *. *)
-(*   reflexivity. *)
-(*   eapply (ap2 (UR_vector_cons _ _)); *)
-(*   typeclasses eauto with equiv typeclass_instances. *)
-(*   let l := fresh "l" in intro l; induction l ; cbn in *. *)
-(*   reflexivity. *)
-(*   eapply (ap2 (UR_vector_cons _ _)); *)
-(*   typeclasses eauto with equiv typeclass_instances. *)
-(* Defined. *)
-
-
 Instance FP_sized_list_ {A B : Type} `{A ≈ B} (n n':nat) (en : n = n') : 
    {l : list A & length l = n} ⋈ {l : list B & length l = n'}.
 Proof.
@@ -583,3 +559,5 @@ Defined.
 Instance Equiv_Vector_instance : forall x y : Type, x ⋈ y -> forall n n' (e:n=n'), (Vector.t x n) ⋈ (Vector.t y n') :=
   fun x y e n n' en => ur_type (FP_Vector x y e) n n' en. 
 
+
+Hint Extern 0 (Vector.t _ _ ⋈ _) => apply Equiv_vector_list_; simpl : typeclass_instances. 

@@ -259,6 +259,20 @@ Defined.
 
 Canonical Structure Dnat : DType := Build_DType nat _.
 
+Instance DecidableEq_eq_datatypes_nat : DecidableEq Datatypes.nat.
+constructor. intros x y; revert y. 
+induction x.
+- destruct y.
+ + left ;reflexivity.
+ + right; intro H; inversion H.
+- induction y.
+  + right; intro H; inversion H.
+  + case (IHx y). intro H. left. exact (ap Datatypes.S H).
+    intro H; right. intro e. inversion e. apply (H (logic_eq_is_eq H1)).
+Defined.
+
+Canonical Structure Ddatatypes_nat : DType := Build_DType Datatypes.nat _.
+
 (*! bool !*)
 
 Instance DecidableEq_eq_bool : DecidableEq bool.
@@ -292,6 +306,61 @@ induction le_mn1 using le_rect; intros.
 - intros a b; apply inl. destruct (H _ _ eq_refl a b). reflexivity. 
 Defined. 
 
+Require Import Arith. 
+
+Definition Peano_le_rect : forall (n : Datatypes.nat) (P : forall n0 , Nat.le n n0 -> Prop),
+       P n (Peano.le_n n) ->
+       (forall m (l : Peano.le n m), P m l -> P (Datatypes.S m) (Peano.le_S n m l)) -> forall n0 (l : Peano.le n n0), P n0 l := 
+fun n (P : forall n0 , Peano.le n n0 -> Prop) (f : P n (Peano.le_n n))
+  (f0 : forall m (l : Peano.le n m), P m l -> P (Datatypes.S m) (Peano.le_S n m l)) =>
+fix F n0 (l : Peano.le n n0) {struct l} : P n0 l :=
+  match l as l0 in (Peano.le _ n1) return (P n1 l0) with
+  | Peano.le_n _ => f
+  | Peano.le_S _ m l0 => f0 m l0 (F m l0)
+  end.
+
+Fixpoint Peano_apply_S_n (n:Datatypes.nat) m : Datatypes.nat :=
+  match n with 0 => Datatypes.S m
+          | Datatypes.S n => Datatypes.S (Peano_apply_S_n n m)
+  end. 
+
+Definition Peano_apply_prop n m : Logic.eq (Peano_apply_S_n n (Datatypes.S m)) (Datatypes.S (Peano_apply_S_n n m)).
+Proof.
+  induction n. reflexivity. cbn. f_equal; auto.
+Defined. 
+
+Definition Peano_inv_eq_gen m : forall n, Logic.eq (Peano_apply_S_n n m) m -> False.
+Proof.
+  induction m. destruct n; cbn; intro; inversion H. 
+  - intros. rewrite Peano_apply_prop in H. inversion H. apply (IHm _ H1).
+Defined.
+
+Definition Peano_inv_leq m : forall n, (Peano_apply_S_n n m <= m)%nat -> False.
+  induction m.
+  - destruct n; cbn; intro; inversion H.
+  - intros n e. rewrite Peano_apply_prop in e. inversion e.
+    + apply (Peano_inv_eq_gen _ _ H0).
+    + apply (IHm (Datatypes.S n) H0).
+Defined.
+
+Instance Decidable_datatypes_leq n m : DecidableEq (n <= m)%nat.
+constructor. revert m n. intros n m.  
+assert (forall n n'
+(e : n = n'), forall (le_mn1 : (m <= n)%nat) (le_mn2 : (m <= n')%nat), Logic.eq (e # le_mn1) le_mn2).
+clear.
+intros. revert n' e le_mn2.
+induction le_mn1 using Peano_le_rect; intros. 
+- destruct le_mn2 using Peano_le_rect.
+  + assert (e = eq_refl). apply is_hset. rewrite X. reflexivity.
+  + assert False. clear - e le_mn2. rewrite e in le_mn2. apply (Peano_inv_leq _ 0 le_mn2). destruct H.
+- destruct le_mn2 using Peano_le_rect; try clear IHle_mn2.
+  + assert False. clear - e le_mn1. rewrite <- e in le_mn1. apply (Peano_inv_leq _ 0 le_mn1). destruct H. 
+  + assert (m0 = m1). clear - e. inversion e. reflexivity.
+    specialize (IHle_mn1 _ X le_mn2). rewrite <- IHle_mn1.
+    assert (e = ap Datatypes.S X). apply is_hset. rewrite X0 in *. clear e X0.
+    destruct X. reflexivity. 
+- intros a b; apply inl. destruct (H _ _ eq_refl a b). reflexivity. 
+Defined. 
 
 Definition DecidableEq_hprop : forall (A B : DType), A.(carrier) = B.(carrier) -> A = B.
   intros A B e. destruct A as [A decA], B as [B decB]. cbn in *. assert (HSet A). apply Hedberg. auto. 

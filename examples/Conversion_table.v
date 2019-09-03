@@ -72,22 +72,24 @@ Definition compat_mul : mult ≈ N.mul. Admitted.
 Definition compat_div : Nat.div ≈ N.div. Admitted.
 Definition compat_pow : Nat.pow ≈ N.pow. Admitted.
 Definition compat_sub : Nat.sub ≈ N.sub. Admitted.
-Definition compat_le : le ≈ N.le. Admitted.
+Definition compat_le : Peano.le ≈ N.le. Admitted.
 
 Hint Extern 0 (plus _ _ = _) => eapply compat_add : typeclass_instances.
 Hint Extern 0 (mult _ _ = _) => eapply compat_mul : typeclass_instances.
 Hint Extern 0 (Nat.div _ _ = _) => eapply compat_div : typeclass_instances.
 Hint Extern 0 (Nat.pow _ _ = _) => eapply compat_pow : typeclass_instances.
 Hint Extern 0 (Nat.sub _ _ = _) => eapply compat_sub : typeclass_instances.
-Hint Extern 0 (le _ _ ≃ _) => eapply compat_le : typeclass_instances. 
-Hint Extern 0 (le _ _ ⋈ _) => eapply compat_le : typeclass_instances. 
+Hint Extern 0 (Peano.le _ _ ≃ _) => eapply compat_le : typeclass_instances. 
+Hint Extern 0 (Peano.le _ _ ⋈ _) => eapply compat_le : typeclass_instances. 
+Hint Extern 0 (Nat.le _ _ ≃ _) => eapply compat_le : typeclass_instances. 
+Hint Extern 0 (Nat.le _ _ ⋈ _) => eapply compat_le : typeclass_instances. 
 
 Definition compat_add' : N.add ≈ plus. Admitted.
 Definition compat_mul' : N.mul ≈ mult. Admitted. 
 Definition compat_div' : N.div ≈ Nat.div. Admitted.
 Definition compat_pow' : N.pow ≈ Nat.pow. Admitted.
 Definition compat_sub' : N.sub ≈ Nat.sub. Admitted.
-Definition compat_le' : N.le ≈ le. Admitted.
+Definition compat_le' : N.le ≈ Peano.le. Admitted.
 
 Hint Extern 0 (N.add _ _ = _) => eapply compat_add' : typeclass_instances.
 Hint Extern 0 (N.mul _ _ = _) => eapply compat_mul' : typeclass_instances.
@@ -106,7 +108,7 @@ Arguments Nat.pow : simpl never.
 Arguments Nat.sub  : simpl never.
 Arguments Nat.div : simpl never.
 
-Lemma nat_distrib : forall (c a b: nat), c * (a + b) = c * a + c * b.
+Lemma nat_distrib : forall (c a b: Datatypes.nat), c * (a + b) = c * a + c * b.
 Proof.
   induction c; intros; cbn.
   - reflexivity.
@@ -120,7 +122,7 @@ Defined.
 (* And after adding the relation in the correspondance table, 
    we can convert proofs over converted functions *)
 
-Lemma nat_distrib' : forall (c a b: nat), (a + b) * c = a * c + b * c.
+Lemma nat_distrib' : forall (c a b: Datatypes.nat), (a + b) * c = a * c + b * c.
 Proof.
   intros. rewrite mult_comm. rewrite nat_distrib.
   rewrite mult_comm. rewrite (mult_comm c b). reflexivity. 
@@ -130,9 +132,9 @@ Defined.
 
 (* we can even convert dependent functions *)
 
-Notation "n <= m" := (le n m) : nat_scope.
+Notation "n <= m" := (Nat.le n m) : nat_scope.
 
-Definition lt (n m : nat) := (S n <= m)%nat. 
+Definition lt (n m : Datatypes.nat) := (Datatypes.S n <= m)%nat. 
 Notation "n < m" := (lt n m) : nat_scope.
 Hint Extern 0 => progress (unfold lt) :  typeclass_instances.
 
@@ -144,55 +146,53 @@ Definition lt_N (n m : N) := (N.succ n <= m)%N.
 Notation "n < m" := (lt_N n m) : N_scope.
 Hint Extern 0 => progress (unfold lt_N) :  typeclass_instances.
 
-Instance Decidable_leq_N n m : DecidableEq (n <= m)%N.
-apply (DecidableEq_equiv (↑n <= ↑m) (n <= m)%N); tc. 
+Instance Decidable_leq_N (n m:N) : DecidableEq (n <= m)%N.
+apply (DecidableEq_equiv (Peano.le (↑n) (↑m)) (n <= m)%N); tc.
 Defined.
 
-
-
-Definition fix_nat_1 : (fun P X0 XS => fix f (n : nat) {struct n} : P :=
+Definition fix_nat_1 : (fun P X0 XS => fix f (n : Datatypes.nat) {struct n} : P :=
   match n with
   | 0 => X0
-  | S n => XS n (f n)
+  | Datatypes.S n => XS n (f n)
   end) ≈
-       (fun P X0 XS => fix f (n : nat) {struct n} : P :=
+       (fun P X0 XS => fix f (n : Datatypes.nat) {struct n} : P :=
   match n with
   | 0 => X0
-  | S n => XS n (f n)
+  | Datatypes.S n => XS n (f n)
   end).
 Proof. 
   cbn; intros. equiv_elim. 
 Defined. 
 
-Definition fix_nat_2 : (fun P X0 X1 XS => fix f (n : nat) {struct n} : P :=
+Definition fix_nat_2 : (fun P X0 X1 XS => fix f (n : Datatypes.nat) {struct n} : P :=
   match n with
   | 0 => X0
   | 1 => X1
-  | S n => XS n (f n)
+  | Datatypes.S n => XS n (f n)
   end) ≈
-       (fun P X0 X1 XS => fix f (n : nat) {struct n} : P :=
+       (fun P X0 X1 XS => fix f (n : Datatypes.nat) {struct n} : P :=
   match n with
   | 0 => X0
   | 1 => X1
-  | S n => XS n (f n)
+  | Datatypes.S n => XS n (f n)
   end).
 Proof. 
   cbn; intros. repeat equiv_elim.
 Defined. 
 
-Definition fix_nat_3 : (fun P X0 X1 X2 XS => fix f (n : nat) {struct n} : P :=
+Definition fix_nat_3 : (fun P X0 X1 X2 XS => fix f (n : Datatypes.nat) {struct n} : P :=
   match n with
   | 0 => X0
   | 1 => X1
   | 2 => X2
-  | S n => XS n (f n)
+  | Datatypes.S n => XS n (f n)
   end) ≈
-       (fun P X0 X1 X2 XS => fix f (n : nat) {struct n} : P :=
+       (fun P X0 X1 X2 XS => fix f (n : Datatypes.nat) {struct n} : P :=
   match n with
   | 0 => X0
   | 1 => X1
   | 2 => X2
-  | S n => XS n (f n)
+  | Datatypes.S n => XS n (f n)
   end).
 Proof. 
   cbn; intros. repeat equiv_elim.

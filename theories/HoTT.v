@@ -13,6 +13,13 @@ Set Universe Polymorphism.
 
 Inductive nat@{i} : Type@{i} :=  O : nat | S : nat -> nat.
 
+Definition add :=
+fix add (n m : nat) {struct n} : nat :=
+  match n with
+  | O => m
+  | S p => S (add p m)
+  end.
+
 Cumulative Inductive sigT {A:Type} (P:A -> Type) : Type :=
     existT : forall x:A, P x -> sigT P.
 

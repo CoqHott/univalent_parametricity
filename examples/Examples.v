@@ -3,6 +3,9 @@ Require Import BinInt BinNat Nnat Vector Arith.Plus Omega ZArith Conversion_tabl
 
 Set Universe Polymorphism.
 
+Definition nat := Datatypes.nat.
+Definition S := Datatypes.S.
+
 
 (* This file contains 2 examples: Monoid, and pow. *)
 
@@ -212,7 +215,6 @@ Definition N_square_prop : forall n, (N_square (2 * n) = 4 * N_square n)%N :=
 
 (* we can even convert dependent functions *)
 
-Notation "n <= m" := (le n m) : nat_scope.
 
 Definition lt (n m : nat) := (S n <= m)%nat. 
 Notation "n < m" := (lt n m) : nat_scope.
@@ -229,9 +231,8 @@ Notation "n < m" := (lt_N n m) : N_scope.
 Hint Extern 0 => progress (unfold lt_N) :  typeclass_instances.
 
 Instance Decidable_leq_N n m : DecidableEq (n <= m)%N.
-apply (DecidableEq_equiv (↑n <= ↑m) (n <= m)%N); tc. 
+apply (DecidableEq_equiv (Peano.le (↑n) (↑m)) (n <= m)%N); tc. 
 Defined.
-
 
 Definition N_divide_conv :=
   ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), N)).
@@ -245,7 +246,7 @@ Check eq_refl : N_divide = (fun x y => (x / y.1)%N).
 
 (* more dependent version of divide (on Nat)*)
 
-Definition divide_dep_p n (m : {m : nat & 0 < m }) : divide n m <= n.
+Definition divide_dep_p n (m : {m : nat & 0 < m }) : (divide n m <= n)%nat.
   destruct m as [m Hm]. destruct m.
   - inversion Hm.
   - apply Nat.div_le_upper_bound.
@@ -254,7 +255,7 @@ Definition divide_dep_p n (m : {m : nat & 0 < m }) : divide n m <= n.
       apply Nat.mul_le_mono_r. apply le_n_S. apply Nat.le_0_l.
 Qed.
 
-Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & res <= n} :=
+Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & (res <= n)%nat} :=
   (divide n m ; divide_dep_p n m).
 
 (* divide_dep_p is a proof with no computational meaning, so we want to lift it globally *)

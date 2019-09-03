@@ -109,5 +109,18 @@ Definition const {A} (a:A) := nat_rect _ [] (fun n x => cons _ a n x).
 Definition tl {A} := @caseS _ (fun n v => t A n) (fun h n t => t).
 Global Arguments tl {A} {n} v.
 
+Definition map {A} {B} (f : A -> B) : forall {n} (v:t A n), t B n :=
+  fix map_fix {n} (v : t A n) : t B n := match v with
+  | [] => []
+  | a :: v' => (f a) :: (map_fix v')
 
-End BASES. 
+                                       end.
+
+(** Concatenation of two vectors *)
+Fixpoint append {A}{n}{p} (v:t A n) (w:t A p):t A (add n p) :=
+  match v with
+  | [] => w
+  | a :: v' => a :: (append v' w)
+  end.
+
+End BASES.
