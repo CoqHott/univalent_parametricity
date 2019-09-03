@@ -140,8 +140,8 @@ Definition path_sum {A B : Type} (z z' : A + B)
   all:elim pq.
 Defined.
 
-Definition dec_hprop A (decA decA' : DecidableEq A) : decA = decA'.
-  apply path_DecidableEq. apply funext. intro a. apply funext. intro a'.
+Definition dec_hprop A : IsHProp (DecidableEq A).
+  intros decA decA'. apply path_DecidableEq. apply funext. intro a. apply funext. intro a'.
   apply path_sum. destruct (dec_paths a a'); destruct (dec_paths a a'); auto. 
   apply is_hset. apply funext. intro e. destruct (f e).
 Defined.
@@ -151,10 +151,10 @@ Definition path_DType_simple A B (decA : DecidableEq A) (decB : DecidableEq B) (
   apply path_DType. exists e. destruct e. apply dec_hprop. 
 Defined. 
 
-
 Definition dec_hprop_hprop A (decA : DecidableEq A) :
   dec_hprop A decA decA = eq_refl.
-Admitted.
+  apply IsHProp_IsHprop. apply dec_hprop. 
+Defined.
 
 Definition path_DType_simple_refl A (decA : DecidableEq A) :
   path_DType_simple A A decA decA eq_refl = eq_refl.
@@ -185,25 +185,17 @@ Opaque path_DType_simple.
 Definition can_eq_eq_dec {A} {decA} (e :Canonical_eq A) : e.(can_eq) = Canonical_eq_decidable_ A.
 Proof.
   apply funext; intros x. apply funext; intros y. apply funext; intro E.
-  destruct E.  rewrite can_eq_refl. unfold Canonical_eq_decidable_.
-  destruct (dec_paths x x). apply is_hset. destruct (f eq_refl).
+  apply is_hset. 
 Defined.
 
 Definition Canonical_contr_dec A (ecanA : Canonical_eq A) (e : DecidableEq A) :
   ecanA = Canonical_eq_decidable A.
 Proof.
   unshelve eapply Canonical_eq_eq. cbn.
-  apply can_eq_eq_dec.
-  (* cbn. rewrite transport_paths_l. *)
-  (* unfold can_eq_eq_dec. cbn. apply inverse. *)
-  (* pose (@e_sect _ _ _ (funext _ _  (fun (x y : A) (e0 : eq A x y) => e0) (fun (x y : A) (e0 : eq A x y) => e0)) eq_refl). *)
-  (* etransitivity; try exact e0. clear e0. apply ap. apply funext. intros. cbn. *)
-  (* pose (@e_sect _ _ _ (funext _ _  (fun (y : A) (e0 : eq A x y) => e0) (fun (y : A) (e0 : eq A x y) => e0)) eq_refl). *)
-  (* etransitivity ; try apply e0. clear e0. apply ap. apply funext. intros y. cbn. *)
-  (* pose (@e_sect _ _ _ (funext _ _  (fun (e0 : eq A x y) => e0) (fun (e0 : eq A x y) => e0)) eq_refl). *)
-  (* etransitivity; try apply e0. clear e0. apply ap. apply funext. intros e0. cbn. *)
-  (* destruct e0. reflexivity. *)
-Admitted.
+  apply can_eq_eq_dec. apply IsHProp_IsHprop.
+  repeat (apply IsHProp_forall; intro). 
+  intros E E'. apply is_hset.
+Defined.
 
 Instance URDType_IsEq : URIsEq DType DType (Equiv_id _) _ URDType_Refl.
 Proof.
