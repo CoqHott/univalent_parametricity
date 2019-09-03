@@ -8,6 +8,7 @@ Require Import HoTT URTactics.
 Set Universe Polymorphism.
 Set Primitive Projections.
 Set Polymorphic Inductive Cumulativity. 
+Unset Universe Minimization ToSet.
 
 (* basic classes for univalent relations *)
 
@@ -268,9 +269,9 @@ Definition vcons {A n} (val:A) (v:vector A n) := Vector.cons A val _ v.
 
 Inductive UR_vector {A B} (R : A -> B -> Type) : forall (n n':nat) (en : n ≈ n'),
   Vector.t A n -> Vector.t B n' -> Type :=
-  UR_vector_nil : UR_vector R 0 0 eq_refl (nil A) (nil B) 
-| UR_vector_cons : forall {a b n n' v v'},
-    (R a b) -> forall (en : n ≈ n'), (UR_vector R n n' en v v') ->
+  UR_vector_nil : UR_vector R O O eq_refl (nil A) (nil B) 
+| UR_vector_cons : forall {a b n n' v v'} (en : n ≈ n'),
+    (R a b) -> (UR_vector R n n' en v v') ->
     UR_vector R (S n) (S n') (ap S en) (vcons a v) (vcons b v').
 
 

@@ -5,9 +5,13 @@
 (* to be independent from the HoTT framework which requires a tailored version of Coq  *)
 (************************************************************************)
 
+Unset Universe Minimization ToSet.
+
 Set Universe Polymorphism.
 
 (* Basic notations *)
+
+Inductive nat@{i} : Type@{i} :=  O : nat | S : nat -> nat.
 
 Cumulative Inductive sigT {A:Type} (P:A -> Type) : Type :=
     existT : forall x:A, P x -> sigT P.
@@ -863,7 +867,7 @@ Fixpoint IsTrunc n A := match n with
                            | S n => forall x y:A, IsTrunc n (x = y)
                            end.
 
-Definition IsHProp A := IsTrunc 1 A.
+Definition IsHProp A := IsTrunc (S O) A.
 
 (* begin contractible is the lowest level of truncation *)
 
@@ -909,11 +913,11 @@ Definition IsIrr_False : IsIrr False.
   intro e; destruct e.
 Defined. 
 
-Definition eq_is_logic_eq {A:Set} {x y:A} : x = y -> Logic.eq x y.
+Definition eq_is_logic_eq {A} {x y:A} : x = y -> Logic.eq x y.
   now destruct 1.
 Defined.
 
-Instance isEquiv_logic_eq_is_eq {A:Set} {x y:A} : IsEquiv (@logic_eq_is_eq A x y).
+Instance isEquiv_logic_eq_is_eq {A} {x y:A} : IsEquiv (@logic_eq_is_eq A x y).
 Proof.
   unshelve eapply isequiv_adjointify.
   - apply eq_is_logic_eq.
@@ -921,9 +925,9 @@ Proof.
   - intro e; now destruct e.  
 Defined.
 
-Instance Equiv_eq_is_logic_eq {A:Set} {x y:A} : Equiv (Logic.eq x y) (x = y) := BuildEquiv _ _ (@logic_eq_is_eq A x y) _.
+Instance Equiv_eq_is_logic_eq {A} {x y:A} : Equiv (Logic.eq x y) (x = y) := BuildEquiv _ _ (@logic_eq_is_eq A x y) _.
 
-Definition logic_eq_is_eq_inj {A : Set} {x y:A} (e e': Logic.eq x y) :
+Definition logic_eq_is_eq_inj {A} {x y:A} (e e': Logic.eq x y) :
   logic_eq_is_eq e = logic_eq_is_eq e' -> e = e'.
 Proof.
   exact (e_inv (isequiv_ap _ _  e e')). 
@@ -955,7 +959,7 @@ Definition inversionS n m : S n = S m -> n = m.
   inversion 1. reflexivity.
 Defined. 
 
-Definition zeroS n : O = S n -> False.
+Definition zeroS n : O = S n-> False.
   inversion 1.
 Defined.
 

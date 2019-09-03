@@ -245,7 +245,7 @@ Defined.
 
 (* nat *)
 
-Instance DecidableEq_eq_nat : DecidableEq (nat:Type).
+Instance DecidableEq_eq_nat : DecidableEq nat.
 constructor. intros x y; revert y. 
 induction x.
 - destruct y.
@@ -282,9 +282,9 @@ intros. revert n' e le_mn2.
 induction le_mn1 using le_rect; intros. 
 - destruct le_mn2 using le_rect.
   + assert (e = eq_refl). apply is_hset. rewrite X. reflexivity.
-  + assert False. clear - e le_mn2. rewrite e in le_mn2. apply (inv_leq _ 0 le_mn2). destruct H.
+  + assert False. clear - e le_mn2. rewrite e in le_mn2. apply (inv_leq _ O le_mn2). destruct H.
 - destruct le_mn2 using le_rect; try clear IHle_mn2.
-  + assert False. clear - e le_mn1. rewrite <- e in le_mn1. apply (inv_leq _ 0 le_mn1). destruct H. 
+  + assert False. clear - e le_mn1. rewrite <- e in le_mn1. apply (inv_leq _ O le_mn1). destruct H. 
   + assert (m0 = m1). clear - e. inversion e. reflexivity.
     specialize (IHle_mn1 _ X le_mn2). rewrite <- IHle_mn1.
     assert (e = ap S X). apply is_hset. rewrite X0 in *. clear e X0.
