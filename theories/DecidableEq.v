@@ -140,7 +140,7 @@ Definition path_sum {A B : Type} (z z' : A + B)
   all:elim pq.
 Defined.
 
-Definition dec_hprop A : IsHProp (DecidableEq A).
+Definition dec_hprop A : IsIrr (DecidableEq A).
   intros decA decA'. apply path_DecidableEq. apply funext. intro a. apply funext. intro a'.
   apply path_sum. destruct (dec_paths a a'); destruct (dec_paths a a'); auto. 
   apply is_hset. apply funext. intro e. destruct (f e).
@@ -153,7 +153,7 @@ Defined.
 
 Definition dec_hprop_hprop A (decA : DecidableEq A) :
   dec_hprop A decA decA = eq_refl.
-  apply IsHProp_IsHprop. apply dec_hprop. 
+  apply IsIrr_IsHprop'. apply dec_hprop. 
 Defined.
 
 Definition path_DType_simple_refl A (decA : DecidableEq A) :
@@ -192,8 +192,8 @@ Definition Canonical_contr_dec A (ecanA : Canonical_eq A) (e : DecidableEq A) :
   ecanA = Canonical_eq_decidable A.
 Proof.
   unshelve eapply Canonical_eq_eq. cbn.
-  apply can_eq_eq_dec. apply IsHProp_IsHprop.
-  repeat (apply IsHProp_forall; intro). 
+  apply can_eq_eq_dec. apply IsIrr_IsHprop'.
+  repeat (apply IsIrr_forall; intro). 
   intros E E'. apply is_hset.
 Defined.
 

@@ -854,12 +854,58 @@ Proof.
   destruct e. cbn. rewrite concat_refl. reflexivity.
 Defined.
 
-Definition IsHProp A := forall x y : A, x = y. 
 
-Definition IsHProp_IsHprop A : IsHProp A -> forall x y : A, IsHProp (x = y).
-Admitted. 
+Definition IsContr (A:Type) := { x : A & forall y, x = y}.
+Existing Class IsContr. 
 
-Definition IsHProp_False : IsHProp False. 
+Fixpoint IsTrunc n A := match n with
+                           | O => IsContr A
+                           | S n => forall x y:A, IsTrunc n (x = y)
+                           end.
+
+Definition IsHProp A := IsTrunc 1 A.
+
+(* begin contractible is the lowest level of truncation *)
+
+Definition path_contr {A} `{IsContrA : IsContr A} (x y : A) : x = y
+  := let contr := IsContrA.2 in (contr x)^ @ (contr y).
+
+Definition path2_contr {A} `{IsContr A} {x y : A} (p q : x = y) : p = q.
+Proof.
+  assert (K : forall (r : x = y), r = path_contr x y).
+  intro r; destruct r. unfold path_contr.
+  symmetry. apply concat_Vp.
+  transitivity (path_contr x y). apply K. symmetry; apply K. 
+Defined.
+
+Definition contr_paths_contr A `{IsContr A} (x y : A) : IsContr (x = y).
+  unshelve econstructor.
+  exact (path_contr x y).
+  exact (path2_contr _).
+Defined.
+
+(* begin proof irrelevant is the same as IsHprop *)
+
+Definition IsIrr A := forall x y : A, x = y. 
+
+Definition IsIrr_inhab_IsContr A (H: IsIrr A) : A -> IsContr A :=
+  fun x => existT _ x (H x).
+  
+Definition IsHProp_to_IsIrr A : IsHProp A -> IsIrr A :=
+  fun H x y => (H x y).1. 
+
+Definition IsIrr_to_IsHProp A : IsIrr A -> IsHProp A.
+  unshelve econstructor.
+  apply X.
+  intro e. unshelve eapply path2_contr. apply IsIrr_inhab_IsContr; auto.
+Defined. 
+
+Definition IsIrr_IsHprop' A : IsIrr A -> forall x y : A, IsIrr (x = y).
+  intros E x y e e'. destruct (IsIrr_to_IsHProp _ E x y) as [c ec]. 
+  eapply concat; try apply ec. symmetry; apply ec.
+Defined. 
+  
+Definition IsIrr_False : IsIrr False. 
   intro e; destruct e.
 Defined. 
 
@@ -899,7 +945,7 @@ Proof.
   simpl in q; destruct q; reflexivity.
 Defined.
 
-Definition IsHProp_conj (A B:Prop) : IsHProp A -> IsHProp B -> IsHProp (A /\ B).
+Definition IsIrr_conj (A B:Prop) : IsIrr A -> IsIrr B -> IsIrr (A /\ B).
   intros HA HB x y. apply path_conj_uncurried. split; [apply HA | apply HB].
 Defined.
 
@@ -972,9 +1018,6 @@ Defined.
 
 Ltac etransitivity := refine (_ @_).
 
-(* helper *)
-Axiom admit : forall X, X. 
-
 
 (* univalence *)
 
@@ -1012,7 +1055,7 @@ Proof.
   rewrite transport_apD10. rewrite e_retr. reflexivity.
 Defined.
 
-Definition IsHProp_forall A (B:A ->Type) : (forall a, IsHProp (B a)) -> IsHProp (forall a, B a).
+Definition IsIrr_forall A (B:A ->Type) : (forall a, IsIrr (B a)) -> IsIrr (forall a, B a).
   intros H f g. apply funext; intro. apply H. 
 Defined.
 
