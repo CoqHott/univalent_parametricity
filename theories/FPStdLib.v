@@ -348,13 +348,42 @@ Definition IsIrr_UrEq_nat n n' e m m' e' X Y :
   destruct e, e', X. assert (Y = eq_refl). apply is_hset. rewrite X. econstructor.
 Defined. 
 
+Definition IsHProp_UrEq_nat_B {n n' e m m' e' X Y p p' e'' X' Y'}
+           (Hm:m = p) (Hm' : m' = p')
+           (He : Hm # Hm' # e' = e'')
+           (HX : Hm # X = X')
+           (HY : Hm' # Y = Y')
+           (B : UR_eq nat nat (eq nat) n n' e p p' e'' X' Y')
+  : UR_eq nat nat (eq nat) n n' e m m' e' X Y.
+  pose (transport_eq (fun XX => UR_eq nat nat (eq nat) n n' e p p' XX _ _) He^
+        (transport_eq (fun XX => UR_eq nat nat (eq nat) n n' e p p' e'' XX _) HX^
+         (transport_eq (fun XX => UR_eq nat nat (eq nat) n n' e p p' e'' X'  XX) HY^ B))).
+  cbn in u. clearbody u. clear HX He HY B.
+  destruct Hm, Hm'. 
+  exact u.
+Defined. 
+
+Definition IsHProp_UrEq_nat_gen {n n' e m m' e' X Y p p' e'' X' Y'}
+           (Hm:m = p) (Hm' : m' = p')
+           (He : Hm # Hm' # e' = e'')
+           (HX : Hm # X = X')
+           (HY : Hm' # Y = Y')
+           (A : UR_eq nat nat (eq nat) n n' e m m' e' X Y)
+           (B : UR_eq nat nat (eq nat) n n' e p p' e'' X' Y')
+  : A = IsHProp_UrEq_nat_B Hm Hm' He HX HY B. 
+  destruct A, B. cbn in *. revert He HX HY. 
+  assert (Hm = eq_refl). apply is_hset. rewrite X. clear X. 
+  assert (Hm' = eq_refl). apply is_hset. rewrite X. clear X. cbn.
+  intros.
+  assert (He = eq_refl). apply IsIrr_IsHprop'. intros X Y. apply is_hset. rewrite X. clear X. 
+  assert (HX = eq_refl). apply IsIrr_IsHprop'. intros X Y. apply is_hset. rewrite X. clear X. 
+  assert (HY = eq_refl). apply IsIrr_IsHprop'. intros X Y. apply is_hset. rewrite X. clear X. 
+  reflexivity. 
+Defined.
+
 Definition IsHProp_UrEq_nat n n' e m m' e' X Y (A B :
-  UR_eq nat nat (eq nat) n n' e m m' e' X Y) : A = B.
-Proof.
-Admitted. 
-  (* destruct A. destruct B.  *)
-  (* destruct e, e', X. assert (eq_refl = Y). apply is_hset. *)
-  (* destruct X. destruct A.  *)
+  UR_eq nat nat (eq nat) n n' e m m' e' X Y) : A = B :=
+  IsHProp_UrEq_nat_gen eq_refl eq_refl eq_refl eq_refl eq_refl A B.
 
 Definition UR_sized_list_irr A B {X:A ⋈ B}
            (n n':nat) (en : n = n')
@@ -440,25 +469,6 @@ Definition UR_vector_list_is_eq_inv A B {X:A ⋈ B}
 UR_list ur (vector_to_list A A (Equiv_id A) n n eq_refl v) .1
         (vector_to_list B B (Equiv_id B) n' n' eq_refl v') .1 ->
 UR_vector ur n n' en v v'.
-  (* intro urlist. *)
-(*   refine (transport_eq (fun X => *)
-(*                             UR_vector ur n n' en X v') *)
-(*                          (e_sect (vector_to_list A A _ n n _) v) _). *)
-(*     refine (transport_eq (fun X => *)
-(*                             UR_vector ur n n' en _ X) *)
-(*                          (e_sect (vector_to_list B B _ n' n' _) v') _). *)
-(*     cbn. *)
-(*     set (vector_to_list A A (Equiv_id A) n n eq_refl v) in *. *)
-(*     set (vector_to_list B B (Equiv_id B) n' n' eq_refl v') in *. *)
-(*     clearbody s s0. clear v v'. destruct s as [l Hl], s0 as [l' Hl']. *)
-(*     cbn in *. destruct Hl, Hl'. clear en_inv. revert en. induction urlist; cbn in *. *)
-(*     + cbn in *; intro. assert (en = eq_refl). apply is_hset. *)
-(*       rewrite X0. econstructor. *)
-(*     + cbn; intro. *)
-(*       refine (transport_eq (fun X => UR_vector ur (S _) (S _) X _ _) (ap_S_section en)^ _).  *)
-(*       econstructor. auto. apply IHurlist. *)
-(* Defined. *)
-
 intros Hlist. clear en_inv. generalize dependent n'.
     induction v; destruct v'; intros.
     + assert (en = eq_refl). apply is_hset.
