@@ -9,7 +9,7 @@ Set Universe Polymorphism.
 
 (* Basic notations *)
 
-Inductive sigT {A:Type} (P:A -> Type) : Type :=
+Cumulative Inductive sigT {A:Type} (P:A -> Type) : Type :=
     existT : forall x:A, P x -> sigT P.
 
 Inductive prod (A B : Type) : Type :=  pair : A -> B -> prod A B.
@@ -856,6 +856,9 @@ Defined.
 
 Definition IsHProp A := forall x y : A, x = y. 
 
+Definition IsHProp_IsHprop A : IsHProp A -> forall x y : A, IsHProp (x = y).
+Admitted. 
+
 Definition IsHProp_False : IsHProp False. 
   intro e; destruct e.
 Defined. 
@@ -906,11 +909,14 @@ Definition inversionS n m : S n = S m -> n = m.
   inversion 1. reflexivity.
 Defined. 
 
-Definition zeroS n : 0 = S n -> False.
+Definition zeroS n : O = S n -> False.
   inversion 1.
 Defined.
 
+Inductive le (n : nat) : nat -> Prop :=
+    le_n : le n n | le_S : forall m : nat, le n m -> le n (S m).
 
+Infix "<=" := le. 
 
 Definition le_rect : forall (n : nat) (P : forall n0 : nat, le n n0 -> Prop),
        P n (le_n n) ->
@@ -930,7 +936,7 @@ Definition inv_eq m : Logic.eq (S m) m -> False.
 Defined. 
 
 Fixpoint apply_S_n (n:nat) m : nat :=
-  match n with 0 => S m
+  match n with O => S m
           | S n => S (apply_S_n n m)
   end. 
 
