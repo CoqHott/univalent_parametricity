@@ -1,8 +1,7 @@
 (************************************************************************)
-
-(* This files introduced basic ingredients of HoTT, most of them already *)
+(* This file defines basic ingredients of HoTT, most of them already *)
 (* present in https://github.com/HoTT. We have created our own library *)
-(* to be independent from the HoTT framework which requires a tailored version of Coq  *)
+(* to be independent from the HoTT framework, which requires a tailored version of Coq  *)
 (************************************************************************)
 
 Unset Universe Minimization ToSet.
@@ -10,15 +9,6 @@ Unset Universe Minimization ToSet.
 Set Universe Polymorphism.
 
 (* Basic notations *)
-
-Inductive nat@{i} : Type@{i} :=  O : nat | S : nat -> nat.
-
-Definition add :=
-fix add (n m : nat) {struct n} : nat :=
-  match n with
-  | O => m
-  | S p => S (add p m)
-  end.
 
 Cumulative Inductive sigT {A:Type} (P:A -> Type) : Type :=
     existT : forall x:A, P x -> sigT P.
@@ -147,9 +137,7 @@ Definition transport_double A (P : A -> A -> Type) x y (e : x = y) (f : forall a
 Defined.
 
 Definition transport_forall A B (f : forall x : A , B x)  y z (e : z = y) :
-  (* ET: why not [e # (f z) = f y]. *)
-                transport_eq B e (f z) =
-                f y.
+  e # (f z) = f y.
 Proof.
   destruct e. reflexivity.
 Defined.
@@ -1072,7 +1060,7 @@ Defined.
 
 (* for minor differences between Prop and Type (coming from impredicativity)  *)
 (* we need to state again univalence for Prop, even if in principle Prop is  *)
-(* a subtype iof Type *)
+(* a subtype of Type *)
 
 Definition Equiv_id_P (A:Prop) : A ≃ A := 
   BuildEquiv _ _ id (BuildIsEquiv _ _ _ id (fun _ => eq_refl) (fun _ => eq_refl) (fun _ => eq_refl)).
@@ -1163,8 +1151,14 @@ Definition hprop_isequiv {A B} {f: A -> B} : forall e e' : IsEquiv f, e = e'.
     etransitivity. apply concat_p_pp. etransitivity. eapply ap2. etransitivity.
     eapply ap2. reflexivity. apply ap_compose. etransitivity. apply (ap_pp _ _ _)^.
     eapply ap. etransitivity. reflexivity. apply inv_inv. reflexivity. reflexivity. 
-  - Opaque ap2. cbn. Transparent ap2. intro x. repeat rewrite concat_refl.
-    repeat rewrite <- concat_p_pp.
+  - (* Opaque ap2. cbn. Transparent ap2. intro x. repeat rewrite concat_refl. *)
+    (* repeat rewrite <- concat_p_pp. *)
+    (* eapply concat. apply ap2. apply ap. *)
+    (* repeat rewrite concat_p_pp. *)
+    (* rewrite ap2_pp. Opaque ap2. cbn. Transparent ap2. *)
+    (* apply ap2.  *)
+    (* rewrite ap2_pp. Opaque ap2. cbn. Transparent ap2.  *)
+    
     (* give up for now *)
     
-Admitted. 
+Admitted.

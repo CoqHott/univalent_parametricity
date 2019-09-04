@@ -1,14 +1,11 @@
-Require Import HoTT Tactics UR URTactics FP Record MoreInductive Transportable Conversion_table DecidableEq FPStdLib.
-Require Import BinInt BinNat Nnat Vector Arith.Plus Omega ZArith.
+Require Import HoTT Tactics UnivalentParametricity.theories.UR UnivalentParametricity.theories.StdLib.UR URTactics UnivalentParametricity.theories.FP Record UnivalentParametricity.theories.StdLib.FP UnivalentParametricity.theories.Transportable CanonicalEq DecidableEq NatBinDefs.
+Require Import BinNat Nnat Vector Arith.Plus Omega ZArith.
 
 Set Universe Polymorphism.
 
 
-(* This file contains 3 examples: Lib, Monoid, and pow. 
-   Lib and pow are mentioned in the paper. Monoid is not. *)
-
 (*****************************)
-(* we start with the Lib example (Section 1) *)
+(* A library on nats  *)
 
 Record Lib (C : Type -> nat -> Type) :=
   { head : forall {A : Type} {n : nat}, C A (S n) -> A;
@@ -18,8 +15,6 @@ Record Lib (C : Type -> nat -> Type) :=
 Arguments map {_} _ {_ _} _ {_} _.
 Arguments head {_} _ {_ _} _.
 Arguments lib_prop {_} _ {_ _} _ _ _.
-
-
 
 
 (* the proof that Lib is a univalent type constructor requires to 
@@ -100,14 +95,6 @@ Time Eval lazy in lib_list.(map) Datatypes.S [[1;2;3;4;5;6;7;8]].
 
 
 
-
-
-
-
-
-
-
-
 Definition libvec_
   : {hd : forall {A : Type} {n : nat}, Vector.t A (S n) -> A  &
                       {map : forall {A B} (f:A -> B) {n},
@@ -155,18 +142,18 @@ Definition app {A} : list A -> list A -> list A :=
    | a :: l1 => a :: app l1 m
   end.
 
-Lemma app_length {A} : forall l l' : list A, length (app l l') = add (length l) (length l').
+Lemma app_length {A} : forall l l' : list A, length (app l l') = length l + length l'.
 Proof.
   induction l; simpl; intros. reflexivity. apply ap. auto.
 Defined.
 
 Definition app_list {A:Type} {n n'} `{A ⋈ A} :
   {l: list A & length l = n} -> {l: list A & length l = n'}
-  -> {l: list A & length l = add n n'} := ↑ Vector.append.
+  -> {l: list A & length l = n + n'} := ↑ Vector.append.
 
 Definition app_list' {A:Type} {n n'} `{A ⋈ A} :
   {l: list A & length l = n} -> {l: list A & length l = n'}
-  -> {l: list A & length l = add n n'}.
+  -> {l: list A & length l = n + n'}.
    intros l l'. exists (app l.1 l'.1). eapply concat. apply app_length. apply ap2; [exact l.2 | exact l'.2].
 Defined.
 
@@ -175,5 +162,10 @@ Eval compute in (app_list [[1;2]] [[1;2]]).
 Eval compute in (app_list' [[1;2]] [[1;2]]).
 
 Eval compute in (lib_list.(map) Datatypes.S (app_list [[1;2]] [[5;6]])).
+
+Definition neg : bool -> bool := fun b => match b with
+                                          | true => false
+                                          | false => true
+                                                       end. 
 
 Eval compute in (lib_list.(map) neg (app_list [[true;false]] [[true;false]])).

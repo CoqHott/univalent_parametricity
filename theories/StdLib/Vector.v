@@ -1,4 +1,10 @@
 (************************************************************************)
+(* This file is copied from the std library of Coq, with only one modification *)
+(* in order to benefit from universe polymorphism: *)
+(* the command [Set Universe Polymorphism.] below *)
+(************************************************************************)
+
+(************************************************************************)
 (*  v      *   The Coq Proof Assistant  /  The Coq Development Team     *)
 (* <O___,, * CNRS-Ecole Polytechnique-INRIA Futurs-Universite Paris Sud *)
 (*   \VV/  **************************************************************)
@@ -20,11 +26,6 @@ Require Import Arith_base HoTT.
 Require Vectors.Fin.
 Import EqNotations.
 Local Open Scope nat_scope.
-
-(************************************************************************)
-(* We need to copy this file in order to benefit from universe polymorphism *)
-(* The only change is the line below  *)
-(************************************************************************)
 
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
@@ -117,7 +118,7 @@ Definition map {A} {B} (f : A -> B) : forall {n} (v:t A n), t B n :=
                                        end.
 
 (** Concatenation of two vectors *)
-Fixpoint append {A}{n}{p} (v:t A n) (w:t A p):t A (add n p) :=
+Fixpoint append {A}{n}{p} (v:t A n) (w:t A p):t A (n + p) :=
   match v with
   | [] => w
   | a :: v' => a :: (append v' w)

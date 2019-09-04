@@ -1,8 +1,12 @@
+(************************************************************************)
+(* This file introduces the decidable equality type class, and associated results *)
+(************************************************************************)
+
 Set Polymorphic Inductive Cumulativity. 
 
 Set Universe Polymorphism.
 
-Require Import HoTT UR FP Coq.Program.Tactics.
+Require Import HoTT CanonicalEq UnivalentParametricity.theories.Transportable UnivalentParametricity.theories.UR UnivalentParametricity.theories.FP Coq.Program.Tactics.
 
 (* HSet and Hedberg *)
 
@@ -242,6 +246,9 @@ Instance FP_DType : DType ⋈ DType.
 Proof. 
   econstructor; try typeclasses eauto.
 Defined.
+
+Instance Transportable_DType : Transportable (fun A:DType => A) := 
+  Transportable_default _.
 
 (* nat *)
 

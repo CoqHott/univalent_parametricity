@@ -1,4 +1,5 @@
-Require Import HoTT Tactics UR URTactics FP Record MoreInductive Transportable Conversion_table.
+Require Import HoTT Tactics UnivalentParametricity.theories.UR UnivalentParametricity.theories.StdLib.UR URTactics UnivalentParametricity.theories.FP Record UnivalentParametricity.theories.StdLib.FP UnivalentParametricity.theories.Transportable CanonicalEq DecidableEq NatBinDefs ALCTactics.
+
 Require Import BinInt BinNat Nnat. 
 
 Require Import Utf8.
