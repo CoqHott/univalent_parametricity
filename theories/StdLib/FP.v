@@ -1178,7 +1178,7 @@ Hint Extern 0 (URForall_Type_class ?A ?B ?F ?G) =>
 : typeclass_instances.
 
 
-(* Fixpoints on nats *)
+(* FP for fixpoints on nats *)
 
 Definition fix_nat_1 : (fun P X0 XS => fix f (n : nat) {struct n} : P :=
   match n with
@@ -1227,3 +1227,29 @@ Definition fix_nat_3 : (fun P X0 X1 X2 XS => fix f (n : nat) {struct n} : P :=
 Proof. 
   cbn; intros. repeat equiv_elim.
 Defined.
+
+(* FP for canonical eq *)
+
+Definition Canonical_eq_sig A :=   {can_eq : forall (x y : A), x = y -> x = y &
+    forall x, can_eq x x eq_refl = eq_refl }.
+
+Instance issig_Canonical_eq A : Canonical_eq_sig A ≃ Canonical_eq A.
+Proof.
+  unfold Canonical_eq_sig.  
+  issig (Build_Canonical_eq A) (@can_eq A) (@can_eq_refl A).
+Defined.
+
+Instance issig_Canonical_eq_inv A : Canonical_eq A ≃ Canonical_eq_sig A :=
+  Equiv_inverse _.
+
+Hint Extern 0 => progress (unfold Canonical_eq_sig) :  typeclass_instances.
+
+Definition FP_Canonical_eq : Canonical_eq ≈ Canonical_eq.
+  univ_param_record.
+Defined.
+
+Hint Extern 0 (Canonical_eq _ ⋈ Canonical_eq _) => erefine (ur_type FP_Canonical_eq _ _ _); simpl
+:  typeclass_instances.
+
+Hint Extern 0 (Canonical_eq _ ≃ Canonical_eq _) => erefine (ur_type FP_Canonical_eq _ _ _).(equiv); simpl
+:  typeclass_instances.

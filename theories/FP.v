@@ -363,6 +363,8 @@ Proof.
 Defined.
 
 
+(* ET:  stuff below seems to belong more to UR.v *) 
+
 (*! UR is symmetric on types !*)
 
 Definition UR_Type_Inverse (A B : Type) : A ≈ B -> B ≈ A.
@@ -471,7 +473,21 @@ Definition UR_Type_canonical_eq (A A' : Type) (eA : A ⋈ A') :
 Defined. 
 
 
+Hint Extern 0 (sigT _) => unshelve refine (existT _ _ _): typeclass_instances.
 
+Definition compat_inverse (A A' B B':Type) (eA: A ≈ A') (eB: B ≈ B') (eA' := UR_Type_Inverse _ _ eA)
+           (eB' := UR_Type_Inverse _ _ eB) (f : A -> B) (g : A' -> B') :
+  f ≈ g -> g ≈ f.
+  tc. 
+Defined.
+
+Definition compat_inverse2 {A A' B B' C C' :Type} {eA: A ≈ A'} (eA' := UR_Type_Inverse _ _ eA)
+           {eB: B ≈ B'} (eB' := UR_Type_Inverse _ _ eB)
+           {eC: C ≈ C'} (eC' := UR_Type_Inverse _ _ eC)
+           {f : A -> B -> C} {g : A' -> B' -> C'} :
+  f ≈ g -> g ≈ f.
+  tc. 
+Defined.
 
 
 

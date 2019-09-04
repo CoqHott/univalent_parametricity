@@ -20,3 +20,5 @@ Definition Canonical_eq_gen A : Canonical_eq A :=
 Arguments can_eq {_} _.
 Arguments can_eq_refl {_}.
 
+Instance Canonical_eq_Forall A (B: A -> Type) : Canonical_eq (forall x:A, B x) := Canonical_eq_gen _.
+

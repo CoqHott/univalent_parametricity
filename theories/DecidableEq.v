@@ -247,6 +247,9 @@ Proof.
   econstructor; try typeclasses eauto.
 Defined.
 
+Instance Transportable_DType : Transportable (fun A:DType => A) := 
+  Transportable_default _.
+
 (* nat *)
 
 Instance DecidableEq_eq_nat : DecidableEq nat.

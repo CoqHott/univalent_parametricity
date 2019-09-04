@@ -1,14 +1,11 @@
-Require Import HoTT Tactics UnivalentParametricity.theories.UR UnivalentParametricity.theories.StdLib.UR URTactics UnivalentParametricity.theories.FP Record UnivalentParametricity.theories.StdLib.FP UnivalentParametricity.theories.Transportable CanonicalEq DecidableEq Nat_binnat Conversion_table.
-Require Import BinInt BinNat Nnat Vector Arith.Plus Omega ZArith.
+Require Import HoTT Tactics UnivalentParametricity.theories.UR UnivalentParametricity.theories.StdLib.UR URTactics UnivalentParametricity.theories.FP Record UnivalentParametricity.theories.StdLib.FP UnivalentParametricity.theories.Transportable CanonicalEq DecidableEq NatBinDefs.
+Require Import BinNat Nnat Vector Arith.Plus Omega ZArith.
 
 Set Universe Polymorphism.
 
 
-(* This file contains 3 examples: Lib, Monoid, and pow. 
-   Lib and pow are mentioned in the paper. Monoid is not. *)
-
 (*****************************)
-(* we start with the Lib example (Section 1) *)
+(* A library on nats  *)
 
 Record Lib (C : Type -> nat -> Type) :=
   { head : forall {A : Type} {n : nat}, C A (S n) -> A;
@@ -18,8 +15,6 @@ Record Lib (C : Type -> nat -> Type) :=
 Arguments map {_} _ {_ _} _ {_} _.
 Arguments head {_} _ {_ _} _.
 Arguments lib_prop {_} _ {_ _} _ _ _.
-
-
 
 
 (* the proof that Lib is a univalent type constructor requires to 
@@ -96,14 +91,6 @@ Time Eval lazy in (lib_list.(lib_prop) Dnat S [[S O; S (S O)]]).
 (* the induced lib_list.(map) function behaves as map on sized lists. *)
 
 Time Eval lazy in lib_list.(map) Datatypes.S [[1;2;3;4;5;6;7;8]].
-
-
-
-
-
-
-
-
 
 
 

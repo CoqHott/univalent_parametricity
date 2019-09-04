@@ -11,10 +11,9 @@ theories/StdLib/UR.v
 theories/StdLib/FP.v
 theories/StdLib/Record.v
 theories/StdLib/ALCTactics.v
-examples/Conversion_table.v
-examples/FFI.v
-examples/Lib.v
 examples/NatBinDefs.v
 examples/NatBinMonoid.v
 examples/NatBinPow.v
+examples/NatBinLib.v
 examples/NatBinALC.v
+examples/FFI.v
