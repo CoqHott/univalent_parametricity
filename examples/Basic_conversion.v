@@ -1,11 +1,11 @@
-Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable Conversion_table.
+Require Import HoTT Tactics UR URTactics FP Record MoreInductive Transportable Nat_binnat FPStdLib DecidableEq Conversion_table.
 Require Import BinInt BinNat Nnat Vector Arith.Plus Omega ZArith.
 
 Set Universe Polymorphism.
 
 (* we can also convert functions from one setting to another *)
 
-Definition cube : nat -> nat := fun n => n * n * n.  
+Definition cube := fun n => n * n * n.  
 
 (* not that a direct lifting does not using the conversion table *)
 
@@ -44,10 +44,10 @@ Lemma N_cube_prop : forall n, (N_cube (3 * n) = 27 * N_cube n)%N.
   exact (↑ cube_prop). 
 Qed.
 
-Lemma nat_comm : forall n m : nat, n + m = m + n.
+Lemma nat_comm : forall n m, n + m = m + n.
   intros. rewrite plus_comm. reflexivity.
 Defined. 
-  
+
 Lemma bin_comm : forall n m : N, (n + m = m + n)%N.
   exact (↑ nat_comm).
 Defined.
@@ -65,7 +65,7 @@ Qed.
 
 (* Test with polynomials *)
 
-Definition poly : nat -> nat := fun n => 12 * n + 51 * (Nat.pow n 4) - (Nat.pow n 5).
+Definition poly := fun n => 12 * n + 51 * (Nat.pow n 4) - (Nat.pow n 5).
 
 Arguments poly : simpl never.
 
@@ -83,14 +83,14 @@ Hint Extern 0 => progress (unfold g) : typeclass_instances.
 
 Section sequence.
   
-Variable acc : nat.
+Variable acc : Datatypes.nat.
 
-Fixpoint test_sequence (n : nat) :=
+Fixpoint test_sequence n :=
   match n with
     0 => acc
   | 1 => 2 * acc
   | 2 => 3 * acc
-  | S n => g acc n (test_sequence n)
+  | Datatypes.S n => g acc (↑n) (test_sequence n)
     (* Nat.pow (f n) acc would be better ... *)
   end.
 
@@ -106,8 +106,11 @@ Goal test_sequence 2 5 >= 1000.
   replace_goal. now compute.
 Defined.
 
+ 
+
 (* with eliminator instead of pattern matching *)
 
+(*
 Definition test_sequence_ : nat -> nat -> nat := fun acc =>
   nat_rect (fun _ => nat) acc
            (fun n res => nat_rect (fun _ => nat) (2 * acc)
@@ -115,9 +118,7 @@ Definition test_sequence_ : nat -> nat -> nat := fun acc =>
                                      nat_rect (fun _ => nat) (3 * acc)
                                               (fun _ res'' => Nat.pow res acc) m) n).
 
-
 Definition test_sequence__conv := ltac: (convert test_sequence_ : (N -> nat -> N)).
-
 
 Hint Extern 0 (test_sequence_ _ _ = _ )  => eapply test_sequence__conv.2 : typeclass_instances.
 Arguments test_sequence_ : simpl never.
@@ -125,3 +126,5 @@ Arguments test_sequence_ : simpl never.
 Goal test_sequence_ 2 5 >= 1000.
   replace_goal; inversion 1. 
 Defined. 
+
+*)

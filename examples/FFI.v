@@ -1,10 +1,13 @@
-Require Import HoTT HoTT_axioms Tactics UR URTactics FP Record MoreInductive Transportable Conversion_table.
+Require Import HoTT Tactics UR URTactics FP Record MoreInductive Transportable Conversion_table.
 Require Import BinInt BinNat Nnat. 
 
 Require Import Utf8.
 Require Export Zdiv.
 
 Require Export DoubleType.
+
+Definition nat := Datatypes.nat.
+Definition S := Datatypes.S.
 
 (* axiomatization of int63 and its operations *)
 
@@ -43,21 +46,21 @@ Lemma to_ZwB_section : forall x, of_ZwB (to_ZwB x) = x.
   unfold of_ZwB, to_ZwB; simpl. intro. rewrite of_to_Z. reflexivity.
 Defined.
 
-Definition IsHProp_le_Z (n m : Z) : IsHProp (n <= m)%Z.
+Definition IsIrr_le_Z (n m : Z) : IsIrr (n <= m)%Z.
 Proof.
-  apply IsHProp_forall. intro. exact IsHProp_False.
+  apply IsIrr_forall. intro. exact IsIrr_False.
 Defined.
 
-Definition IsHProp_lt_Z (n m : Z) : IsHProp (n < m)%Z.
+Definition IsIrr_lt_Z (n m : Z) : IsIrr (n < m)%Z.
 Proof.
   intros x y. unfold Z.lt in *.
   pose (is_hset (n ?= m)%Z Lt (logic_eq_is_eq x) (logic_eq_is_eq y)).
   refine (logic_eq_is_eq_inj x y e). 
 Defined.
 
-Definition isHProp_leq_Z (n m p : Z): IsHProp (n <= m < p).
+Definition isHProp_leq_Z (n m p : Z): IsIrr (n <= m < p).
 Proof.
-  apply IsHProp_conj. apply IsHProp_le_Z. apply IsHProp_lt_Z. 
+  apply IsIrr_conj. apply IsIrr_le_Z. apply IsIrr_lt_Z. 
 Defined.
 
 Definition eqZ_ZwB (x y:ZwB) : x.1 = y.1 -> x = y.
@@ -237,20 +240,20 @@ Defined.
 
 Local Open Scope ZwB_scope.
 
-Fixpoint ZwB_pow z (n:nat) : ZwB := match n with 0%nat => 1 | S n => z * ZwB_pow z n end.  
+Fixpoint ZwB_pow z (n:nat) : ZwB := match n with 0%nat => 1 | Datatypes.S n => z * ZwB_pow z n end.  
 
 Local Open Scope Z_scope.
 
 Local Open Scope ZwB_scope.
 
 Definition poly_ZwB : ZwB -> ZwB :=
-  fun n => 45 + ZwB_pow n 100 - ZwB_pow n 99 * 16550.
+  fun n => 45 + ZwB_pow n 100%nat - ZwB_pow n 99%nat * 16550.
 
 Goal poly_ZwB 16550 = 45.
   Time reflexivity. 
 Defined.
 
-Fixpoint pow z (n:nat) : int := match n with 0%nat => 1 | S n => z * pow z n end.  
+Fixpoint pow z (n:nat) : int := match n with 0%nat => 1 | Datatypes.S n => z * pow z n end.  
 
 Lemma succ_spec x : Z.succ (Z.of_nat x) = Z.pos (Pos.of_succ_nat x).
   destruct x. easy. cbn. apply ap.

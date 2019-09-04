@@ -3,11 +3,12 @@
    defines the relation for basic type constructors *)
 (************************************************************************)
 
-Require Import HoTT HoTT_axioms URTactics.
+Require Import HoTT URTactics.
 
 Set Universe Polymorphism.
 Set Primitive Projections.
 Set Polymorphic Inductive Cumulativity. 
+Unset Universe Minimization ToSet.
 
 (* basic classes for univalent relations *)
 
@@ -172,48 +173,6 @@ Hint Extern 0 (UR ({x:_ & _}) ({x:_ & _})) =>
   erefine (@URSigma _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
 
 
-(* Lemmas about canonical equality *)
-
-Definition can_eq_eq {A} (e :Canonical_eq A) : e.(can_eq) = fun x y e => e.
-Proof.
-  apply funext; intros x. apply funext; intros y. apply funext; intro E.
-  destruct E. apply can_eq_refl. 
-Defined. 
-
-
-Definition Canonical_eq_eq A (e e':Canonical_eq A)
-           (H : e.(can_eq) = e'.(can_eq)) :
-  (transport_eq (fun X => X = _) H  (can_eq_eq e) = (can_eq_eq e')) ->
-  e = e'.
-Proof.
-  destruct e, e'. cbn in *. destruct H. cbn.
-  unfold can_eq_eq.
-  intros H. apply ap_inv_equiv' in H. cbn in H. 
-  assert (can_eq_refl0  = can_eq_refl1).
-  apply funext. intro x. 
-  pose (H' := apD10 H x). apply ap_inv_equiv' in H'.
-  pose (H'' := apD10 H' x). apply ap_inv_equiv' in H''.
-  exact (apD10 H'' eq_refl). 
-  destruct X. reflexivity.
-Defined. 
-
-Definition Canonical_contr A (e :Canonical_eq A) : e = Canonical_eq_gen A.
-Proof.
-  unshelve eapply Canonical_eq_eq.
-  apply can_eq_eq.
-  cbn. rewrite transport_paths_l. rewrite inv_inv.
-  unfold can_eq_eq. cbn. apply inverse. 
-  pose (@e_sect _ _ _ (funext _ _  (fun (x y : A) (e0 : eq A x y) => e0) (fun (x y : A) (e0 : eq A x y) => e0)) eq_refl).
-  etransitivity; try exact e0. clear e0. apply ap. apply funext. intros. cbn.
-  pose (@e_sect _ _ _ (funext _ _  (fun (y : A) (e0 : eq A x y) => e0) (fun (y : A) (e0 : eq A x y) => e0)) eq_refl).
-  etransitivity ; try apply e0. clear e0. apply ap. apply funext. intros y. cbn.
-  pose (@e_sect _ _ _ (funext _ _  (fun (e0 : eq A x y) => e0) (fun (e0 : eq A x y) => e0)) eq_refl). 
-  etransitivity; try apply e0. clear e0. apply ap. apply funext. intros e0. cbn.
-  destruct e0. reflexivity.                  
-Defined.
-
-
-(* ET: moved from MoreInductive *)
 Definition ur_hprop A A' (H : A ⋈ A') (HA: forall x y:A, x = y) (x:A) (y:A')
   : x ≈ y. 
   intros. apply (alt_ur_coh _ _ _ _ ). apply HA. 
@@ -261,3 +220,59 @@ Definition UREq A (x x' y y' : A) (H:x=x') (H':y=y') : UR (x = y) (x' = y') :=
   {| ur := fun e e' => H^ @ e @ H' = e' |}.
 
 Hint Extern 0 (UR (_ = _)(_ = _)) => erefine (@UREq _ _ _ _ _ _ _) : typeclass_instances.
+
+(* lists *)
+
+Inductive list (A : Type) : Type :=
+    nil : list A | cons : A -> list A -> list A.
+
+Arguments nil {_}.
+Arguments cons {_} _ _.
+
+Notation "[ ]" := nil (format "[ ]").
+Notation "[ x ]" := (cons x nil).
+Notation "[ x ; y ; .. ; z ]" := (cons x (cons y .. (cons z nil) ..)).
+Notation "[ x ; .. ; y ]" := (cons x .. (cons y nil) ..).
+
+Infix "::" := cons (at level 60, right associativity). 
+
+Inductive UR_list {A B} (R : A -> B -> Type) : list A -> list B -> Type :=
+  UR_list_nil : UR_list R nil nil
+| UR_list_cons : forall {a b l l'},
+    (R a b) -> (UR_list R l l') ->
+    UR_list R (a::l) (b::l').
+
+Instance UR_list_ A B `{UR A B} : UR (list A) (list B) :=
+  {| ur := UR_list ur |}.
+
+Hint Extern 0 (UR (list ?A) (list ?B)) => unshelve notypeclasses refine (@UR_list _ _ _): typeclass_instances. 
+
+Hint Extern 0 (UR_list ?R [] []) => exact (UR_list_nil R)  : typeclass_instances.
+
+Hint Extern 0 (UR_list ?R (_::_) (_::_)) => unshelve refine (UR_list_cons R _ _) : typeclass_instances.
+
+(* nat *)
+
+Instance UR_nat : UR nat nat := UR_gen nat. 
+
+(* bool *)
+
+Instance UR_bool : UR bool bool := UR_gen bool. 
+
+(* vectors *)
+
+Require Import Vector.
+
+Definition vector A (n:nat) := Vector.t A n.
+Definition vnil {A} := Vector.nil A.
+Definition vcons {A n} (val:A) (v:vector A n) := Vector.cons A val _ v.
+
+Inductive UR_vector {A B} (R : A -> B -> Type) : forall (n n':nat) (en : n ≈ n'),
+  Vector.t A n -> Vector.t B n' -> Type :=
+  UR_vector_nil : UR_vector R O O eq_refl (nil A) (nil B) 
+| UR_vector_cons : forall {a b n n' v v'} (en : n ≈ n'),
+    (R a b) -> (UR_vector R n n' en v v') ->
+    UR_vector R (S n) (S n') (ap S en) (vcons a v) (vcons b v').
+
+
+
