@@ -8,7 +8,7 @@ Set Universe Polymorphism.
 
 Unset Universe Minimization ToSet.
 
-Require Import HoTT CanonicalEq UnivalentParametricity.theories.UR URTactics DecidableEq UnivalentParametricity.theories.FP ADT UnivalentParametricity.theories.Transportable UnivalentParametricity.theories.StdLib.UR Record.
+Require Import HoTT CanonicalEq UnivalentParametricity.theories.UR URTactics DecidableEq UnivalentParametricity.theories.FP UnivalentParametricity.theories.Transportable UnivalentParametricity.theories.StdLib.UR Record.
 
 (*! FP for Sigma !*)
 
@@ -206,6 +206,66 @@ Hint Extern 0 (sigT_rect ?A ?P ?Q ?f ?s ≈ _)
 Hint Extern 0 (_ ≈ sigT_rect ?A ?P ?Q ?f ?s)
                => unshelve refine (FP_sigT_rect _ A _ _ P _ _ Q
                      {| transport_ := _; ur_type := _ |} _ f _ _ s _ ) ; try eassumption : typeclass_instances.
+
+(*! FP for Product !*)
+
+Definition Equiv_prod (A B A' B' : Type) (e:A ≃ B) (e':A' ≃ B') : (A * A') ≃ (B * B').
+Proof.
+  equiv_pind (@prod_rect _ _) (@pair _ _).
+Defined.
+
+Instance isequiv_path_prod {A B : Type} {z z' : A * B}
+: IsEquiv (path_prod_uncurried z z') | 0.
+Proof.
+  unshelve refine (BuildIsEquiv _ _ _
+                                (fun r => (ap fst r, ap snd r)) _ _ _).
+  - intro e. destruct e. cbn. destruct z, z'.
+    cbn in *. destruct e, e0. reflexivity.
+  - intro e. destruct e. destruct z.  reflexivity.
+  - destruct z, z'. intros [e e']. cbn in *. destruct e, e'. reflexivity. 
+Defined.
+
+Definition equiv_path_prod {A B : Type} (u v : A * B): ((fst u = fst v) * (snd u = snd v)) ≃ (u = v)
+  := BuildEquiv _ _ (path_prod_uncurried u v) _. 
+
+Instance UR_Prod (x y : Type) (H : x ⋈ y) (x0 y0 : Type) (H0 : x0 ⋈ y0) : UR (x * x0) (y * y0).
+econstructor. exact (fun e e' => prod (fst e ≈ fst e') (snd e ≈ snd e')).
+Defined. 
+
+Definition FP_prod : prod ≈ prod.
+  cbn in *. intros.
+  (* this instance of transportable is on Type, we can only use the default one *)
+  split; [typeclasses eauto | ].
+  intros. 
+  unshelve refine (Build_UR_Type _ _ _ _ _ _ _).
+  unshelve refine (Equiv_prod _ _ _ _ _ _); typeclasses eauto. 
+  econstructor. exact (fun e e' => prod (fst e ≈ fst e') (snd e ≈ snd e')). 
+  econstructor. intros [X Y] [X' Y']. cbn.
+  assert ( ((X, Y) = (X', Y')) ≃ ((X=X') * (Y=Y'))).
+  apply Equiv_inverse. apply (equiv_path_prod (X, Y) (X', Y')).
+  eapply equiv_compose. exact X0.
+  eapply equiv_compose. apply Equiv_prod.
+  apply ur_coh. apply ur_coh. apply Equiv_id.
+  unshelve refine (let X : forall (a b:x*x0) , a=b -> a = b := _ in _).
+  intros. apply path_prod_uncurried. apply (Equiv_inverse (BuildEquiv _ _ (path_prod_uncurried a b) _)) in X.
+  split. apply can_eq. apply H. exact (fst X). 
+  apply can_eq. apply H0. exact (snd X).
+  apply (Build_Canonical_eq _ X). cbn; clear X. intros [a b].
+  cbn. repeat rewrite can_eq_refl. reflexivity.
+  unshelve refine (let X : forall (a b:y*y0) , a=b -> a = b := _ in _).
+  intros. apply path_prod_uncurried. apply (Equiv_inverse (BuildEquiv _ _ (path_prod_uncurried a b) _)) in X.
+  split. apply can_eq. apply H. exact (fst X). 
+  apply can_eq. apply H0. exact (snd X).
+  apply (Build_Canonical_eq _ X). cbn; clear X. intros [a b].
+  cbn. repeat rewrite can_eq_refl. reflexivity.
+Defined.
+
+Hint Extern 0 ((_ * _) ≃ (_ * _)) => erefine (@Equiv_prod _ _ _ _ _ _)
+:  typeclass_instances.
+
+Hint Extern 0 (UR_Type (_ * _) (_ * _)) => erefine (ur_type (@FP_prod _ _ _) _ _ _)
+:  typeclass_instances.
+
 
 
 (*! FP for the identity type !*)
@@ -454,14 +514,14 @@ Defined.
 
 Instance Equiv_List A B (e:A ≃ B) : list A ≃ list B.
 Proof.
-    equiv_adt2 (@list_rect _) (@nil _) (@cons _).
+    equiv_pind2 (@list_rect _) (@nil _) (@cons _).
 Defined.
 
 Instance Equiv_UR_list A B (R R' : A -> B -> Type)
          (e:forall a b, R a b ≃ R' a b) : forall l l' , UR_list R l l' ≃ UR_list R' l l'.
 Proof.
   intros. 
-  equiv_adt2 (@UR_list_rect _ _ _) (@UR_list_nil _ _ _) (@UR_list_cons _ _ _).
+  equiv_pind2 (@UR_list_rect _ _ _) (@UR_list_nil _ _ _) (@UR_list_cons _ _ _).
 Defined.
 
 Definition eq_nil_refl {A} {l:list A} (e : [] = l) :
@@ -555,7 +615,7 @@ Require Import Vector.
 
 Definition Equiv_Vector_not_eff A B (e:A ≃ B) n n' (en :n = n') : Vector.t A n ≃ Vector.t B n'.
 Proof.
-  equiv_adt2 (@Vector.t_rect _) (@Vector.nil _) (@Vector.cons _).
+  equiv_pind2 (@Vector.t_rect _) (@Vector.nil _) (@Vector.cons _).
 Defined.
 
 Definition Equiv_Vector_fun A B (e:A ≃ B) n n' (en : n = n') : Vector.t A n -> Vector.t B n'.

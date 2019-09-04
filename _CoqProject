@@ -4,7 +4,6 @@ theories/CanonicalEq.v
 theories/Transportable.v
 theories/URTactics.v
 theories/UR.v
-theories/ADT.v
 theories/FP.v
 theories/DecidableEq.v
 theories/StdLib/Vector.v
