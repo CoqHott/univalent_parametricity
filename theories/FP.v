@@ -6,7 +6,7 @@ Set Polymorphic Inductive Cumulativity.
 
 Set Universe Polymorphism.
 
-Require Import HoTT CanonicalEq URTactics ADT UnivalentParametricity.theories.UR UnivalentParametricity.theories.Transportable.
+Require Import HoTT CanonicalEq URTactics UnivalentParametricity.theories.UR UnivalentParametricity.theories.Transportable.
 
 
 (* Lemmas about canonical equality *)

@@ -117,7 +117,7 @@ Definition map {A} {B} (f : A -> B) : forall {n} (v:t A n), t B n :=
                                        end.
 
 (** Concatenation of two vectors *)
-Fixpoint append {A}{n}{p} (v:t A n) (w:t A p):t A (add n p) :=
+Fixpoint append {A}{n}{p} (v:t A n) (w:t A p):t A (n + p) :=
   match v with
   | [] => w
   | a :: v' => a :: (append v' w)

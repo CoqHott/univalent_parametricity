@@ -18,42 +18,42 @@ Proof.
  rewrite X. apply IHp.
 Defined.
 
-Fixpoint plus_assoc (n m p : Datatypes.nat) : n + (m + p) = n + m + p.
+Fixpoint plus_assoc (n m p : nat) : n + (m + p) = n + m + p.
  induction n. cbn. reflexivity.
  cbn. apply ap. apply plus_assoc.
 Defined. 
  
-Lemma inj_succ p : Pos.to_nat (Pos.succ p) = Datatypes.S (Pos.to_nat p).
+Lemma inj_succ p : Pos.to_nat (Pos.succ p) = S (Pos.to_nat p).
 Proof.
  unfold Pos.to_nat. rewrite iter_op_succ. reflexivity. 
  apply plus_assoc.
 Defined.
 
-Definition is_succ : forall p, {n:Datatypes.nat & Pos.to_nat p = Datatypes.S n}.
+Definition is_succ : forall p, {n:nat & Pos.to_nat p = S n}.
 Proof.
  induction p using Pos.peano_rect.
  now exists 0.
- destruct IHp as (n,Hn). exists (Datatypes.S n). now rewrite inj_succ, Hn.
+ destruct IHp as (n,Hn). exists (S n). now rewrite inj_succ, Hn.
 Defined. 
 
-Theorem Pos_id (n:Datatypes.nat) : n<>0 -> Pos.to_nat (Pos.of_nat n) = n.
+Theorem Pos_id (n:nat) : n<>0 -> Pos.to_nat (Pos.of_nat n) = n.
 Proof.
  induction n as [|n H]; trivial. now destruct 1.
  intros _. simpl Pos.of_nat. destruct n. reflexivity.
  rewrite inj_succ. f_equal. apply ap. now apply H.
 Defined.
 
-Lemma of_nat_succ (n:Datatypes.nat) : Pos.of_succ_nat n = Pos.of_nat (Datatypes.S n).
+Lemma of_nat_succ (n:nat) : Pos.of_succ_nat n = Pos.of_nat (S n).
 Proof.
  induction n. reflexivity. simpl. apply ap. now rewrite IHn.
 Defined. 
 
-Theorem id_succ (n:Datatypes.nat) : Pos.to_nat (Pos.of_succ_nat n) = Datatypes.S n.
+Theorem id_succ (n:nat) : Pos.to_nat (Pos.of_succ_nat n) = S n.
 Proof.
 rewrite of_nat_succ. now apply Pos_id.
 Defined.
 
-Lemma inj (n m : Datatypes.nat) : Pos.of_succ_nat n = Pos.of_succ_nat m -> n = m.
+Lemma inj (n m : nat) : Pos.of_succ_nat n = Pos.of_succ_nat m -> n = m.
 Proof.
  intro H. apply (ap Pos.to_nat) in H. rewrite !id_succ in H.
  inversion H. reflexivity. 
@@ -83,7 +83,7 @@ Proof.
 rewrite of_nat_succ, <- inj_succ. apply Pos2Nat_id.
 Defined.
 
-Theorem id_succ' (n:Datatypes.nat) : Pos.to_nat (Pos.of_succ_nat n) = Datatypes.S n.
+Theorem id_succ' (n:nat) : Pos.to_nat (Pos.of_succ_nat n) = S n.
 Proof.
 rewrite of_nat_succ. apply Pos_id. intro H. inversion H.
 Defined.
@@ -101,35 +101,16 @@ Proof.
   - cbn; intro. exact (N2Nat_id _).
 Defined.
 
-Fixpoint nat_datatypes_nat_fun (n : nat) : Datatypes.nat :=
-  match n with
-  | O => 0
-  | S n => Datatypes.S (nat_datatypes_nat_fun n)
-  end.
 
-Instance IsEquiv_nat_datatypes_nat : IsEquiv nat_datatypes_nat_fun.
-Proof.
-  unshelve refine (isequiv_adjointify _ _ _ _).
-  - induction 1. exact O. exact (S IHnat).
-  - intro n; induction n; tc.
-  - intro n; induction n; tc.
-Defined.
-
-Instance Equiv_nat_datatypes_nat : nat ≃ Datatypes.nat := BuildEquiv _ _ nat_datatypes_nat_fun _. 
-
-Instance Equiv_datatypes_nat_nat : Datatypes.nat ≃ nat := Equiv_inverse _.
-
-Instance FP_Datatypes_nat : Datatypes.nat ⋈ Datatypes.nat := URType_Refl_decidable Datatypes.nat DecidableEq_eq_datatypes_nat.
-
-Instance Equiv_N_nat : Datatypes.nat ≃ N.
+Instance Equiv_N_nat : nat ≃ N.
   refine (BuildEquiv _ _ N.of_nat _).  
 Defined.
 
-Instance Equiv_nat_N : N ≃ Datatypes.nat := Equiv_inverse _.
+Instance Equiv_nat_N : N ≃ nat := Equiv_inverse _.
 
 Instance UR_N : UR N N := UR_gen N. 
 
-Instance Decidable_eq_N : DecidableEq N := DecidableEq_equiv Datatypes.nat N _.
+Instance Decidable_eq_N : DecidableEq N := DecidableEq_equiv nat N _.
 
 Hint Extern 0 (?f ?x = ?y ) => erefine (Move_equiv Equiv_nat_N x y _)
                                : typeclass_instances.
@@ -137,28 +118,28 @@ Hint Extern 0 (?f ?x = ?y ) => erefine (Move_equiv Equiv_nat_N x y _)
 Hint Extern 0 (?f ?x = ?y ) => erefine (Move_equiv Equiv_N_nat x y _)
                                : typeclass_instances.
 
-Instance UR_N_nat : UR N Datatypes.nat | 0.
+Instance UR_N_nat : UR N nat | 0.
 eapply UR_Equiv; tc.
 Defined.
 
-Instance compat_N_nat : N ⋈ Datatypes.nat.
+Instance compat_N_nat : N ⋈ nat.
 Proof.
   unshelve eexists; try tc.
   econstructor. intros. cbn. rewrite (N2Nat_id _). apply Equiv_id.
 Defined. 
 
-Instance UR_nat_N : UR Datatypes.nat N | 0.
+Instance UR_nat_N : UR nat N | 0.
 eapply UR_Equiv; tc. 
 Defined.
 
-Instance compat_nat_N : Datatypes.nat ⋈ N.
+Instance compat_nat_N : nat ⋈ N.
 Proof.
   unshelve eexists; try tc.
   econstructor. intros. cbn.
   rewrite (Nat2N_id _). apply Equiv_id.
 Defined. 
 
-Definition refl_nat_N (n:Datatypes.nat) : n ≈ (↑ n : N) := ur_refl (e:=compat_nat_N) n.
+Definition refl_nat_N (n:nat) : n ≈ (↑ n : N) := ur_refl (e:=compat_nat_N) n.
 Hint Extern 0 (?n = _) => unshelve refine (refl_nat_N _) : typeclass_instances.
 
 
@@ -168,19 +149,19 @@ Hint Extern 0 (?n = _) => unshelve refine (refl_nat_N _) : typeclass_instances.
    binary nats to operate on normal nats, sometimes considerably
    improving performance. *)
 
-Definition nat_pow_ : Datatypes.nat -> Datatypes.nat -> Datatypes.nat := ↑ N.pow.
+Definition nat_pow_ : nat -> nat -> nat := ↑ N.pow.
 
 Print Assumptions nat_pow_.
 
 (* (the use of [Eval compute] in the definition above is to 
    force reduction of some noise produced by the lifting.) *)
 
-Definition nat_pow : Datatypes.nat -> Datatypes.nat -> Datatypes.nat := Eval compute in ↑ N.pow.
+Definition nat_pow : nat -> nat -> nat := Eval compute in ↑ N.pow.
 
 Print Assumptions nat_pow.
 
 
-Definition const0 {A} : A -> Datatypes.nat := fun _ => 0. 
+Definition const0 {A} : A -> nat := fun _ => 0. 
 
 (* with the standard nat function: *)
 (* Time Eval vm_compute in let x := Nat.pow 3 15 in const0 x. *)

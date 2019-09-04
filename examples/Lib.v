@@ -155,18 +155,18 @@ Definition app {A} : list A -> list A -> list A :=
    | a :: l1 => a :: app l1 m
   end.
 
-Lemma app_length {A} : forall l l' : list A, length (app l l') = add (length l) (length l').
+Lemma app_length {A} : forall l l' : list A, length (app l l') = length l + length l'.
 Proof.
   induction l; simpl; intros. reflexivity. apply ap. auto.
 Defined.
 
 Definition app_list {A:Type} {n n'} `{A ⋈ A} :
   {l: list A & length l = n} -> {l: list A & length l = n'}
-  -> {l: list A & length l = add n n'} := ↑ Vector.append.
+  -> {l: list A & length l = n + n'} := ↑ Vector.append.
 
 Definition app_list' {A:Type} {n n'} `{A ⋈ A} :
   {l: list A & length l = n} -> {l: list A & length l = n'}
-  -> {l: list A & length l = add n n'}.
+  -> {l: list A & length l = n + n'}.
    intros l l'. exists (app l.1 l'.1). eapply concat. apply app_length. apply ap2; [exact l.2 | exact l'.2].
 Defined.
 
