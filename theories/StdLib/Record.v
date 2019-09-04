@@ -1,7 +1,7 @@
 (** * Techniques for applying theorems from [Sigma.v] to record types. *)
 (** * From the HoTT Library *)
 
-Require Import HoTT UR FP.
+Require Import HoTT UnivalentParametricity.theories.UR UnivalentParametricity.theories.FP.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -132,35 +132,6 @@ Ltac issig5 build pr1 pr2 pr3 pr4 pr5 :=
 
 Tactic Notation "issig" constr(build) constr(pr1) constr(pr2) constr(pr3) constr(pr4) constr(pr5) :=
   issig5 build pr1 pr2 pr3 pr4 pr5.
-
-(*
-Ltac issig6 build pr1 pr2 pr3 pr4 pr5 pr6 :=
-  hnf;
-  let A := match goal with |- ?A <~> ?B => constr:(A) end in
-  let B := match goal with |- ?A <~> ?B => constr:(B) end in
-  exact (BuildEquiv _ _ _
-                    (BuildIsEquiv
-                       A B
-                       (fun u => build u.1 u.2.1 u.2.2.1 u.2.2.2.1 u.2.2.2.2.1 u.2.2.2.2.2)
-                       (fun v => (pr1 v; (pr2 v; (pr3 v; (pr4 v ; (pr5 v ; pr6 v))))))
-                       (fun v => let (v1, v2, v3, v4, v5, v6) as v' return (build (pr1 v') (pr2 v') (pr3 v') (pr4 v') (pr5 v') (pr6 v') = v') := v in 1)
-                       (fun u => 1)
-                       (fun _ => 1))).
-
-Tactic Notation "issig" constr(build) constr(pr1) constr(pr2) constr(pr3) constr(pr4) constr(pr5) constr(pr6) :=
-  issig6 build pr1 pr2 pr3 pr4 pr5 pr6.
- *)
-
-(** The record [IsEquiv] has four components, so [issig4] can prove that it is equivalent to an iterated Sigma-type. *)
-
-Definition issig_isequiv {A B : Type} (f : A -> B) :
-  { g:B->A & {r: forall x, g (f x) = x  & { s:forall y, f (g y) = y  &
-                                             forall x : A, s (f x) = ap f (r x) }}}
-  ≃  IsEquiv f.
-Proof.
-  issig (BuildIsEquiv A B f) (@e_inv A B f) (@e_sect A B f) (@e_retr A B f)
-        (@e_adj A B f).
-Defined.
   
 
 (* A tactic to show that record type are univalent type constructor *)

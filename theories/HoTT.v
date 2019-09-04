@@ -1163,8 +1163,14 @@ Definition hprop_isequiv {A B} {f: A -> B} : forall e e' : IsEquiv f, e = e'.
     etransitivity. apply concat_p_pp. etransitivity. eapply ap2. etransitivity.
     eapply ap2. reflexivity. apply ap_compose. etransitivity. apply (ap_pp _ _ _)^.
     eapply ap. etransitivity. reflexivity. apply inv_inv. reflexivity. reflexivity. 
-  - Opaque ap2. cbn. Transparent ap2. intro x. repeat rewrite concat_refl.
-    repeat rewrite <- concat_p_pp.
+  - (* Opaque ap2. cbn. Transparent ap2. intro x. repeat rewrite concat_refl. *)
+    (* repeat rewrite <- concat_p_pp. *)
+    (* eapply concat. apply ap2. apply ap. *)
+    (* repeat rewrite concat_p_pp. *)
+    (* rewrite ap2_pp. Opaque ap2. cbn. Transparent ap2. *)
+    (* apply ap2.  *)
+    (* rewrite ap2_pp. Opaque ap2. cbn. Transparent ap2.  *)
+    
     (* give up for now *)
     
-Admitted. 
+Admitted.

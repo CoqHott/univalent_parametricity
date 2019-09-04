@@ -2,7 +2,7 @@ Set Polymorphic Inductive Cumulativity.
 
 Set Universe Polymorphism.
 
-Require Import HoTT UR FP Coq.Program.Tactics.
+Require Import HoTT CanonicalEq UnivalentParametricity.theories.Transportable UnivalentParametricity.theories.UR UnivalentParametricity.theories.FP Coq.Program.Tactics.
 
 (* HSet and Hedberg *)
 
