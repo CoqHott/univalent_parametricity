@@ -10,6 +10,7 @@ theories/StdLib/Vector.v
 theories/StdLib/UR.v
 theories/StdLib/FP.v
 theories/StdLib/Record.v
+theories/StdLib/ALCTactics.v
 examples/Nat_binnat.v
 examples/Conversion_table.v
 examples/Basic_conversion.v

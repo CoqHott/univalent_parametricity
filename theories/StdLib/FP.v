@@ -1176,3 +1176,54 @@ Defined.
 Hint Extern 0 (URForall_Type_class ?A ?B ?F ?G) =>
 (is_ground A; is_ground B; is_ground F; is_ground G; econstructor)
 : typeclass_instances.
+
+
+(* Fixpoints on nats *)
+
+Definition fix_nat_1 : (fun P X0 XS => fix f (n : nat) {struct n} : P :=
+  match n with
+  | 0 => X0
+  | S n => XS n (f n)
+  end) ≈
+       (fun P X0 XS => fix f (n : nat) {struct n} : P :=
+  match n with
+  | 0 => X0
+  | S n => XS n (f n)
+  end).
+Proof. 
+  cbn; intros. equiv_elim. 
+Defined. 
+
+Definition fix_nat_2 : (fun P X0 X1 XS => fix f (n : nat) {struct n} : P :=
+  match n with
+  | 0 => X0
+  | 1 => X1
+  | S n => XS n (f n)
+  end) ≈
+       (fun P X0 X1 XS => fix f (n : nat) {struct n} : P :=
+  match n with
+  | 0 => X0
+  | 1 => X1
+  | S n => XS n (f n)
+  end).
+Proof. 
+  cbn; intros. repeat equiv_elim.
+Defined. 
+
+Definition fix_nat_3 : (fun P X0 X1 X2 XS => fix f (n : nat) {struct n} : P :=
+  match n with
+  | 0 => X0
+  | 1 => X1
+  | 2 => X2
+  | S n => XS n (f n)
+  end) ≈
+       (fun P X0 X1 X2 XS => fix f (n : nat) {struct n} : P :=
+  match n with
+  | 0 => X0
+  | 1 => X1
+  | 2 => X2
+  | S n => XS n (f n)
+  end).
+Proof. 
+  cbn; intros. repeat equiv_elim.
+Defined.

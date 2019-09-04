@@ -19,3 +19,4 @@ Definition Canonical_eq_gen A : Canonical_eq A :=
 
 Arguments can_eq {_} _.
 Arguments can_eq_refl {_}.
+
