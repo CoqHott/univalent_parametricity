@@ -741,3 +741,48 @@ Hint Transparent ur.
 
 Hint Extern 0 (UR_Type (_ -> _) (_ -> _)) =>
   erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := Transportable_cst _ _; ur_type := _|} ); cbn in *; intros : typeclass_instances.
+
+
+(* special cases for arrows *)
+
+Definition Equiv_Arrow (A A' B B': Type)
+           (eA: A ≈ A') (e' : B ≈ B') :
+  (A -> B) ≃ (A' -> B') := Equiv_forall _ _ eA _ _ {| transport_ := _ ; ur_type:= fun _ _ _ => e' |}.
+
+Hint Extern 0 ((_ -> _) ≃ (_ -> _)) =>
+  erefine (Equiv_Arrow _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
+
+Instance Transportable_Arrow A (P Q: A -> Type)
+         (HP_can : forall x, Canonical_eq (P x))
+         (HQ_can : forall x, Canonical_eq (Q x))
+         (HP : Transportable P) (HQ : Transportable Q) : Transportable (fun a => P a -> Q a).
+Proof.
+  unshelve econstructor. intros x y e. pose (inverse e).
+  eapply Equiv_Arrow.
+  { unshelve eexists.
+    - apply transportable; auto. 
+    - destruct e. apply UR_gen.
+    - constructor. destruct e. cbn. unfold univalent_transport.
+      rewrite transportable_refl. cbn. intros;apply Equiv_id.
+    - auto.
+    - auto.
+  }
+  { unshelve eexists.
+    - apply transportable; auto.     
+    - destruct e. apply UR_gen.
+    - constructor. destruct e. cbn. unfold univalent_transport.
+      rewrite transportable_refl. cbn. intros;apply Equiv_id.
+    - auto.
+    - auto.
+  }
+  intro a; cbn.
+  unshelve refine (path_Equiv _).
+  apply funext; intro f. apply funext; intro b. cbn.
+  rewrite (@transportable_refl _ _ HQ a). cbn. apply ap.
+  exact (apD10 (ap e_fun (ap Equiv_inverse (@transportable_refl _ _ HP a))) b).
+Defined.
+
+
+
+
+

@@ -10,13 +10,6 @@ Unset Universe Minimization ToSet.
 
 Require Import HoTT CanonicalEq UnivalentParametricity.theories.UR URTactics DecidableEq UnivalentParametricity.theories.FP UnivalentParametricity.theories.Transportable UnivalentParametricity.theories.StdLib.UR Record.
 
-Definition Equiv_Arrow (A A' B B': Type)
-           (eA: A ≈ A') (e' : B ≈ B') :
-  (A -> B) ≃ (A' -> B') := Equiv_forall _ _ eA _ _ {| transport_ := _ ; ur_type:= fun _ _ _ => e' |}.
-
-Hint Extern 0 ((_ -> _) ≃ (_ -> _)) =>
-  erefine (Equiv_Arrow _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
-
 (*! FP for Sigma !*)
 
 Definition exist_eq {A P} (a a': A) (l : P a) (l' : P a') (e : a = a') :
@@ -137,6 +130,32 @@ Definition Equiv_Sigma (A A':Type) (e: A ≈ A')
 Defined. 
 
 Hint Extern 0 (sigT _ ≃ sigT _) => erefine (@Equiv_Sigma _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
+
+
+Instance Transportable_Sigma (A:Type) B (P : A -> B -> Type)
+         (HP: forall a, Transportable (P a))
+         (HP_can : forall x y, Canonical_eq (P x y))
+         (HP': forall x, Transportable (fun a => P a x)):
+  Transportable (fun x => {a: A & P a x}).
+Proof.
+  unshelve econstructor.
+  intros. erefine (@Equiv_Sigma _ _ (@ur_refl_ _ _ _ _ URType_Refl A) _ _ _).
+  cbn. split. typeclasses eauto.
+  intros.
+  { unshelve eexists.
+    - destruct H. apply transportable; auto. 
+    - destruct X, H. apply UR_gen.
+    - constructor. destruct X, H. cbn. unfold univalent_transport.
+      rewrite transportable_refl. cbn. intros;apply Equiv_id.
+    - auto.
+    - auto.
+  }
+  intros. unshelve refine (path_Equiv _). cbn.
+  apply funext. intros. eapply path_sigma_uncurried.
+  destruct x0. unshelve esplit. cbn.
+  unfold univalent_transport. exact (apD10 (ap e_fun (transportable_refl x)) p).
+Defined.
+
 
 
 Instance isequiv_path_sigma {A : Type} {B:A-> Type} {z z' : sigT B}
@@ -1151,3 +1170,9 @@ Definition FP_univalence : univalence ≈ univalence.
   intros A A' eA B B' eB. 
   apply Isequiv_ur_hprop.
 Defined. 
+
+
+
+Hint Extern 0 (URForall_Type_class ?A ?B ?F ?G) =>
+(is_ground A; is_ground B; is_ground F; is_ground G; econstructor)
+: typeclass_instances.

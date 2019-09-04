@@ -9,7 +9,6 @@ theories/DecidableEq.v
 theories/StdLib/Vector.v
 theories/StdLib/UR.v
 theories/StdLib/FP.v
-theories/StdLib/Transportable.v
 theories/StdLib/Record.v
 examples/Nat_binnat.v
 examples/Conversion_table.v
