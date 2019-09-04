@@ -1,3 +1,7 @@
+(************************************************************************)
+(* This file introduces the decidable equality type class, and associated results *)
+(************************************************************************)
+
 Set Polymorphic Inductive Cumulativity. 
 
 Set Universe Polymorphism.

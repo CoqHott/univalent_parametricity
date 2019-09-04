@@ -1,8 +1,7 @@
 (************************************************************************)
-
-(* This files introduced basic ingredients of HoTT, most of them already *)
+(* This file defines basic ingredients of HoTT, most of them already *)
 (* present in https://github.com/HoTT. We have created our own library *)
-(* to be independent from the HoTT framework which requires a tailored version of Coq  *)
+(* to be independent from the HoTT framework, which requires a tailored version of Coq  *)
 (************************************************************************)
 
 Unset Universe Minimization ToSet.
@@ -138,9 +137,7 @@ Definition transport_double A (P : A -> A -> Type) x y (e : x = y) (f : forall a
 Defined.
 
 Definition transport_forall A B (f : forall x : A , B x)  y z (e : z = y) :
-  (* ET: why not [e # (f z) = f y]. *)
-                transport_eq B e (f z) =
-                f y.
+  e # (f z) = f y.
 Proof.
   destruct e. reflexivity.
 Defined.
@@ -1063,7 +1060,7 @@ Defined.
 
 (* for minor differences between Prop and Type (coming from impredicativity)  *)
 (* we need to state again univalence for Prop, even if in principle Prop is  *)
-(* a subtype iof Type *)
+(* a subtype of Type *)
 
 Definition Equiv_id_P (A:Prop) : A ≃ A := 
   BuildEquiv _ _ id (BuildIsEquiv _ _ _ id (fun _ => eq_refl) (fun _ => eq_refl) (fun _ => eq_refl)).

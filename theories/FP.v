@@ -738,19 +738,6 @@ Hint Extern 100 ((forall x:_ , _) ≃ (forall y:_, _)) => erefine (Equiv_forall 
 Hint Unfold ur. 
 Typeclasses Transparent ur.
 Hint Transparent ur. 
- 
-Instance Transportable_cst A B : Transportable (fun _ : A => B) :=
-  {|
-    transportable := fun (x y : A) _ => Equiv_id B;
-    transportable_refl := fun x : A => eq_refl
-  |}.
-
-Definition Equiv_Arrow (A A' B B': Type)
-           (eA: A ≈ A') (e' : B ≈ B') :
-  (A -> B) ≃ (A' -> B') := Equiv_forall _ _ eA _ _ {| transport_ := _ ; ur_type:= fun _ _ _ => e' |}.
-
-Hint Extern 0 ((_ -> _) ≃ (_ -> _)) =>
-  erefine (Equiv_Arrow _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
 
 Hint Extern 0 (UR_Type (_ -> _) (_ -> _)) =>
   erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := Transportable_cst _ _; ur_type := _|} ); cbn in *; intros : typeclass_instances.

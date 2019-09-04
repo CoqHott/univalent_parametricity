@@ -1,3 +1,9 @@
+(************************************************************************)
+(* The univalent relation on dependent product uses a framework of transportable type families
+   in order to enhance effectiveness. 
+   This file introduces the transportable type class and default instances *)
+(************************************************************************)
+
 Require Import HoTT.
  
 Set Universe Polymorphism.
@@ -21,3 +27,10 @@ Instance Transportable_Type (P:Type -> Type) : Transportable P :=
 
 Instance Transportable_Forall_default A B (P: (forall x: A, B x) -> Type) : Transportable P :=
   Transportable_default P.
+
+
+Instance Transportable_cst A B : Transportable (fun _ : A => B) :=
+  {|
+    transportable := fun (x y : A) _ => Equiv_id B;
+    transportable_refl := fun x : A => eq_refl
+  |}.

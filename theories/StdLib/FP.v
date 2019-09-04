@@ -10,6 +10,13 @@ Unset Universe Minimization ToSet.
 
 Require Import HoTT CanonicalEq UnivalentParametricity.theories.UR URTactics DecidableEq UnivalentParametricity.theories.FP UnivalentParametricity.theories.Transportable UnivalentParametricity.theories.StdLib.UR Record.
 
+Definition Equiv_Arrow (A A' B B': Type)
+           (eA: A ≈ A') (e' : B ≈ B') :
+  (A -> B) ≃ (A' -> B') := Equiv_forall _ _ eA _ _ {| transport_ := _ ; ur_type:= fun _ _ _ => e' |}.
+
+Hint Extern 0 ((_ -> _) ≃ (_ -> _)) =>
+  erefine (Equiv_Arrow _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
+
 (*! FP for Sigma !*)
 
 Definition exist_eq {A P} (a a': A) (l : P a) (l' : P a') (e : a = a') :
@@ -463,7 +470,7 @@ Defined.
 
 Definition FP_transport_eq : @transport_eq ≈ @transport_eq.
   cbn; intros. induction H3. auto.
-Defined. 
+Defined.
 
 
 (*! nat !*)

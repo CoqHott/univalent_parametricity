@@ -1,3 +1,7 @@
+(************************************************************************)
+(* This file defines specific results and instances for transportable. *)
+(************************************************************************)
+
 Require Import HoTT CanonicalEq UnivalentParametricity.theories.Transportable UnivalentParametricity.theories.UR UnivalentParametricity.theories.FP URTactics UnivalentParametricity.theories.StdLib.FP.
  
 Set Universe Polymorphism.

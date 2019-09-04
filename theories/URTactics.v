@@ -199,8 +199,6 @@ Tactic Notation "define_map" constr(ty) uconstr(rec) uconstr(cons1) :=
                  idtac]); clear dependent ty;
   apply_cons cons1.
 
-(* can we avoid duplication here ? *)
-
 Tactic Notation "equiv_pind" uconstr(rec) uconstr(pr1) :=
   clear_eq;
   match goal with

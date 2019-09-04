@@ -1,6 +1,5 @@
 (************************************************************************)
-(* This file introduces the univalent logical relation framework, and
-   defines the relation for basic type constructors *)
+(* This file introduces the canonical equality type class and its default instance *)
 (************************************************************************)
 
 Require Import HoTT.

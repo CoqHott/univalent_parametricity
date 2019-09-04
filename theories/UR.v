@@ -76,7 +76,7 @@ Proof.
                      (Hiseq a a')).
 Defined.
 
-(* The definition of Ur_coh given in the ICFP'18 paper is equivalent to *)
+(* The definition of Ur_coh given in the paper is equivalent to *)
 (* the definition given here, but technically, this one is more convenient to use *)
 
 Definition alt_ur_coh {A B:Type} (e:A ≃ B) (H:UR A B) (HCoh : UR_Coh A B e H) (einv := Equiv_inverse e):
