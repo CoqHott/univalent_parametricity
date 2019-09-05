@@ -1128,7 +1128,7 @@ Definition IsEquiv_eq A B (f : A -> B) (e e' : IsEquiv f)
   destruct (e_adj0 x). reflexivity. destruct X. reflexivity. 
 Defined.
 
-(* This property as been proven in https://github.com/HoTT/HoTT/blob/86c3bc0edb5c0dc2be76b47e4bbe0b348929a856/theories/EquivalenceVarieties.v#L86 *)
+(* This property has been proven in https://github.com/HoTT/HoTT/blob/86c3bc0edb5c0dc2be76b47e4bbe0b348929a856/theories/EquivalenceVarieties.v#L86 *)
 
 Definition isequiv_hprop {A B} {f: A -> B} : IsHProp (IsEquiv f).
 Admitted.
