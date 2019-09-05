@@ -1128,42 +1128,10 @@ Definition IsEquiv_eq A B (f : A -> B) (e e' : IsEquiv f)
   destruct (e_adj0 x). reflexivity. destruct X. reflexivity. 
 Defined.
 
-Definition hprop_isequiv {A B} {f: A -> B} : forall e e' : IsEquiv f, e = e'.
-  intros e e'.
-  destruct e as [e_inv e_sect e_retr e_adj], e'. unshelve eapply IsEquiv_eq.
-  - intro y. etransitivity. apply (e_sect0 _)^. apply ap. exact (e_retr _).
-  - cbn. intro x. etransitivity. eapply ap2. etransitivity. 
-    eapply concat_inv. eapply ap2. reflexivity. etransitivity.
-    apply inv2. reflexivity. reflexivity. etransitivity.
-    apply (concat_p_pp _ _ _)^. etransitivity. eapply ap2. reflexivity.
-    apply (transport_paths_naturality' (e_sect x) e_sect0). etransitivity.
-    apply concat_p_pp. etransitivity. eapply (ap2 HoTT.concat).
-    etransitivity. eapply ap2. apply (ap_inv _ _)^. etransitivity.
-    apply ap_compose. apply (ap _ (e_adj _)^). etransitivity.
-    apply (ap_pp _ _ _)^. apply ap. apply inv_inv. reflexivity. reflexivity. 
-  - cbn. intro y. etransitivity. eapply ap2. eapply ap.
-    apply concat_inv. reflexivity. etransitivity. eapply ap2.
-    apply ap_pp. reflexivity. etransitivity.
-    apply (concat_p_pp _ _ _)^. etransitivity. eapply ap2. reflexivity.
-    eapply ap2. etransitivity. eapply ap. etransitivity. apply inv2. reflexivity.
-    apply (e_adj0 _)^. reflexivity.
-    etransitivity. eapply ap2. reflexivity.
-    apply (transport_paths_naturality' (e_retr y) e_retr0).
-    etransitivity. apply concat_p_pp. etransitivity. eapply ap2. etransitivity.
-    eapply ap2. reflexivity. apply ap_compose. etransitivity. apply (ap_pp _ _ _)^.
-    eapply ap. etransitivity. reflexivity. apply inv_inv. reflexivity. reflexivity. 
-  - (* Opaque ap2. cbn. Transparent ap2. intro x. repeat rewrite concat_refl. *)
-    (* repeat rewrite <- concat_p_pp. *)
-    (* eapply concat. apply ap2. apply ap. *)
-    (* repeat rewrite concat_p_pp. *)
-    (* rewrite ap2_pp. Opaque ap2. cbn. Transparent ap2. *)
-    (* apply ap2.  *)
-    (* rewrite ap2_pp. Opaque ap2. cbn. Transparent ap2.  *)
-    
-    (* give up for now *)
-    
-Admitted.
+(* This property as been proven in https://github.com/HoTT/HoTT/blob/86c3bc0edb5c0dc2be76b47e4bbe0b348929a856/theories/EquivalenceVarieties.v#L86 *)
 
+Definition hprop_isequiv {A B} {f: A -> B} : forall e e' : IsEquiv f, e = e'.
+Admitted.
 
 
 Definition path_Equiv {A B} {f g: A ≃  B} : e_fun f = e_fun g -> f = g.
