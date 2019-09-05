@@ -1130,13 +1130,13 @@ Defined.
 
 (* This property as been proven in https://github.com/HoTT/HoTT/blob/86c3bc0edb5c0dc2be76b47e4bbe0b348929a856/theories/EquivalenceVarieties.v#L86 *)
 
-Definition hprop_isequiv {A B} {f: A -> B} : forall e e' : IsEquiv f, e = e'.
+Definition isequiv_hprop {A B} {f: A -> B} : IsHProp (IsEquiv f).
 Admitted.
 
 
 Definition path_Equiv {A B} {f g: A ≃  B} : e_fun f = e_fun g -> f = g.
   destruct f, g. cbn. intro e. destruct e.
-  assert (e_isequiv0 = e_isequiv1). apply hprop_isequiv.
+  assert (e_isequiv0 = e_isequiv1). apply isequiv_hprop.
   destruct X; reflexivity.
 Defined.
 
