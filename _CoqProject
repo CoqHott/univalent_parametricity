@@ -18,4 +18,5 @@ examples/NatBinMonoid.v
 examples/NatBinPow.v
 examples/NatBinLib.v
 examples/NatBinALC.v
+examples/Expr.v
 examples/FFI.v

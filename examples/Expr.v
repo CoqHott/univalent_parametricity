@@ -1,4 +1,5 @@
-(* TODO: declare in build, imports, etc. *)
+Require Import UnivalentParametricity.theories.Basics UnivalentParametricity.theories.StdLib.Basics.
+Set Universe Polymorphism.
 
 Inductive Expr@{i} : Set -> Type@{i} :=
   I : nat -> Expr nat
