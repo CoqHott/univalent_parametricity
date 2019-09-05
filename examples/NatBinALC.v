@@ -174,18 +174,22 @@ Defined.
 
 
 
+(* 
+   Playing with division:
+   - show lifting for dependent functions that use subset types
+   - show also a version of divide with more refinement
+   - augment the conversion table with the nat/bin divisions and exploit it for transport a la carte
+*)
+
 (* we can even convert dependent functions *)
 
 Notation "n <= m" := (Nat.le n m) : nat_scope.
-
 Definition lt (n m : nat) := (S n <= m)%nat. 
 Notation "n < m" := (lt n m) : nat_scope.
 Hint Extern 0 => progress (unfold lt) :  typeclass_instances.
-
 Hint Extern 0 => progress (unfold projT1) :  typeclass_instances.
 
 (* the original definition of N.lt is using compare and is more complicated to deal with *)
-
 Definition lt_N (n m : N) := (N.succ n <= m)%N. 
 Notation "n < m" := (lt_N n m) : N_scope.
 Hint Extern 0 => progress (unfold lt_N) :  typeclass_instances.
@@ -194,27 +198,7 @@ Instance Decidable_leq_N (n m:N) : DecidableEq (n <= m)%N.
 apply (DecidableEq_equiv (Peano.le (↑n) (↑m)) (n <= m)%N); tc.
 Defined.
 
-
-
-(** OLD: SEE what to recover 
-
-Definition lt (n m : nat) := (S n <= m)%nat. 
-Notation "n < m" := (lt n m) : nat_scope.
-Hint Extern 0 => progress (unfold lt) :  typeclass_instances.
-
 Definition divide n (m : {m : nat & 0 < m }) : nat := n / m.1.
-
-Hint Extern 0 => progress (unfold projT1) :  typeclass_instances.
-
-(* the original definition of N.lt is using compare and is more compicated to deal with *)
-
-Definition lt_N (n m : N) := (N.succ n <= m)%N. 
-Notation "n < m" := (lt_N n m) : N_scope.
-Hint Extern 0 => progress (unfold lt_N) :  typeclass_instances.
-
-Instance Decidable_leq_N n m : DecidableEq (n <= m)%N.
-apply (DecidableEq_equiv (Peano.le (↑n) (↑m)) (n <= m)%N); tc. 
-Defined.
 
 Definition N_divide_conv :=
   ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), N)).
@@ -235,48 +219,27 @@ Definition divide_dep_p n (m : {m : nat & 0 < m }) : (divide n m <= n)%nat.
     + apply Nat.neq_succ_0.
     + rewrite <- Nat.mul_1_l at 1.
       apply Nat.mul_le_mono_r. apply le_n_S. apply Nat.le_0_l.
-Qed.
+Defined.      
 
 Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & (res <= n)%nat} :=
   (divide n m ; divide_dep_p n m).
 
-(* divide_dep_p is a proof with no computational meaning, so we want to lift it globally *)
-
+(* divide_dep_p is a proof with no computational meaning, so we want to lift it black box *)
 Hint Extern 0 (divide_dep_p _ _ ≈ ?g _ _) => direct_lifting divide_dep_p g : typeclass_instances.
 
-(* Approach 1: start from divide, N_divide and divide_dep, convert first proj, lift second proj... *)
+(* the above hint is need for the following convert to succeed *)
+Definition N_divide_dep_conv :=
+  ltac: (convert divide_dep : (forall (n:N) (m : {m : N & (0 < m)%N}), {res:N & (res <= n)%N})). 
 
-Definition N_divide_dep_p_conv := ltac: (convert divide_dep_p : (forall (n:N) (m : {m : N & (0 < m)%N}), (N_divide n m <= n)%N)).
+Definition N_divide_dep := N_divide_dep_conv.1.
 
-Definition N_divide_dep_p := N_divide_dep_p_conv.1.
 
-(* ... and put the pieces together *)
-Definition N_divide_dep_comp : forall (n:N) (m : {m : N & (0 < m)%N}),
-    {res:N & (res <= n)%N} :=
-  fun n m => (N_divide n m; N_divide_dep_p n m).
-
+(* an example *)
 Definition N_two : {m : N & (0 < m)%N}.
   apply (existT _) with (x:=N.succ (N.succ 0)). unfold lt_N.
   apply -> N.succ_le_mono. apply N.le_succ_diag_r.
 Defined.
-
-Eval lazy in (N_divide_dep_comp 10%N N_two).1.
-
-(* Approach 2: more automatic *)
-(* ... it's direct! *)
-
-Definition N_divide_dep_auto_conv :=
-  ltac: (convert divide_dep : (forall (n:N) (m : {m : N & (0 < m)%N}), {res:N & (res <= n)%N})). 
-
-Definition N_divide_dep_auto := N_divide_dep_auto_conv.1.
-
-Eval lazy in (N_divide_dep_auto 10%N N_two).1.
-
-(* the two versions we derive are indeed equal *)
-
-Goal N_divide_dep_comp = N_divide_dep_auto.
-  reflexivity.
-Defined. 
+Eval lazy in (N_divide_dep 10%N N_two).1.
 
 
 (* Now, we can exploit the new divide - N_divide correspondance 
@@ -311,8 +274,5 @@ Definition N_avg := N_avg_conv.1.
 (* it works... *)
 Eval lazy in N_avg 10%N 30%N.
 
-(* and is needed the same as the hand-written N-based version *)
+(* and is indeed the same as the hand-written N-based version *)
 Check eq_refl : N_avg = (fun x y => N_divide (x + y) N_two).
-
-
-**)
