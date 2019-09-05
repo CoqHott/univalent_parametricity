@@ -196,6 +196,19 @@ Proof.
   - exact (e.(Ur_Can_A)).
 Defined.
 
+Definition compat_inverse (A A' B B':Type) (eA: A ≈ A') (eB: B ≈ B') (eA' := UR_Type_Inverse _ _ eA)
+           (eB' := UR_Type_Inverse _ _ eB) (f : A -> B) (g : A' -> B') :
+  f ≈ g -> g ≈ f.
+  tc. 
+Defined.
+
+Definition compat_inverse2 {A A' B B' C C' :Type} {eA: A ≈ A'} (eA' := UR_Type_Inverse _ _ eA)
+           {eB: B ≈ B'} (eB' := UR_Type_Inverse _ _ eB)
+           {eC: C ≈ C'} (eC' := UR_Type_Inverse _ _ eC)
+           {f : A -> B -> C} {g : A' -> B' -> C'} :
+  f ≈ g -> g ≈ f.
+  tc. 
+Defined.
 
 (*! Canonical UR from a type equivalence !*)
 
