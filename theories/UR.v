@@ -211,3 +211,145 @@ Proof.
   - apply Canonical_eq_gen.
   - apply Canonical_eq_gen. 
 Defined.     
+
+(* alt_ur_coh is an equivalence UR_Coh A B e H ≃ forall (a:A) (b:B), (a ≈ b) ≃ (a = ↑ b) *)
+
+Instance is_equiv_alt_ur_coh_inv {A B:Type}  (e:A ≃ B) (H:UR A B) : IsEquiv (alt_ur_coh e H). 
+Proof.
+  unshelve refine (isequiv_adjointify _ _ _ _).
+  - intro. apply alt_ur_coh_inv. assumption.
+  - intros [f]. apply (ap (Build_UR_Coh _ _ _ _)).
+    apply funext. intro a. apply funext. intro a'. unfold alt_ur_coh, alt_ur_coh_inv.
+    apply path_Equiv. apply funext. intro E.
+    rewrite transport_inverse. rewrite <- transport_e_fun. cbn.
+    unfold univalent_transport. rewrite transport_paths_r. cbn.
+    change (Equiv_inverse (transport_eq (fun X : B => (a ≈ X) ≃ (a = e_inv e (e a'))) (e_retr e (e a')) (Equiv_inverse (f a (e_inv e (e a')))))
+    (E @ (e_sect e a')^) = (f a a') E).
+    rewrite transport_inverse'.
+    rewrite Equiv_inverse_inverse. 
+    rewrite e_adj. rewrite transport_ap. rewrite <- (transport_e_fun' _ _ (fun x => (a ≈ e x))). 
+    rewrite (transport_fun_eq A a (fun x : A => (a ≈ e x)) (fun a' => e_fun (f a a'))).
+    rewrite <- concat_p_pp. rewrite inv_inv. rewrite concat_refl. reflexivity.
+  - intros f. apply funext. intro a. apply funext. intro a'.
+    apply path_Equiv. apply funext. intro E. unfold alt_ur_coh, alt_ur_coh_inv. 
+    cbn. rewrite Equiv_inverse_inverse.
+    rewrite other_adj. rewrite transport_ap. unfold univalent_transport.
+    rewrite (transport_double _ (fun X X' => (a ≈ X) ≃ (a = e_inv e X'))).
+    reflexivity. 
+Defined.
+
+Definition ur_coh_equiv {A B:Type} (e:A ≃ B) (H:UR A B) (einv := Equiv_inverse e):
+  UR_Coh A B e H ≃ forall (a:A) (b:B), (a ≈ b) ≃ (a = ↑ b)
+  := BuildEquiv _ _ (alt_ur_coh e H) _.
+
+
+(* transport and path lemmas on UR_Type *)
+
+Definition transport_UR_Type A B C (e: B = C) e1 e2 e3 e4 e5 :
+  transport_eq (fun X : Type => A ⋈ X)
+               e (Build_UR_Type A B e1 e2 e3 e4 e5) =
+  Build_UR_Type A C (e # e1) (e#e2)
+                (transportD2 _ _ (@UR_Coh A) e _ _ e3)
+                e4 (e # e5)
+  :=
+  match e with eq_refl => eq_refl end.
+
+Definition transport_UR_Type' A B C (e: A = C) e1 e2 e3 e4 e5:
+  transport_eq (fun X : Type => X ⋈ B)
+               e (Build_UR_Type A B e1 e2 e3 e4 e5) =
+  Build_UR_Type C B (e # e1) (e#e2)
+                (transportD2 _ _ (fun X => @UR_Coh X B) e _ _ e3)
+                (e # e4) e5
+  :=
+  match e with eq_refl => eq_refl end.
+
+Definition path_UR_Type A B (X Y:UR_Type A B) (e1:X.(equiv) = Y.(equiv))
+           (e2 : X.(Ur) = Y.(Ur))
+           (e3 : forall a a',
+               e_fun (@ur_coh _ _ _ _ (transport_eq (fun X => UR_Coh A B X _ ) e1
+                                   (transport_eq (fun X => UR_Coh A B _ X ) e2 X.(Ur_Coh))) a a') =
+               e_fun (@ur_coh _ _ _ _ Y.(Ur_Coh) a a'))
+           (e4 : X.(Ur_Can_A) = Y.(Ur_Can_A))
+           (e5 : X.(Ur_Can_B) = Y.(Ur_Can_B))
+                               : X = Y. 
+Proof.
+  destruct X, Y. cbn in *. 
+  destruct e1, e2, e4, e5. cbn.
+  destruct Ur_Coh0, Ur_Coh1. 
+  assert (ur_coh0 = ur_coh1).
+  apply funext. intro a.
+  apply funext. intro a'.
+  apply path_Equiv. apply e3. destruct X. reflexivity. 
+Defined. 
+
+Definition transport_UR A B C (e: B = C) e1 :
+  transport_eq (fun X : Type => UR A X)
+               e (Build_UR A B e1) =
+  Build_UR A C (fun a x => e1 a ((eq_to_equiv _ _ e^).(e_fun) x))
+  :=  match e with eq_refl => eq_refl end.
+
+Definition transport_UR' A B C (e: A = C) e1 :
+  transport_eq (fun X : Type => UR X B)
+               e (Build_UR A B e1) =
+  Build_UR C B (fun x b => e1 ((eq_to_equiv _ _ e^).(e_fun) x) b)
+  :=  match e with eq_refl => eq_refl end.
+
+Definition path_UR A B (X Y: UR A B) : (forall a b, @ur _ _ X a b = @ur _ _ Y a b) -> X = Y.
+  intros e. pose ((funext _ _ _ _).(@e_inv _ _ _) (fun a => (funext _ _ _ _).(@e_inv _ _ _) (e a))).
+  destruct X, Y. cbn in *. 
+  destruct e0. reflexivity. 
+Defined.
+
+(* some generic ways of getting UR instances *)
+
+Definition UR_Equiv (A B C:Type) `{C ≃ B} `{UR A B} : UR A C :=
+  {| ur := fun a b => a ≈ ↑ b |}.
+
+Definition UR_Equiv' (A B C:Type) `{C ≃ A} `{UR A B} : UR C B :=
+  {| ur := fun c b => ↑ c ≈  b |}.
+
+Definition UR_Type_Equiv (A B C:Type) `{C ≃ B} `{A ≈ B} : A ≈ C.
+Proof.
+  cbn in *. unshelve econstructor.
+  - apply (equiv_compose (equiv H0)). apply Equiv_inverse. exact H.    
+  - eapply UR_Equiv; typeclasses eauto.
+  - econstructor.
+    intros a a'. cbn. unfold univalent_transport. 
+    refine (transport_eq (fun X => _ ≃ (a ≈ X)) (e_retr' H _)^ _). apply ur_coh. 
+  - apply H0.(Ur_Can_A).
+  - pose H0.(Ur_Can_B). destruct c.
+    unshelve refine (let x : forall (x y:C) , x=y -> x = y := _ in _).
+    intros x y e. pose (can_eq _ _ (ap H e)).
+    apply (Equiv_inverse (@isequiv_ap _ _ H _ _) e0). 
+    apply (Build_Canonical_eq _ x).
+    cbn. clear x; intro x. rewrite can_eq_refl. cbn. rewrite concat_refl.
+    apply inv_inv.
+Defined.     
+
+Definition UR_Type_Equiv' (A B C:Type) `{C ≃ A} `{A ≈ B} : C ≈ B.
+Proof.
+    unshelve econstructor.
+  - apply (equiv_compose H (equiv H0)).
+  - cbn in *. eapply UR_Equiv'; typeclasses eauto.
+  - econstructor. intros. cbn.
+    unfold univalent_transport.
+    pose (X:= isequiv_ap C A a a'). 
+    eapply equiv_compose. apply X.
+    apply ur_coh.
+  - pose H0.(Ur_Can_A). destruct c.
+    unshelve refine (let x : forall (x y:C) , x=y -> x = y := _ in _).
+    intros x y e. pose (can_eq _ _ (ap H e)).
+    apply (Equiv_inverse (@isequiv_ap _ _ H _ _) e0). 
+    apply (Build_Canonical_eq _ x).
+    cbn. clear x; intro x. rewrite can_eq_refl. cbn. rewrite concat_refl.
+    apply inv_inv.
+  - apply H0.(Ur_Can_B).
+Defined. 
+
+Definition UR_Type_Equiv_gen (X:Type) (eX : X ⋈ X) (A B: X -> Type) (HAB: forall x, B x ≃ A x) (x y:X) (e : x ≈ y) `{A x ≈ A y}
+  : B x ≈ B y.
+Proof.
+  unshelve refine (UR_Type_Equiv _ _ _).
+  unshelve refine (UR_Type_Equiv' _ _ _).
+  auto. 
+Defined.

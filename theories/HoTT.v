@@ -1183,3 +1183,80 @@ Proof.
 Defined. 
 
 
+
+Definition Equiv_inverse_inverse A B (e : A ≃ B) : Equiv_inverse (Equiv_inverse e) = e.
+  intros. apply path_Equiv. reflexivity.
+Defined. 
+
+Definition equiv_ind {A B} {f : A ≃  B} (P : B -> Type)
+  : (forall x:A, P (e_fun f x)) -> forall y:B, P y
+  := fun g y => transport_eq P (e_retr' f y) (g (e_inv' f y)).
+
+Ltac equiv_intro E x :=
+  match goal with
+    | |- forall y, @?Q y =>
+      refine (equiv_ind E Q _); intros x
+  end.
+
+Definition equiv_path (A B : Type) : (A = B) ≃ (A ≃ B) 
+  := BuildEquiv _ _ (eq_to_equiv A B) _.
+
+Definition equiv_path_V (A B : Type) (p : A = B) :
+  eq_to_equiv  B A (p^) = Equiv_inverse (eq_to_equiv  A B p).
+Proof.
+  destruct p. simpl. simpl.
+  apply path_Equiv. reflexivity. 
+Defined.
+
+
+
+Instance isequiv_forall_cod A B C (f : forall a : A, B a -> C a) `{!forall a, IsEquiv (f a)}
+  : IsEquiv (fun (g : forall a, B a) a => f a (g a)).
+Proof.
+  simple refine (isequiv_adjointify _ _ _ _).
+  - intros h a;exact (e_inv (f a) (h a)).
+  - simpl. intros g;apply funext;intros a.
+    apply e_sect.
+  - simpl;intros h; apply funext; intros a.
+    apply e_retr.
+Defined.
+
+Definition equiv_forall_cod A B C (e : forall a : A, B a ≃ C a) : (forall a, B a) ≃ (forall a, C a).
+Proof.
+  eexists;apply isequiv_forall_cod,_.
+Defined.
+
+Instance equiv_relation_equiv_fun A B (R1 R2 : A -> B -> Type)
+  : (R1 = R2) ≃ (forall a b, R1 a b ≃ R2 a b).
+Proof.
+  eapply equiv_compose;[|apply equiv_forall_cod].
+  eexists. apply funext.
+  intros a. simpl.
+  eapply equiv_compose;[|apply equiv_forall_cod].
+  eexists. apply funext.
+  intros b. simpl.
+  eexists. apply univalence.
+Defined.
+
+
+
+Definition apD10_gen (A : Type) (B : A -> Type) (f g : forall x : A, B x) :
+  f = g -> forall x y (e:y = x), f x = e # g y.
+  intros H x y e. destruct e. cbn. apply apD10. auto.  
+Defined. 
+
+Instance funextGen (A : Type) (P : A -> Type) f g: IsEquiv (@apD10_gen A P f g).
+Proof.
+  unshelve eapply isequiv_adjointify.
+  intros. apply funext. intros x. exact (X _ _ eq_refl).
+  cbn. intros e. cbn.
+  exact (e_sect (@apD10 _ _ f g) e).
+  cbn; intro e.
+  apply funext. intro x.
+  apply funext. intro y.
+  apply funext. intro E.
+  destruct E. cbn.
+  pose (funext _ _ f g).
+  pose (e_retr (@apD10 _ _ f g) (fun x => e x x eq_refl)).
+  exact (apD10 e0 y).
+Defined.
