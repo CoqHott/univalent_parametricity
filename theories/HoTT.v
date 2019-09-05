@@ -1054,6 +1054,7 @@ Proof.
   rewrite transport_apD10. rewrite e_retr. reflexivity.
 Defined.
 
+
 Definition IsIrr_forall A (B:A ->Type) : (forall a, IsIrr (B a)) -> IsIrr (forall a, B a).
   intros H f g. apply funext; intro. apply H. 
 Defined.
@@ -1162,3 +1163,23 @@ Definition hprop_isequiv {A B} {f: A -> B} : forall e e' : IsEquiv f, e = e'.
     (* give up for now *)
     
 Admitted.
+
+
+
+Definition path_Equiv {A B} {f g: A ≃  B} : e_fun f = e_fun g -> f = g.
+  destruct f, g. cbn. intro e. destruct e.
+  assert (e_isequiv0 = e_isequiv1). apply hprop_isequiv.
+  destruct X; reflexivity.
+Defined.
+
+
+Definition transport_univalence A B C (e: A ≃ B) (e': C ≃ A)  :
+  transport_eq (Equiv C) (e_inv (eq_to_equiv A B) e) e'
+  = e ∘∘ e'.
+Proof.
+  pose (@e_retr _ _ (eq_to_equiv A B) _ e). 
+  set (e_inv (eq_to_equiv A B) e) in *.  rewrite <- e0.
+  clear e0. destruct e1. cbn. apply path_Equiv. apply funext; reflexivity. 
+Defined. 
+
+

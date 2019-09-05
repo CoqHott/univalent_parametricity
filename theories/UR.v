@@ -176,3 +176,38 @@ Defined.
 
 Definition UR_Equiv_refl (A B:Type) (e:A ≃ B) (e_inv := Equiv_inverse e) `{UR A B} : UR B B :=
   {| ur := fun b b' => ↑ b ≈  b' |}.
+
+
+(*! UR is symmetric on types !*)
+
+Definition UR_Type_Inverse (A B : Type) : A ≈ B -> B ≈ A.
+Proof.
+  intro e.
+  unshelve eexists; cbn in *. 
+  - apply Equiv_inverse.  typeclasses eauto. 
+  - econstructor. exact (fun b a => ur a b).
+  - econstructor. intros b b'. cbn. 
+    eapply equiv_compose. apply isequiv_sym.
+    eapply equiv_compose. apply (@isequiv_ap _ _ ( Equiv_inverse (equiv e))).
+    eapply equiv_compose. apply ur_coh.
+    cbn. unfold univalent_transport.
+    refine (transport_eq (fun X => (_ ≈ X) ≃ _) (can_eq _ _ _ (e_retr _ _))^ (Equiv_id _)).
+  - exact (e.(Ur_Can_B)).
+  - exact (e.(Ur_Can_A)).
+Defined.
+
+
+(*! Canonical UR from a type equivalence !*)
+
+
+Definition Canonical_UR (A B:Type) `{A ≃ B} : A ≈ B.
+Proof.
+  pose (einv := Equiv_inverse H).
+  cbn in *. unshelve econstructor.
+  - exact ({| ur := fun a b => a = ↑ b |}). 
+  - econstructor.
+    intros a a'. cbn. unfold univalent_transport. 
+    refine (transport_eq (fun X => _ ≃ (a = X)) (e_sect' H _)^ _). apply Equiv_id. 
+  - apply Canonical_eq_gen.
+  - apply Canonical_eq_gen. 
+Defined.     

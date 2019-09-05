@@ -71,12 +71,6 @@ Definition transport_UR_Type' A B C (e: A = C) e1 e2 e3 e4 e5:
   match e with eq_refl => eq_refl end.
 
 
-Definition path_Equiv {A B} {f g: A ≃  B} : e_fun f = e_fun g -> f = g.
-  destruct f, g. cbn. intro e. destruct e.
-  assert (e_isequiv = e_isequiv0). apply hprop_isequiv.
-  destruct X; reflexivity.
-Defined.
-
 Definition Equiv_inverse_inverse A B (e : A ≃ B) : Equiv_inverse (Equiv_inverse e) = e.
   intros. apply path_Equiv. reflexivity.
 Defined. 
@@ -361,117 +355,6 @@ Instance FP_Prop : Prop ⋈ Prop.
 Proof.
   econstructor; typeclasses eauto. 
 Defined.
-
-
-(* ET:  stuff below seems to belong more to UR.v *) 
-
-(*! UR is symmetric on types !*)
-
-Definition UR_Type_Inverse (A B : Type) : A ≈ B -> B ≈ A.
-Proof.
-  intro e.
-  unshelve eexists; cbn in *. 
-  - apply Equiv_inverse.  typeclasses eauto. 
-  - econstructor. exact (fun b a => ur a b).
-  - econstructor. intros b b'. cbn. 
-    eapply equiv_compose. apply isequiv_sym.
-    eapply equiv_compose. apply (@isequiv_ap _ _ ( Equiv_inverse (equiv e))).
-    eapply equiv_compose. apply ur_coh.
-    cbn. unfold univalent_transport.
-    refine (transport_eq (fun X => (_ ≈ X) ≃ _) (can_eq _ _ _ (e_retr _ _))^ (Equiv_id _)).
-  - exact (e.(Ur_Can_B)).
-  - exact (e.(Ur_Can_A)).
-Defined.
-
-(*! Canonical UR from a type equivalence !*)
-
-
-Definition transport_apD10 A B (f g : forall x:A, B x)
-           (P : forall x:A, B x -> Type)
-           (e : f = g) x v: transport_eq (fun X => P x (X x))
-                                                       e v
-                                          = transport_eq (fun X => P x X)
-                                                (apD10 e x) v.
-  destruct e. reflexivity.
-Defined. 
-
-
-Definition transport_funext {A B} {f g : forall x:A, B x}
-           (P : forall x:A, B x -> Type) x 
-           (v : P x (f x)) (e : forall x, f x = g x)
-            : transport_eq (fun X => P x (X x))
-                                                       (e_inv apD10 e) v
-                                          = transport_eq (fun X => P x X)
-                                                (e x) v.
-Proof.
-  rewrite transport_apD10. rewrite e_retr. reflexivity.
-Defined.
-
-Definition transport_univalence A B C (e: A ≃ B) (e': C ≃ A)  :
-  transport_eq (Equiv C) (e_inv (eq_to_equiv A B) e) e'
-  = e ∘∘ e'.
-Proof.
-  pose (@e_retr _ _ (eq_to_equiv A B) _ e). 
-  set (e_inv (eq_to_equiv A B) e) in *.  rewrite <- e0.
-  clear e0. destruct e1. cbn. apply path_Equiv. apply funext; reflexivity. 
-Defined. 
-
-
-
-
-Definition Canonical_UR (A B:Type) `{A ≃ B} : A ≈ B.
-Proof.
-  pose (einv := Equiv_inverse H).
-  cbn in *. unshelve econstructor.
-  - exact ({| ur := fun a b => a = ↑ b |}). 
-  - econstructor.
-    intros a a'. cbn. unfold univalent_transport. 
-    refine (transport_eq (fun X => _ ≃ (a = X)) (e_sect' H _)^ _). apply Equiv_id. 
-  - apply Canonical_eq_gen.
-  - apply Canonical_eq_gen. 
-Defined.     
-
-
-Definition UR_Type_canonical_eq (A A' : Type) (eA : A ⋈ A') :
-  eA = @Canonical_UR A A' (equiv eA).
-  unshelve eapply UR_Type_eq. 
-  destruct eA, Ur, Ur_Coh. cbn; apply ap.
-  apply funext; intro a. 
-  apply funext; intro a'.
-  specialize (ur_coh a (e_inv equiv a')).
-  apply univalence.
-  exact (transport_eq (fun X => ur a X ≃ _) (e_retr equiv _)
-                      (Equiv_inverse ur_coh)).
-
-  destruct eA, Ur, Ur_Coh. cbn.
-  rewrite transport_ap. rewrite transport_Ur_Coh. apply ap.
-  apply funext; intro a; apply funext; intro a'.
-  apply path_Equiv. apply funext. intro e. 
-  unfold univalent_transport in ur_coh.
-  pose (@transport_funext _ _ ur (fun a a' => a = e_inv equiv a') (fun _ (X : A' -> Type) => (a = a') ≃ X (equiv a')) a (ur_coh a a')). 
-  cbn in e0.
-  rewrite e0. clear e0. 
-  pose (@transport_funext _ _ (ur a) (fun a' => a = e_inv equiv a')
-                          (fun _ X => (a = a') ≃ X) (equiv a') (ur_coh a a')). 
-  rewrite e0. clear e0.
-  rewrite transport_univalence. cbn.
-  rewrite (e_adj equiv a'). rewrite transport_ap. 
-  unfold e_sect'.
-  pose (T := fun (X:{a'' : A & a'' = a'}) => (transport_eq (fun x : A => ur a (equiv x) ≃ (a = X.1))
-     X.2 (Equiv_inverse (ur_coh a X.1)))
-    ((ur_coh a a') e) =
-  (transport_eq (fun X : A => (a = a') ≃ (a = X)) X.2^
-     (Equiv_id (a = a'))) e).
-  change (T (_ ; e_sect equiv a')).
-  assert ((e_inv equiv (equiv a'); e_sect equiv a') =
-          ((_;eq_refl):{a'' : A & a'' = a'})).
-  apply path_sigma_uncurried. unshelve eexists. exact (e_sect equiv a').
-  cbn. rewrite transport_paths_l. rewrite inv2. apply eq_sym, concat_refl.
-  rewrite X. unfold T; clear T. cbn. apply e_sect.
-  - apply Canonical_contr.
-  - apply Canonical_contr.    
-Defined. 
-
 
 Hint Extern 0 (sigT _) => unshelve refine (existT _ _ _): typeclass_instances.
 
