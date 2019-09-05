@@ -8,7 +8,7 @@ Set Universe Polymorphism.
 
 Unset Universe Minimization ToSet.
 
-Require Import HoTT CanonicalEq UnivalentParametricity.theories.UR URTactics DecidableEq UnivalentParametricity.theories.FP UnivalentParametricity.theories.Transportable UnivalentParametricity.theories.StdLib.UR Record.
+Require Import UnivalentParametricity.theories.Basics UnivalentParametricity.theories.StdLib.UR Record.
 
 (*! FP for Sigma !*)
 

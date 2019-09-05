@@ -1,7 +1,7 @@
 (** * Techniques for applying theorems from [Sigma.v] to record types. *)
 (** * From the HoTT Library *)
 
-Require Import HoTT UnivalentParametricity.theories.UR UnivalentParametricity.theories.FP.
+Require Import UnivalentParametricity.theories.Basics.
 
 Set Primitive Projections.
 Set Universe Polymorphism.

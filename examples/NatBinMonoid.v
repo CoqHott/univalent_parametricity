@@ -1,4 +1,5 @@
-Require Import HoTT Tactics UnivalentParametricity.theories.UR UnivalentParametricity.theories.StdLib.UR URTactics UnivalentParametricity.theories.FP Record UnivalentParametricity.theories.StdLib.FP UnivalentParametricity.theories.Transportable CanonicalEq DecidableEq NatBinDefs.
+Require Import UnivalentParametricity.theories.Basics UnivalentParametricity.theories.StdLib.Basics.
+Require Import NatBinDefs.
 
 Require Import BinNat.
 

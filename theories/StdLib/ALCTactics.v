@@ -1,5 +1,5 @@
 
-Require Import HoTT URTactics UnivalentParametricity.theories.UR UnivalentParametricity.theories.StdLib.FP.
+Require Import UnivalentParametricity.theories.Basics UnivalentParametricity.theories.StdLib.FP.
 
 Set Universe Polymorphism.
 

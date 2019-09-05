@@ -3,8 +3,7 @@
    defines the relation for basic type constructors *)
 (************************************************************************)
 
-Require Import HoTT CanonicalEq UnivalentParametricity.theories.Transportable URTactics
-        UnivalentParametricity.theories.UR.
+Require Import UnivalentParametricity.theories.Basics.
 
 Set Universe Polymorphism.
 Set Primitive Projections.
