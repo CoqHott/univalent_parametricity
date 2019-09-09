@@ -1132,7 +1132,7 @@ Hint Extern 0 (UR (_ ≃ _) (_ ≃ _)) => refine (Ur (ur_type (FP_Equiv _ _ _) _
 Definition Isequiv_ur_hprop A A' B B' (H : A ⋈ A')(H' : B ⋈ B') (f:A->B) (g:A'->B')
            (e : IsEquiv f) (e' : IsEquiv g)
            (efg:f ≈ g) : e ≈ e'. 
-  intros; apply ur_hprop. apply hprop_isequiv. 
+  intros; apply ur_hprop. apply isequiv_hprop. 
 Defined.   
 
 
