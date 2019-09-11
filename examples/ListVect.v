@@ -170,8 +170,6 @@ Definition neg : bool -> bool := fun b => match b with
 
 Eval compute in (lib_list.(map) neg (app_list [[true;false]] [[true;false]])).
 
-Hint Extern 0 (list_rect _ _ _ _ _ = _) => eapply FP_List_vect_rect : typeclass_instances.
-
 (* Example of lifting structurally a fixpoint on lists to a fixpoint on vectors. *)
 (* This example would need some more automation to be nicer *)
 
