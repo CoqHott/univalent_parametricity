@@ -611,7 +611,6 @@ Definition FP_List : list ≈ list.
   - apply Canonical_eq_gen.    
 Defined.
 
-
 Definition FP_List_rect : @list_rect ≈ @list_rect.
 Proof.
   cbn. intros A B e X X' eX P P' P_nil Q Q' Q_cons l l' el. 
@@ -1253,3 +1252,168 @@ Hint Extern 0 (Canonical_eq _ ⋈ Canonical_eq _) => erefine (ur_type FP_Canonic
 
 Hint Extern 0 (Canonical_eq _ ≃ Canonical_eq _) => erefine (ur_type FP_Canonical_eq _ _ _).(equiv); simpl
 :  typeclass_instances.
+
+Definition Svector A := {n : nat & t A n}.
+
+Definition Snil {A} : Svector A := (O ; nil A).
+
+Definition Svcons {A} a v : Svector A := (S v.1; vcons a v.2).
+
+Instance Equiv_Svector_list (A B:Type) {H: A ≃ B} : Svector A ≃ list B.
+Proof.
+  unshelve econstructor; [idtac | unshelve eapply isequiv_adjointify].
+  - intro v. exact (vector_to_list _ _ _ v.1 v.1 eq_refl v.2).1.
+  - intro l. apply Equiv_inverse in H. exact (length l; list_to_vector _ _ _ (length l) _ eq_refl (l;eq_refl)).
+  - intros [n v].
+    pose proof (e_sect' (Equiv_vector_list _ _ n n eq_refl) v). cbn in X. 
+    cbn. eapply path_sigma_uncurried.
+    unshelve eexists.
+    + exact ((vector_to_list A B H n n eq_refl v) .2).
+    + cbn.
+      change ((fun X : {l : list B & length l = n} =>
+                list_to_vector B A (Equiv_inverse H) (length X.1)
+    (length X.1) eq_refl
+    (X.1; eq_refl) = transport_eq (fun n0 : nat => t A n0) (X.2)^ v)
+                (vector_to_list A B H n n eq_refl v)).
+      destruct (vector_to_list A B H n n eq_refl v).
+      destruct e. cbn. exact X.
+  - intro l. cbn.
+    exact ((e_retr' (Equiv_vector_list _ _ (length l) _  eq_refl) (l;eq_refl))..1).
+Defined. 
+
+Instance Equiv_list_Svector (A B:Type) (H: A ≃ B) (H' := Equiv_inverse H)
+  : list A ≃ Svector B := Equiv_inverse _.
+
+Inductive UR_list_vect {A B} (R : A -> B -> Type) : list A -> Svector B -> Type :=
+  UR_list_vect_nil : UR_list_vect R [] Snil
+| UR_list_vect_cons : forall {a b l l'},
+    (R a b) -> (UR_list_vect R l l') ->
+    UR_list_vect R (a::l) (Svcons b l').
+
+Hint Extern 0 (UR (list ?A) (Svector ?B)) => unshelve notypeclasses refine (@UR_list_vect _ _ _): typeclass_instances. 
+
+Hint Extern 0 (UR_list_vect ?R [] Snil) => exact (UR_list_vect_nil R)  : typeclass_instances.
+
+Hint Extern 0 (UR_list_vect ?R (_::_) (Svcons _ _)) => unshelve refine (UR_list_vect_cons R _ _) : typeclass_instances.
+
+Definition Equiv_list_length {A B:Type} (e : A ≈ B) (l:list B) :
+  let l' := e_inv (Equiv_List A B (equiv e)) l in
+  length l' = length l.
+Proof.
+  induction l; tc.
+Defined.
+
+Definition list_to_vector_Equiv_list (A B:Type) (e : A ≈ B) (l:list B) :
+  let l' := e_inv (Equiv_List A B (equiv e)) l in
+  (length l' ; list_to_vector A B (equiv e) (length l') (length l') eq_refl (l'; eq_refl))
+  =
+  (length l; list_to_vector B B (Equiv_id B) (length l) (length l) eq_refl (l; eq_refl)).
+  apply path_sigma_uncurried. exists (Equiv_list_length e l).
+  induction l; cbn.
+  - reflexivity.
+  - rewrite <- ap_inv. rewrite transport_vector. rewrite e_retr. now apply ap.
+Defined. 
+
+Definition UR_list_Svector_fun (A B:Type) (e : A ≈ B) (l : list A) (l':list B) :
+  UR_list ur l l' ->
+  UR_list_vect ur l
+      (length l'; list_to_vector B B (Equiv_id B) (length l') (length l') eq_refl (l'; eq_refl)).
+Proof.
+  induction 1; cbn; try econstructor. cbn in IHX. 
+  match goal with | H : UR_list_vect _ _ ?X |- _ => set (s := X) in * end.
+  eapply (@UR_list_vect_cons _ _ _ _ _ _ s); auto.
+Defined.
+
+Definition UR_list_vect_decompose {A B} (R:A->B->Type) l v (e : UR_list_vect R l v) :
+  match v return UR_list_vect R l v -> Type
+  with (n;v) =>
+       match l in list _, v as v in t _ n return UR_list_vect R l (n;v) -> Type
+       with [],nil _ => fun e => e = UR_list_vect_nil R
+       | a::l, cons _ a' n' v => fun e => { X : (R a a') * UR_list_vect R l (n';v) & e = UR_list_vect_cons R (fst X) (snd X)}
+        | _,_ => fun _ => False end end e.
+Proof.
+  destruct e. reflexivity. cbn. destruct l'. exists (r,e). reflexivity.
+Defined.
+
+Definition UR_list_Svector_inv (A B:Type) (e : A ≈ B) (l : list A) (l':list B) :
+  UR_list_vect ur l
+      (length l'; list_to_vector B B (Equiv_id B) (length l') (length l') eq_refl (l'; eq_refl))
+  -> UR_list ur l l'.
+Proof.
+  revert l'. 
+  induction l;destruct l'; cbn; intro H. 
+  - econstructor.
+  - inversion H.
+  - inversion H.
+  - pose (H' := UR_list_vect_decompose _ _ _ H); cbn in H'.  econstructor.
+    + exact (fst H'.1).
+    + apply IHl. exact (snd H'.1).
+Defined.
+
+Definition FP_list_Svector
+  : list ≈ Svector.
+  unshelve econstructor. tc. intros A B e.
+  unshelve refine {| equiv := Equiv_list_Svector _ _ e.(equiv) ; Ur := {| ur := @UR_list_vect A B _ |} |}.
+  - apply ur. 
+  - econstructor. intros.  
+    eapply equiv_compose. apply (ur_coh (UR_Coh := Ur_Coh (FP_List.(ur_type) _ _ e))).
+    cbn. refine (transport_eq (fun X => UR_list ur a
+    (list_rect A (fun _ : list A => list B) []
+       (fun (H0 : A) (_ : list A) (H2 : list B) => univalent_transport H0 :: H2) a') ≃ UR_list_vect ur a
+      (length X;
+      list_to_vector A B (Equiv_inverse (Equiv_inverse (equiv e))) (length X) 
+                     (length X) eq_refl (X; eq_refl))) (e_sect' (Equiv_List _  _ _) a') _).
+    match goal with | |- UR_list _ _ ?X ≃ _ => set X in * end. cbn in l. 
+    change (UR_list ur a l
+  ≃ UR_list_vect ur a
+      (length (e_inv (Equiv_List A B (equiv e)) l);
+      list_to_vector A B (Equiv_inverse (Equiv_inverse (equiv e)))
+        (length (e_inv (Equiv_List A B (equiv e)) l))
+        (length (e_inv (Equiv_List A B (equiv e)) l)) eq_refl
+        (e_inv (Equiv_List A B (equiv e)) l; eq_refl))).
+    rewrite Equiv_inverse_inverse. set (l' :=e_inv (Equiv_List A B (equiv e)) l).
+    unfold l'. rewrite list_to_vector_Equiv_list. clearbody l. clear l' a'. 
+    cbn. unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)).
+    + apply UR_list_Svector_fun; auto.
+    + apply UR_list_Svector_inv; auto.
+    + intro H. induction H.
+      * reflexivity. 
+      * cbn. apply ap. exact IHUR_list.
+    + revert l; induction a; destruct l; intro H.
+      * symmetry. exact (UR_list_vect_decompose _ _ _ H).
+      * inversion H.
+      * inversion H.
+      * pose (H' := UR_list_vect_decompose _ _ _ H). cbn in H'.
+        eapply concat; try exact H'.2^. cbn. apply ap.
+        exact (IHa l (snd H'.1)). 
+  - apply Canonical_eq_gen.
+Defined. 
+
+Hint Extern 0 (list _ ⋈ Svector _) => apply FP_list_Svector : typeclass_instances. 
+
+Definition FP_Svector_list
+  : Svector ≈ list.
+  econstructor. tc. intros A B e.
+  pose (UR_Type_Inverse _ _ e).
+  eapply UR_Type_Inverse. tc.
+Defined. 
+
+Hint Extern 0 (Svector _ ⋈ list _) => apply FP_Svector_list : typeclass_instances. 
+
+Definition Svect_rect : forall (A : Type) (P : Svector A -> Type),
+    P Snil -> (forall (a : A) (l : Svector A), P l -> P (Svcons a l)) -> forall l : Svector A, P l.
+Proof.
+  intros A P Pnil Pcons [n v].  induction v as [ | a n v IH].
+  - exact Pnil. 
+  - exact (Pcons a (n;v) IH).
+Defined. 
+
+Definition FP_List_vect_rect : @list_rect ≈ @Svect_rect.
+Proof.
+  cbn. intros.
+  induction H3.
+  - tc.
+  - destruct l'.  typeclasses eauto with typeclass_instances. 
+Defined. 
+
+
