@@ -1,5 +1,5 @@
-Require Import UnivalentParametricity.theories.Basics UnivalentParametricity.theories.StdLib.Basics.
-Require Import Vector.
+Require Import UnivalentParametricity.theories.Basics.
+Require Import UnivalentParametricity.theories.StdLib.Basics.
 
 Set Universe Polymorphism.
 
