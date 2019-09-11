@@ -5,8 +5,7 @@ Set Universe Polymorphism.
 
 
 (*****************************)
-(* A library on nats  *)
-
+(* A library parametrized by the underlying size-aware container type *)
 Record Lib (C : Type -> nat -> Type) :=
   { head : forall {A : Type} {n : nat}, C A (S n) -> A;
     map : forall {A B} (f:A -> B) {n}, C A n -> C B n;
