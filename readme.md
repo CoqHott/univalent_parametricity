@@ -1,9 +1,13 @@
 # Univalent Parametricity 
 Univalent Parametricity for Effective Transport
 
-The repository contains the companion code of the publication
+The repository contains the companion code of the article
+"The Marriage of Univalence and Parametricity" 
+http://arxiv.org/abs/1909.05027
+
+A previous version of this work has been published at ICFP'18
 "Equivalences for Free!
-Univalent Parametricity for Effective Transport" (accepted at ICFP' 18).
+Univalent Parametricity for Effective Transport" https://hal.inria.fr/hal-01559073
 
 ## Structure
 
