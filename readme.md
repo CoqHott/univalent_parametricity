@@ -22,12 +22,12 @@ A previous version of this work has been published at ICFP'18
 
 Hereafter, "the main development" denotes the directories theories/ and examples/.
 
-You need Coq 8.8.0 to compile the main development. To compile the file in the translation/ directory, you need the hoqc compiler (the HoTT version of Coq provided by the HoTT Library -- available at https://github.com/HoTT/HoTT).
+You need Coq 8.10 to compile the main development. To compile the file in the translation/ directory, you need the hoqc compiler (the HoTT version of Coq provided by the HoTT Library -- available at https://github.com/HoTT/HoTT).
 
 To compile the main development:
 
    set `$COQBIN` to the path where coqc is (`export COQBIN=/.../bin/`),
-   or have Coq 8.8.0 in your path. Then, in the / directory, run:
+   or have Coq 8.10 in your path. Then, in the / directory, run:
 
 	make
 
