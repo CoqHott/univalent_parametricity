@@ -87,6 +87,10 @@ Definition N_cube_def := ltac: (convert cube : (N -> N)).
 
 Check (N_cube_def :{opt : N -> N & cube ≈ opt}). 
 
+Definition N_cube_def' :  cube ≈ (fun x => (x * x * x)%N).
+  unfold cube. tc.
+Defined.
+
 Definition N_cube := N_cube_def.1.
 
 Check eq_refl : N_cube = (fun x => (x * x * x)%N).
@@ -129,7 +133,7 @@ Qed.
 
 (* Test with polynomials *)
 
-Definition poly := fun n => 12 * n + 51 * (Nat.pow n 4) - (Nat.pow n 5).
+Definition poly := fun n => 12 * n + 51 * (Nat.pow n 4) + (Nat.pow n 5).
 
 Arguments poly : simpl never.
 
@@ -139,6 +143,43 @@ Hint Extern 0 => progress (unfold ge) : typeclass_instances.
 
 Goal poly 50 >= 1000.
   unfold poly. replace_goal; now compute. 
+Defined.
+
+Hint Extern 0 (N.to_nat _ = _) => reflexivity : typeclass_instances.
+
+Notation "n <= m" := (Nat.le n m).
+
+Goal poly 50 <= ↑ 12345678901234567891234567891232456789%N.
+  unfold poly. Opaque N.to_nat. replace_goal. now compute.
+Defined.
+
+(* a more complex example using another presentation of polynomes *)
+
+Definition fold_left {A B : Type} (f : A -> B -> A) 
+  := list_rect B (fun _ => A -> A) id (fun x xs IH => fun init => IH (f init x)).
+
+Definition polyType := list nat.
+
+Fixpoint evalPolyRec (p : polyType) (n : nat) (counter : nat) : nat :=
+  match p with 
+  | [] => 0
+  | coef :: p => coef * Nat.pow n counter + evalPolyRec p n (S counter)
+  end.
+
+Definition evalPoly (p : polyType) (n : nat) := evalPolyRec p n 0.
+
+Infix "@@" := evalPoly (at level 50).  
+
+Eval compute in poly 4.
+
+Definition poly' : polyType := [0;12;0;0;51;1].
+
+Eval compute in poly' @@ 4.
+
+Fail Eval compute in poly' @@ 50.
+
+Goal poly' @@ 50 >= 1000.
+  replace_goal; now compute. 
 Defined.
 
 (* Test for sequences *)
@@ -183,7 +224,6 @@ Defined.
 
 (* we can even convert dependent functions *)
 
-Notation "n <= m" := (Nat.le n m) : nat_scope.
 Definition lt (n m : nat) := (S n <= m)%nat. 
 Notation "n < m" := (lt n m) : nat_scope.
 Hint Extern 0 => progress (unfold lt) :  typeclass_instances.
