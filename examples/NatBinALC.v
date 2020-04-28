@@ -155,20 +155,15 @@ Defined.
 
 (* a more complex example using another presentation of polynomes *)
 
-Definition fold_left {A B : Type} (f : A -> B -> A) 
-  := list_rect B (fun _ => A -> A) id (fun x xs IH => fun init => IH (f init x)).
-
 Definition polyType := list nat.
 
-Fixpoint evalPolyRec (p : polyType) (n : nat) (counter : nat) : nat :=
+Fixpoint evalPoly (p : polyType) (n : nat) (degree : nat) : nat :=
   match p with 
   | [] => 0
-  | coef :: p => coef * Nat.pow n counter + evalPolyRec p n (S counter)
+  | coef :: p => coef * Nat.pow n degree + evalPoly p n (S degree) 
   end.
 
-Definition evalPoly (p : polyType) (n : nat) := evalPolyRec p n 0.
-
-Infix "@@" := evalPoly (at level 50).  
+Infix "@@" := (fun p n => evalPoly p n 0) (at level 50).  
 
 Eval compute in poly 4.
 
@@ -305,7 +300,7 @@ Hint Extern 0  => eapply N_two_lift.2 : typeclass_instances.
 (* instruct resolution to dive into avg if helpful *)
 Hint Extern 0 => progress (unfold avg) :  typeclass_instances.
 
-(* now convert  *)
+(* now convert *)
 
 Definition N_avg_conv := ltac: (convert avg : (N -> N -> N)).
 
@@ -316,3 +311,40 @@ Eval lazy in N_avg 10%N 30%N.
 
 (* and is indeed the same as the hand-written N-based version *)
 Check eq_refl : N_avg = (fun x y => N_divide (x + y) N_two).
+
+(* the diff example of the paper *)
+
+Definition diff n (e : 0 = S n) : False :=
+  let P := nat_rect (fun _ => Type) (0 = 0) (fun n _ => False) in
+  eq_rect _ 0 (fun n' _ => P n') eq_refl (S n) e.
+
+Definition ON : N := ↑ 0.
+
+Definition compat_O : 0 ≈ ON.
+  reflexivity.
+Defined.
+
+Definition SN : N -> N := ↑ S.
+
+Definition compat_S : S ≈ SN.
+  exact (@ur_refl (nat -> nat) (N ->N) _ S).
+Defined.
+
+Hint Extern 0 (S _ = _) => eapply compat_S : typeclass_instances.
+
+Axiom cheat : forall X, X. 
+
+Definition nat_rectN_lift : forall P : N -> Type,
+    P ON -> (forall n : N, P n -> P (SN n)) -> forall n : N, P n :=
+  ↑ nat_rect.
+
+Definition nat_rectN : forall P : N -> Type,
+    P ON -> (forall n : N, P n -> P (SN n)) -> forall n : N, P n.
+  intros. induction n. exact X. apply nat_rectN_lift; auto. 
+Defined. 
+
+Fail Definition diffN n (e : ON = SN n) : False :=
+  let P := nat_rectN (fun _ => Type) (ON = ON) (fun n _ => False) in
+  eq_rect _ ON (fun n' _ => P n') eq_refl (SN n) e.
+
+Definition diffN : forall n, (ON = SN n) -> False := ↑ diff.

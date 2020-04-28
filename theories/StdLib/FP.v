@@ -512,6 +512,23 @@ Definition FP_nat_rect_cst (P Q:Type) (e : P ≈ Q) :
 
 Instance FP_bool : bool ⋈ bool := URType_Refl_decidable bool DecidableEq_eq_bool.
 
+(*! False !*)
+
+Instance DecidableEq_eq_False : DecidableEq False.
+Proof.
+  econstructor. intros []. 
+Defined.
+
+Instance FP_False : False ⋈ False := URType_Refl_decidable False DecidableEq_eq_False.
+
+(*! True !*)
+
+Instance DecidableEq_eq_True : DecidableEq True.
+Proof.
+  econstructor. intros [] []. exact (inl eq_refl). 
+Defined.
+
+Instance FP_True : True ⋈ True := URType_Refl_decidable True DecidableEq_eq_True.
 
 (*! List !*)
 
