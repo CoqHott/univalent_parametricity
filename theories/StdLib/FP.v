@@ -16,7 +16,7 @@ Definition exist_eq {A P} (a a': A) (l : P a) (l' : P a') (e : a = a') :
   e # l = l' -> existT _ a l = (a'; l').
 Proof. intros e'; destruct e, e'; reflexivity. Defined.
 
-Fixpoint sigma_map {A B P Q} (f: A -> B) (g : forall a, P a -> Q (f a)) (l : sigT P) : sigT Q :=
+Definition sigma_map {A B P Q} (f: A -> B) (g : forall a, P a -> Q (f a)) (l : sigT P) : sigT Q :=
   match l with
   | existT _ a l => existT _ (f a) (g a l)
   end. 
@@ -129,7 +129,7 @@ Definition Equiv_Sigma (A A':Type) (e: A ≈ A')
     rewrite <- transport_e_fun. cbn. rewrite inv2. reflexivity. 
 Defined. 
 
-Hint Extern 0 (sigT _ ≃ sigT _) => erefine (@Equiv_Sigma _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
+#[export] Hint Extern 0 (sigT _ ≃ sigT _) => erefine (@Equiv_Sigma _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
 
 
 Instance Transportable_Sigma (A:Type) B (P : A -> B -> Type)
@@ -202,18 +202,18 @@ Definition FP_Sigma : @sigT ≈ @sigT.
     reflexivity.
 Defined.
 
-Hint Extern 0 (UR_Type (sigT _) (sigT _)) => erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn in *; intros : typeclass_instances.
+#[export] Hint Extern 0 (UR_Type (sigT _) (sigT _)) => erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn in *; intros : typeclass_instances.
 
 Transparent functor_forall sigma_map. 
-Hint Transparent functor_forall sigma_map. 
-Hint Unfold functor_forall sigma_map. 
+#[export] Hint Transparent functor_forall sigma_map : core.
+#[export] Hint Unfold functor_forall sigma_map : core.
 
 Definition FP_existT : @existT ≈ @existT.
   intros A B H P Q H' x y e X Y E. 
   exact (existT _ e E).
 Defined. 
 
-Hint Extern 0 ({e0 : ?x ≈ ?y & ?X ≈ ?Y}) => unshelve refine (FP_existT _ _ _ _ _ _ _ _ _ _ _ _ ): typeclass_instances.
+#[export] Hint Extern 0 ({e0 : ?x ≈ ?y & ?X ≈ ?Y}) => unshelve refine (FP_existT _ _ _ _ _ _ _ _ _ _ _ _ ): typeclass_instances.
 
 Definition FP_sigT_rect : @sigT_rect ≈ @sigT_rect.
 Proof.
@@ -221,15 +221,15 @@ Proof.
   destruct x0, y0, H3. apply H0. 
 Defined. 
 
-Hint Extern 0 (sigT_rect ?A ?P ?Q ?f ?s ≈ sigT_rect ?A' ?P' ?Q' ?f' ?s')
+#[export] Hint Extern 0 (sigT_rect ?A ?P ?Q ?f ?s ≈ sigT_rect ?A' ?P' ?Q' ?f' ?s')
                => unshelve refine (FP_sigT_rect A A' _ P P' _ Q Q'
                      {| transport_ := _; ur_type := _ |} f f' _ s s' _): typeclass_instances.
 
-Hint Extern 0 (sigT_rect ?A ?P ?Q ?f ?s ≈ _)
+#[export] Hint Extern 0 (sigT_rect ?A ?P ?Q ?f ?s ≈ _)
                => unshelve refine (FP_sigT_rect A _ _ P _ _ Q _
                      {| transport_ := _; ur_type := _ |} f _ _ s _ _) ; try eassumption : typeclass_instances.
 
-Hint Extern 0 (_ ≈ sigT_rect ?A ?P ?Q ?f ?s)
+#[export] Hint Extern 0 (_ ≈ sigT_rect ?A ?P ?Q ?f ?s)
                => unshelve refine (FP_sigT_rect _ A _ _ P _ _ Q
                      {| transport_ := _; ur_type := _ |} _ f _ _ s _ ) ; try eassumption : typeclass_instances.
 
@@ -286,10 +286,10 @@ Definition FP_prod : prod ≈ prod.
   cbn. repeat rewrite can_eq_refl. reflexivity.
 Defined.
 
-Hint Extern 0 ((_ * _) ≃ (_ * _)) => erefine (@Equiv_prod _ _ _ _ _ _)
+#[export] Hint Extern 0 ((_ * _) ≃ (_ * _)) => erefine (@Equiv_prod _ _ _ _ _ _)
 :  typeclass_instances.
 
-Hint Extern 0 (UR_Type (_ * _) (_ * _)) => erefine (ur_type (@FP_prod _ _ _) _ _ _)
+#[export] Hint Extern 0 (UR_Type (_ * _) (_ * _)) => erefine (ur_type (@FP_prod _ _ _) _ _ _)
 :  typeclass_instances.
 
 
@@ -359,7 +359,7 @@ Proof.
     rewrite concat_p_pp. rewrite inv_inv. reflexivity. 
 Defined.
 
-Hint Extern 0 ((_ = _) ≃ (_ = _)) => erefine (Equiv_eq _ _ _ _ _ _ _ _ _) : typeclass_instances.
+#[export] Hint Extern 0 ((_ = _) ≃ (_ = _)) => erefine (Equiv_eq _ _ _ _ _ _ _ _ _) : typeclass_instances.
 
 Definition alt_ur_coh' {A B:Type} (H:A ⋈ B) :
            forall (a:A) (b:B), (a ≈ b) ≃ (↑a = b).
@@ -404,8 +404,9 @@ Definition FP_eq : @eq ≈ @eq.
   unshelve eexists.
   - econstructor. exact (UR_eq x y _ x0 y0 H0 x1 y1 H1).
   - econstructor. intros e e'. cbn. 
-    eapply equiv_compose. Focus 2. apply Equiv_inverse.
-    apply UR_eq_equiv.
+    eapply equiv_compose.
+    2: { apply Equiv_inverse.
+    apply UR_eq_equiv. }
     eapply Equiv_inverse,  equiv_compose.
     apply (@isequiv_ap _ _ (alt_ur_coh _ _ _ x1 y1) (transport_eq (ur x1) (eq_map x y H _ x0 y0 H0 x1 y1 H1 e')
      (transport_eq (fun X : x => X ≈ y0) e H0)) H1).
@@ -464,11 +465,11 @@ Definition FP_eq : @eq ≈ @eq.
   - apply Canonical_eq_gen.    
 Defined. 
 
-Hint Extern 0 (UR_Type (_ = _) (_ = _)) => erefine (ur_type (FP_eq _ _ _ _ _ _) _ _ _) :  typeclass_instances.
+#[export] Hint Extern 0 (UR_Type (_ = _) (_ = _)) => erefine (ur_type (FP_eq _ _ _ _ _ _) _ _ _) :  typeclass_instances.
  
-Hint Extern 0 (UR_Type (_ = _) (_ = _)) => unshelve notypeclasses refine (ur_type (FP_eq _ _ _ _ _ _) _ _ _) :  typeclass_instances.
+#[export] Hint Extern 0 (UR_Type (_ = _) (_ = _)) => unshelve notypeclasses refine (ur_type (FP_eq _ _ _ _ _ _) _ _ _) :  typeclass_instances.
 
-Hint Extern 0 (UR (_ = _) (_ = _)) => unshelve notypeclasses refine (Ur (ur_type (FP_eq _ _ _ _ _ _) _ _ _)) :  typeclass_instances.
+#[export] Hint Extern 0 (UR (_ = _) (_ = _)) => unshelve notypeclasses refine (Ur (ur_type (FP_eq _ _ _ _ _ _) _ _ _)) :  typeclass_instances.
 
 Opaque alt_ur_coh.
 
@@ -478,7 +479,7 @@ Proof.
   apply UR_eq_refl.
 Defined.
 
-Hint Extern 0 ( UR_eq _ _ _ _ _ _ _ _ _ eq_refl eq_refl) =>
+#[export] Hint Extern 0 ( UR_eq _ _ _ _ _ _ _ _ _ eq_refl eq_refl) =>
 erefine (FP_eq_refl _ _ _ _ _ _):  typeclass_instances.
 
 Definition FP_eq_rect : @eq_rect ≈ @eq_rect.
@@ -634,7 +635,7 @@ Proof.
   induction el; typeclasses eauto with typeclass_instances. 
 Defined.
 
-Hint Extern 0 (list_rect _ ?X ?P ?Q ?l ≈ list_rect _ ?X' ?P' ?Q' ?l') =>
+#[export] Hint Extern 0 (list_rect _ ?X ?P ?Q ?l ≈ list_rect _ ?X' ?P' ?Q' ?l') =>
 unshelve notypeclasses refine (FP_List_rect _ _ _ X X' _ P P' _ Q Q' _ l l' _); intros
 :  typeclass_instances.
 
@@ -765,7 +766,7 @@ Defined.
 
 Typeclasses Opaque vector_to_list list_to_vector.
 
-Hint Extern 0 => progress (unfold length) :  typeclass_instances.
+#[export] Hint Extern 0 => progress (unfold length) :  typeclass_instances.
 
 
 Instance Equiv_vector_list (A B:Type) {H: A ≃ B} (n n':nat) (en : n ≈ n')
@@ -803,7 +804,7 @@ Proof.
                       (ltac:(econstructor; tc)) O O (ltac:(tc)) (fun _ _ (n0 : nat) => S n0) (fun _ _ (n0 : nat) => S n0) (ltac:(tc)) x y H0). 
 Defined.
 
-Hint Extern 0 (t ?A ?n ≃ _) =>
+#[export] Hint Extern 0 (t ?A ?n ≃ _) =>
 erefine (ur_type (Equiv_vector_list A _ n)) : typeclass_instances.
 
 Instance Equiv_list_vector (A B:Type) {H : ur B A} n :
@@ -1063,7 +1064,7 @@ Instance Equiv_Vector_instance : forall x y : Type, x ⋈ y -> forall n n' (e:n=
   fun x y e n n' en => ur_type (FP_Vector x y e) n n' en. 
 
 
-Hint Extern 0 (Vector.t _ _ ⋈ _) => apply Equiv_vector_list_; simpl : typeclass_instances. 
+#[export] Hint Extern 0 (Vector.t _ _ ⋈ _) => apply Equiv_vector_list_; simpl : typeclass_instances. 
 
 
 
@@ -1107,7 +1108,7 @@ Defined.
 Instance issig_equiv' A B :  (A ≃ B) ≃ { e_fun : A -> B &  IsEquiv e_fun } :=
   Equiv_inverse _.
 
-Hint Extern 0 (UR_eq _ _ _ _ _ _ _ _ _ _ _ ) => 
+#[export] Hint Extern 0 (UR_eq _ _ _ _ _ _ _ _ _ _ _ ) => 
   erefine (FP_ap _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) : typeclass_instances.
 
 Definition FP_IsEquiv : @IsEquiv ≈ @IsEquiv.
@@ -1130,7 +1131,7 @@ Proof.
   typeclasses eauto with typeclass_instances.
 Defined. 
 
-Hint Extern 0 (IsEquiv _ ⋈ IsEquiv _) => refine (ur_type (FP_IsEquiv _ _ _ _ _ _) _ _ _) : typeclass_instances. 
+#[export] Hint Extern 0 (IsEquiv _ ⋈ IsEquiv _) => refine (ur_type (FP_IsEquiv _ _ _ _ _ _) _ _ _) : typeclass_instances. 
 
 Definition FP_Equiv : @Equiv ≈ @Equiv.
 Proof.
@@ -1141,7 +1142,7 @@ Proof.
   split; tc. 
 Defined. 
 
-Hint Extern 0 (UR (_ ≃ _) (_ ≃ _)) => refine (Ur (ur_type (FP_Equiv _ _ _) _ _ _)) : typeclass_instances.
+#[export] Hint Extern 0 (UR (_ ≃ _) (_ ≃ _)) => refine (Ur (ur_type (FP_Equiv _ _ _) _ _ _)) : typeclass_instances.
 
 (*! FP univalence !*)
 
@@ -1165,7 +1166,7 @@ Defined.
 
 Opaque eq_to_equiv. 
 
-Hint Extern 0 (eq_to_equiv _ _ ≈ eq_to_equiv _ _) => refine (FP_eq_to_equiv _ _ _ _ _ _ _ _ _) : typeclass_instances.
+#[export] Hint Extern 0 (eq_to_equiv _ _ ≈ eq_to_equiv _ _) => refine (FP_eq_to_equiv _ _ _ _ _ _ _ _ _) : typeclass_instances.
 
 
 
@@ -1189,7 +1190,7 @@ Defined.
 
 
 
-Hint Extern 0 (URForall_Type_class ?A ?B ?F ?G) =>
+#[export] Hint Extern 0 (URForall_Type_class ?A ?B ?F ?G) =>
 (is_ground A; is_ground B; is_ground F; is_ground G; econstructor)
 : typeclass_instances.
 
@@ -1258,16 +1259,16 @@ Defined.
 Instance issig_Canonical_eq_inv A : Canonical_eq A ≃ Canonical_eq_sig A :=
   Equiv_inverse _.
 
-Hint Extern 0 => progress (unfold Canonical_eq_sig) :  typeclass_instances.
+#[export] Hint Extern 0 => progress (unfold Canonical_eq_sig) :  typeclass_instances.
 
 Definition FP_Canonical_eq : Canonical_eq ≈ Canonical_eq.
   univ_param_record.
 Defined.
 
-Hint Extern 0 (Canonical_eq _ ⋈ Canonical_eq _) => erefine (ur_type FP_Canonical_eq _ _ _); simpl
+#[export] Hint Extern 0 (Canonical_eq _ ⋈ Canonical_eq _) => erefine (ur_type FP_Canonical_eq _ _ _); simpl
 :  typeclass_instances.
 
-Hint Extern 0 (Canonical_eq _ ≃ Canonical_eq _) => erefine (ur_type FP_Canonical_eq _ _ _).(equiv); simpl
+#[export] Hint Extern 0 (Canonical_eq _ ≃ Canonical_eq _) => erefine (ur_type FP_Canonical_eq _ _ _).(equiv); simpl
 :  typeclass_instances.
 
 Definition Svector A := {n : nat & t A n}.
@@ -1307,11 +1308,11 @@ Inductive UR_list_vect {A B} (R : A -> B -> Type) : list A -> Svector B -> Type 
     (R a b) -> (UR_list_vect R l l') ->
     UR_list_vect R (a::l) (Svcons b l').
 
-Hint Extern 0 (UR (list ?A) (Svector ?B)) => unshelve notypeclasses refine (@UR_list_vect _ _ _): typeclass_instances. 
+#[export] Hint Extern 0 (UR (list ?A) (Svector ?B)) => unshelve notypeclasses refine (@UR_list_vect _ _ _): typeclass_instances. 
 
-Hint Extern 0 (UR_list_vect ?R [] Snil) => exact (UR_list_vect_nil R)  : typeclass_instances.
+#[export] Hint Extern 0 (UR_list_vect ?R [] Snil) => exact (UR_list_vect_nil R)  : typeclass_instances.
 
-Hint Extern 0 (UR_list_vect ?R (_::_) (Svcons _ _)) => unshelve refine (UR_list_vect_cons R _ _) : typeclass_instances.
+#[export] Hint Extern 0 (UR_list_vect ?R (_::_) (Svcons _ _)) => unshelve refine (UR_list_vect_cons R _ _) : typeclass_instances.
 
 Definition Equiv_list_length {A B:Type} (e : A ≈ B) (l:list B) :
   let l' := e_inv (Equiv_List A B (equiv e)) l in
@@ -1406,7 +1407,7 @@ Definition FP_list_Svector
   - apply Canonical_eq_gen.
 Defined. 
 
-Hint Extern 0 (list _ ⋈ Svector _) => apply FP_list_Svector : typeclass_instances. 
+#[export] Hint Extern 0 (list _ ⋈ Svector _) => apply FP_list_Svector : typeclass_instances. 
 
 Definition FP_Svector_list
   : Svector ≈ list.
@@ -1415,7 +1416,7 @@ Definition FP_Svector_list
   eapply UR_Type_Inverse. tc.
 Defined. 
 
-Hint Extern 0 (Svector _ ⋈ list _) => apply FP_Svector_list : typeclass_instances. 
+#[export] Hint Extern 0 (Svector _ ⋈ list _) => apply FP_Svector_list : typeclass_instances. 
 
 Definition Svect_rect : forall (A : Type) (P : Svector A -> Type),
     P Snil -> (forall (a : A) (l : Svector A), P l -> P (Svcons a l)) -> forall l : Svector A, P l.

@@ -17,15 +17,15 @@ Definition compat_pow : Nat.pow ≈ N.pow. Admitted.
 Definition compat_sub : Nat.sub ≈ N.sub. Admitted.
 Definition compat_le : Peano.le ≈ N.le. Admitted.
 
-Hint Extern 0 (plus _ _ = _) => eapply compat_add : typeclass_instances.
-Hint Extern 0 (mult _ _ = _) => eapply compat_mul : typeclass_instances.
-Hint Extern 0 (Nat.div _ _ = _) => eapply compat_div : typeclass_instances.
-Hint Extern 0 (Nat.pow _ _ = _) => eapply compat_pow : typeclass_instances.
-Hint Extern 0 (Nat.sub _ _ = _) => eapply compat_sub : typeclass_instances.
-Hint Extern 0 (Peano.le _ _ ≃ _) => eapply compat_le : typeclass_instances. 
-Hint Extern 0 (Peano.le _ _ ⋈ _) => eapply compat_le : typeclass_instances. 
-Hint Extern 0 (Nat.le _ _ ≃ _) => eapply compat_le : typeclass_instances. 
-Hint Extern 0 (Nat.le _ _ ⋈ _) => eapply compat_le : typeclass_instances. 
+#[export] Hint Extern 0 (plus _ _ = _) => eapply compat_add : typeclass_instances.
+#[export] Hint Extern 0 (mult _ _ = _) => eapply compat_mul : typeclass_instances.
+#[export] Hint Extern 0 (Nat.div _ _ = _) => eapply compat_div : typeclass_instances.
+#[export] Hint Extern 0 (Nat.pow _ _ = _) => eapply compat_pow : typeclass_instances.
+#[export] Hint Extern 0 (Nat.sub _ _ = _) => eapply compat_sub : typeclass_instances.
+#[export] Hint Extern 0 (Peano.le _ _ ≃ _) => eapply compat_le : typeclass_instances. 
+#[export] Hint Extern 0 (Peano.le _ _ ⋈ _) => eapply compat_le : typeclass_instances. 
+#[export] Hint Extern 0 (Nat.le _ _ ≃ _) => eapply compat_le : typeclass_instances. 
+#[export] Hint Extern 0 (Nat.le _ _ ⋈ _) => eapply compat_le : typeclass_instances. 
 
 Definition compat_add' : N.add ≈ plus. Admitted.
 Definition compat_mul' : N.mul ≈ mult. Admitted. 
@@ -34,13 +34,13 @@ Definition compat_pow' : N.pow ≈ Nat.pow. Admitted.
 Definition compat_sub' : N.sub ≈ Nat.sub. Admitted.
 Definition compat_le' : N.le ≈ Peano.le. Admitted.
 
-Hint Extern 0 (N.add _ _ = _) => eapply compat_add' : typeclass_instances.
-Hint Extern 0 (N.mul _ _ = _) => eapply compat_mul' : typeclass_instances.
-Hint Extern 0 (N.div _ _ = _) => eapply compat_div' : typeclass_instances.
-Hint Extern 0 (N.pow _ _ = _) => eapply compat_pow' : typeclass_instances.
-Hint Extern 0 (N.sub _ _ = _) => eapply compat_sub' : typeclass_instances.
-Hint Extern 0 (N.le _ _ ≃ _) => eapply compat_le' : typeclass_instances.
-Hint Extern 0 (N.le _ _ ⋈ _) => eapply compat_le' : typeclass_instances.
+#[export] Hint Extern 0 (N.add _ _ = _) => eapply compat_add' : typeclass_instances.
+#[export] Hint Extern 0 (N.mul _ _ = _) => eapply compat_mul' : typeclass_instances.
+#[export] Hint Extern 0 (N.div _ _ = _) => eapply compat_div' : typeclass_instances.
+#[export] Hint Extern 0 (N.pow _ _ = _) => eapply compat_pow' : typeclass_instances.
+#[export] Hint Extern 0 (N.sub _ _ = _) => eapply compat_sub' : typeclass_instances.
+#[export] Hint Extern 0 (N.le _ _ ≃ _) => eapply compat_le' : typeclass_instances.
+#[export] Hint Extern 0 (N.le _ _ ⋈ _) => eapply compat_le' : typeclass_instances.
 
 Arguments N.mul : simpl never.
 Arguments N.pow : simpl never.
@@ -51,7 +51,9 @@ Arguments Nat.pow : simpl never.
 Arguments Nat.sub  : simpl never.
 Arguments Nat.div : simpl never.
 
-
+Goal (forall n m : nat, n + m = m + n) ⋈ (forall n m : N, (n + m)%N = (m + n)%N).
+  typeclasses eauto.
+Qed.
 
 Lemma nat_distrib : forall (c a b: nat), c * (a + b) = c * a + c * b.
 Proof.
@@ -68,7 +70,6 @@ Proof.
   intros. rewrite mult_comm. rewrite nat_distrib.
   rewrite mult_comm. rewrite (mult_comm c b). reflexivity. 
 Defined.
-
 
 (* we can also convert functions from one setting to another *)
 
@@ -97,7 +98,7 @@ Check eq_refl : N_cube = (fun x => (x * x * x)%N).
 
 (* add cube and N_cube in the conversion table *)
 
-Hint Extern 0 (cube _ = _) => eapply N_cube_def.2 : typeclass_instances.
+#[export] Hint Extern 0 (cube _ = _) => eapply N_cube_def.2 : typeclass_instances.
 
 Arguments cube : simpl never.
 
@@ -137,15 +138,15 @@ Definition poly := fun n => 12 * n + 51 * (Nat.pow n 4) + (Nat.pow n 5).
 
 Arguments poly : simpl never.
 
-Fail Eval compute in poly 50.
+(* Fail Eval compute in poly 50. *)
 
-Hint Extern 0 => progress (unfold ge) : typeclass_instances.
+#[export] Hint Extern 0 => progress (unfold ge) : typeclass_instances.
 
 Goal poly 50 >= 1000.
   unfold poly. replace_goal; now compute. 
 Defined.
 
-Hint Extern 0 (N.to_nat _ = _) => reflexivity : typeclass_instances.
+#[export] Hint Extern 0 (N.to_nat _ = _) => reflexivity : typeclass_instances.
 
 Notation "n <= m" := (Nat.le n m).
 
@@ -171,7 +172,7 @@ Definition poly' : polyType := [0;12;0;0;51;1].
 
 Eval compute in poly' @@ 4.
 
-Fail Eval compute in poly' @@ 50.
+(* Fail Eval compute in poly' @@ 50. *)
 
 Goal poly' @@ 50 >= 1000.
   replace_goal; now compute. 
@@ -181,7 +182,7 @@ Defined.
 
 Definition g x := fun (n:nat) X => Nat.pow X x.
 
-Hint Extern 0 => progress (unfold g) : typeclass_instances. 
+#[export] Hint Extern 0 => progress (unfold g) : typeclass_instances. 
 
 Section sequence.
   
@@ -199,7 +200,7 @@ Fixpoint test_sequence n :=
 End sequence. 
 
 Goal test_sequence 2 5 >= 1000.
-  Fail compute.
+  (* Fail compute. *)
 Abort. 
 
 (* Definition test_sequence_conv := ltac: (convert test_sequence : (N -> nat -> N)). *)
@@ -221,13 +222,13 @@ Defined.
 
 Definition lt (n m : nat) := (S n <= m)%nat. 
 Notation "n < m" := (lt n m) : nat_scope.
-Hint Extern 0 => progress (unfold lt) :  typeclass_instances.
-Hint Extern 0 => progress (unfold projT1) :  typeclass_instances.
+#[export] Hint Extern 0 => progress (unfold lt) :  typeclass_instances.
+#[export] Hint Extern 0 => progress (unfold projT1) :  typeclass_instances.
 
 (* the original definition of N.lt is using compare and is more complicated to deal with *)
 Definition lt_N (n m : N) := (N.succ n <= m)%N. 
 Notation "n < m" := (lt_N n m) : N_scope.
-Hint Extern 0 => progress (unfold lt_N) :  typeclass_instances.
+#[export] Hint Extern 0 => progress (unfold lt_N) :  typeclass_instances.
 
 Instance Decidable_leq_N (n m:N) : DecidableEq (n <= m)%N.
 apply (DecidableEq_equiv (Peano.le (↑n) (↑m)) (n <= m)%N); tc.
@@ -238,7 +239,7 @@ Definition divide n (m : {m : nat & 0 < m }) : nat := n / m.1.
 Definition N_divide_conv :=
   ltac: (convert divide : (forall (n:N) (m : {m : N & (0 < m)%N}), N)).
 Arguments divide : simpl never.
-Hint Extern 0 => eapply N_divide_conv.2 : typeclass_instances.
+#[export] Hint Extern 0 => eapply N_divide_conv.2 : typeclass_instances.
 
 Definition N_divide := N_divide_conv.1.
 
@@ -260,7 +261,7 @@ Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & (res <= n)%nat} :
   (divide n m ; divide_dep_p n m).
 
 (* divide_dep_p is a proof with no computational meaning, so we want to lift it black box *)
-Hint Extern 0 (divide_dep_p _ _ ≈ ?g _ _) => direct_lifting divide_dep_p g : typeclass_instances.
+#[export] Hint Extern 0 (divide_dep_p _ _ ≈ ?g _ _) => direct_lifting divide_dep_p g : typeclass_instances.
 
 (* the above hint is need for the following convert to succeed *)
 Definition N_divide_dep_conv :=
@@ -295,10 +296,10 @@ Definition N_two_lift := ltac: (convert two : {n:N & (0 < n)%N}).
 Eval compute in N_two_lift.1.
 
 (* here also, feed the TC resolution *)
-Hint Extern 0  => eapply N_two_lift.2 : typeclass_instances.
+#[export] Hint Extern 0  => eapply N_two_lift.2 : typeclass_instances.
 
 (* instruct resolution to dive into avg if helpful *)
-Hint Extern 0 => progress (unfold avg) :  typeclass_instances.
+#[export] Hint Extern 0 => progress (unfold avg) :  typeclass_instances.
 
 (* now convert *)
 
@@ -330,7 +331,7 @@ Definition compat_S : S ≈ SN.
   exact (@ur_refl (nat -> nat) (N ->N) _ S).
 Defined.
 
-Hint Extern 0 (S _ = _) => eapply compat_S : typeclass_instances.
+#[export] Hint Extern 0 (S _ = _) => eapply compat_S : typeclass_instances.
 
 Axiom cheat : forall X, X. 
 

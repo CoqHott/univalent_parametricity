@@ -396,7 +396,7 @@ Defined.
 (* Equivalences *)
 
 Class IsEquiv {A : Type} {B : Type} (f : A -> B) := BuildIsEquiv {
-  e_inv :> B -> A ;
+  e_inv : B -> A ;
   e_sect : forall x, e_inv (f x) = x;
   e_retr : forall y, f (e_inv y) = y;
   e_adj : forall x : A, e_retr (f x) = ap f (e_sect x);
@@ -404,7 +404,7 @@ Class IsEquiv {A : Type} {B : Type} (f : A -> B) := BuildIsEquiv {
 
 (** A class that includes all the data of an adjoint equivalence. *)
 Class Equiv A B := BuildEquiv {
-  e_fun :> A -> B ;
+  e_fun : A -> B ;
   e_isequiv :> IsEquiv e_fun
 }.
 

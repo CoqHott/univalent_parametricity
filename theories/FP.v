@@ -73,7 +73,7 @@ Proof.
   econstructor; try typeclasses eauto.
 Defined.
 
-Hint Extern 0 (UR_Type Set Set) => exact FP_Type : typeclass_instances. 
+#[export] Hint Extern 0 (UR_Type Set Set) => exact FP_Type : typeclass_instances. 
 
 (*! Establishing FP for Prop !*)
 
@@ -127,7 +127,7 @@ Proof.
   econstructor; typeclasses eauto. 
 Defined.
 
-Hint Extern 0 (sigT _) => unshelve refine (existT _ _ _): typeclass_instances.
+#[export] Hint Extern 0 (sigT _) => unshelve refine (existT _ _ _): typeclass_instances.
 
 
 
@@ -243,13 +243,13 @@ Defined.
 
 (* this instance of transportable is for the equality type, we can use the default one*)
 
-Hint Extern 0 (Transportable (fun _ : _ => _ = _))
+#[export] Hint Extern 0 (Transportable (fun _ : _ => _ = _))
 => apply Transportable_default : typeclass_instances.
 
-Hint Extern 0 (Transportable (eq _ _))
+#[export] Hint Extern 0 (Transportable (eq _ _))
 => apply Transportable_default : typeclass_instances.
 
-Hint Extern 0 (Canonical_eq (_ = _))
+#[export] Hint Extern 0 (Canonical_eq (_ = _))
 => apply Canonical_eq_gen : typeclass_instances.
 
 Definition FP_forall_UR_Coh (A A' : Type) (eA : A ⋈ A')
@@ -359,15 +359,15 @@ Proof.
   intros B B' eB. eapply FP_forall_ur_type; eauto. 
 Defined. 
 
-Hint Extern 0 (UR_Type (forall x:_ , _) (forall y:_, _)) => erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros : typeclass_instances.
+#[export] Hint Extern 0 (UR_Type (forall x:_ , _) (forall y:_, _)) => erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros : typeclass_instances.
 
-Hint Extern 100 ((forall x:_ , _) ≃ (forall y:_, _)) => erefine (Equiv_forall _ _ _ _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros : typeclass_instances.
+#[export] Hint Extern 100 ((forall x:_ , _) ≃ (forall y:_, _)) => erefine (Equiv_forall _ _ _ _ _ {| transport_ := _; ur_type := _|}); cbn in *; intros : typeclass_instances.
 
-Hint Unfold ur. 
+#[export] Hint Unfold ur : core. 
 Typeclasses Transparent ur.
-Hint Transparent ur. 
+#[export] Hint Transparent ur : core. 
 
-Hint Extern 0 (UR_Type (_ -> _) (_ -> _)) =>
+#[export] Hint Extern 0 (UR_Type (_ -> _) (_ -> _)) =>
   erefine (ur_type (FP_forall _ _ _) _ _ {| transport_ := Transportable_cst _ _; ur_type := _|} ); cbn in *; intros : typeclass_instances.
 
 
@@ -377,7 +377,7 @@ Definition Equiv_Arrow (A A' B B': Type)
            (eA: A ≈ A') (e' : B ≈ B') :
   (A -> B) ≃ (A' -> B') := Equiv_forall _ _ eA _ _ {| transport_ := _ ; ur_type:= fun _ _ _ => e' |}.
 
-Hint Extern 0 ((_ -> _) ≃ (_ -> _)) =>
+#[export] Hint Extern 0 ((_ -> _) ≃ (_ -> _)) =>
   erefine (Equiv_Arrow _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
 
 Instance Transportable_Arrow A (P Q: A -> Type)

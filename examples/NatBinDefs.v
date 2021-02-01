@@ -110,10 +110,10 @@ Instance UR_N : UR N N := UR_gen N.
 
 Instance Decidable_eq_N : DecidableEq N := DecidableEq_equiv nat N _.
 
-Hint Extern 0 (?f ?x = ?y ) => erefine (Move_equiv Equiv_nat_N x y _)
+#[export] Hint Extern 0 (?f ?x = ?y ) => erefine (Move_equiv Equiv_nat_N x y _)
                                : typeclass_instances.
 
-Hint Extern 0 (?f ?x = ?y ) => erefine (Move_equiv Equiv_N_nat x y _)
+#[export] Hint Extern 0 (?f ?x = ?y ) => erefine (Move_equiv Equiv_N_nat x y _)
                                : typeclass_instances.
 
 Instance UR_N_nat : UR N nat | 0.
@@ -138,9 +138,9 @@ Proof.
 Defined. 
 
 Definition refl_nat_N (n:nat) : n ≈ (↑ n : N) := ur_refl (e:=compat_nat_N) n.
-Hint Extern 0 (?n = _) => unshelve refine (refl_nat_N _) : typeclass_instances.
+#[export] Hint Extern 0 (?n = _) => unshelve refine (refl_nat_N _) : typeclass_instances.
 
 
-Hint Extern 0 (nat_rect ?P _ _ _ = _)
+#[export] Hint Extern 0 (nat_rect ?P _ _ _ = _)
 => refine (FP_nat_rect_cst _ _ compat_nat_N _ _ _ _ _ _ _ _ _) ;
      try eassumption : typeclass_instances.

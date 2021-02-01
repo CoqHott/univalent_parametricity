@@ -17,13 +17,13 @@ Definition URSigma A A' (B : A -> Type)(B' : A' -> Type) `{UR A A'}
   :=
   {| ur := fun x y => sigT (fun (_ : x.1 ≈ y.1) => x.2 ≈ y.2) |}.
 
-Hint Extern 0 (UR ({x:_ & _}) ({x:_ & _})) =>
+#[export] Hint Extern 0 (UR ({x:_ & _}) ({x:_ & _})) =>
   erefine (@URSigma _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
 
 Definition UREq A (x x' y y' : A) (H:x=x') (H':y=y') : UR (x = y) (x' = y') :=
   {| ur := fun e e' => H^ @ e @ H' = e' |}.
 
-Hint Extern 0 (UR (_ = _)(_ = _)) => erefine (@UREq _ _ _ _ _ _ _) : typeclass_instances.
+#[export] Hint Extern 0 (UR (_ = _)(_ = _)) => erefine (@UREq _ _ _ _ _ _ _) : typeclass_instances.
 
 (* eq *)
 
@@ -55,11 +55,11 @@ Inductive UR_list {A B} (R : A -> B -> Type) : list A -> list B -> Type :=
 Instance UR_list_ A B `{UR A B} : UR (list A) (list B) :=
   {| ur := UR_list ur |}.
 
-Hint Extern 0 (UR (list ?A) (list ?B)) => unshelve notypeclasses refine (@UR_list _ _ _): typeclass_instances. 
+#[export] Hint Extern 0 (UR (list ?A) (list ?B)) => unshelve notypeclasses refine (@UR_list _ _ _): typeclass_instances. 
 
-Hint Extern 0 (UR_list ?R [] []) => exact (UR_list_nil R)  : typeclass_instances.
+#[export] Hint Extern 0 (UR_list ?R [] []) => exact (UR_list_nil R)  : typeclass_instances.
 
-Hint Extern 0 (UR_list ?R (_::_) (_::_)) => unshelve refine (UR_list_cons R _ _) : typeclass_instances.
+#[export] Hint Extern 0 (UR_list ?R (_::_) (_::_)) => unshelve refine (UR_list_cons R _ _) : typeclass_instances.
 
 (* nat *)
 

@@ -57,7 +57,7 @@ Arguments ur_refl_ {_ _ _ _ _} _.
 
 Definition ur_refl {A B: Type} {e : A ⋈ B} : forall a : A,  a ≈ ↑ a := fun a => (ur_coh a a) eq_refl. 
 
-Hint Extern 100 (_ ≈ _) => unshelve notypeclasses refine  (ur_refl _): typeclass_instances.
+#[export] Hint Extern 100 (_ ≈ _) => unshelve notypeclasses refine  (ur_refl _): typeclass_instances.
 
 
 Definition URIsEq@{i j k} A B (e : A ≃ B) (H: UR@{i j k} A B) (H:URRefl@{i j k} A B e H)
@@ -109,7 +109,7 @@ Instance UR_Type_def@{i j} : UR@{j j j} Type@{i} Type@{i} :=
 
 (*! Forall !*)
 
-Hint Extern 0 (?x ≈ ?y) => eassumption : typeclass_instances.
+#[export] Hint Extern 0 (?x ≈ ?y) => eassumption : typeclass_instances.
 
 
 Class URForall_Type_class A A' {HA : UR A A'}  (P : A -> Type) (Q : A' -> Type) :=
@@ -128,10 +128,10 @@ Definition URForall A A' (B : A -> Type) (B' : A' -> Type) {HA : UR A A'}
   :=
   {| ur := fun f g => forall x y (H:x ≈ y), f x ≈ g y |}.
 
-Hint Extern 0 (UR (forall x:?A, _) (forall x:?A', _)) =>
+#[export] Hint Extern 0 (UR (forall x:?A, _) (forall x:?A', _)) =>
   erefine (@URForall_Type A A' _); cbn in *; intros : typeclass_instances.
 
-Hint Extern 1 (UR (forall x:?A, _) (forall x:?A', _)) =>
+#[export] Hint Extern 1 (UR (forall x:?A, _) (forall x:?A', _)) =>
   erefine (@URForall A A' _ _ _ _); cbn in *; intros : typeclass_instances.
 
 Definition ur_hprop A A' (H : A ⋈ A') (HA: forall x y:A, x = y) (x:A) (y:A')

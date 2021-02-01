@@ -5,6 +5,7 @@
 Set Polymorphic Inductive Cumulativity. 
 
 Set Universe Polymorphism.
+Unset Universe Minimization ToSet.
 
 Require Import HoTT CanonicalEq UnivalentParametricity.theories.Transportable UnivalentParametricity.theories.UR UnivalentParametricity.theories.FP Coq.Program.Tactics.
 
@@ -186,7 +187,7 @@ Definition path_DType_eq' A B (decA : DecidableEq A) (decB : DecidableEq B)
 
 Opaque path_DType_simple.
 
-Definition can_eq_eq_dec {A} {decA} (e :Canonical_eq A) : e.(can_eq) = Canonical_eq_decidable_ A.
+Definition can_eq_eq_dec {A} {decA : DecidableEq A} (e : Canonical_eq A) : e.(can_eq) = Canonical_eq_decidable_ A.
 Proof.
   apply funext; intros x. apply funext; intros y. apply funext; intro E.
   apply is_hset. 
@@ -252,7 +253,7 @@ Instance Transportable_DType : Transportable (fun A:DType => A) :=
 
 (* nat *)
 
-Instance DecidableEq_eq_nat : DecidableEq nat.
+Instance DecidableEq_eq_nat : DecidableEq@{Type} nat.
 constructor. intros x y; revert y. 
 induction x.
 - destruct y.

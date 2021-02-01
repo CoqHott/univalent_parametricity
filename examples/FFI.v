@@ -8,6 +8,8 @@ Require Export Zdiv.
 
 Require Export DoubleType.
 
+Unset Universe Minimization ToSet.
+
 Definition nat := Datatypes.nat.
 Definition S := Datatypes.S.
 
@@ -24,8 +26,6 @@ Local Open Scope Z_scope.
 Require Import BinInt Zpow_facts.
 
 Definition ZwB := { n : Z & 0 <= n < wB }.
-
-Delimit Scope zwB_scope with ZwB.
 
 Local Open Scope int63_scope.
 
@@ -74,9 +74,9 @@ Defined.
 Definition to_ZwB_retraction : forall x, to_ZwB (of_ZwB x) = x.
   unfold of_ZwB, to_ZwB; destruct x; apply eqZ_ZwB; simpl.
   rewrite of_Z_spec. now rewrite Z.mod_small.
-Defined. 
+Defined.
   
-Program Definition mod_inj : Z -> ZwB := fun z => (z mod wB; _).
+Program Definition mod_inj : Z -> ZwB := fun z => (z mod wB; _)%Z.
 Next Obligation.
   apply Z.mod_pos_bound. compute. reflexivity.
 Defined. 
@@ -98,20 +98,22 @@ Instance compat_int_ZwB : int ⋈ ZwB := UR_Type_Inverse _ _ compat_ZwB_int.
 Definition compat_eq_int : @eq int63 ≈ @eq ZwB := ltac:(tc). 
 Definition compat_eq_ZwB : @eq ZwB ≈ @eq int63 := ltac:(tc). 
 
-Hint Extern 0 (eq ZwB _ _ ≃ _) => eapply compat_eq_ZwB : typeclass_instances.
-Hint Extern 0 (eq int _ _ ≃ _) => eapply compat_eq_int : typeclass_instances.
-Hint Extern 0 (eq int63 _ _ ≃ _) => eapply compat_eq_int : typeclass_instances.
-Hint Extern 0 (eq ZwB _ _ ⋈ _) => eapply compat_eq_ZwB : typeclass_instances.
-Hint Extern 0 (eq int _ _ ⋈ _) => eapply compat_eq_int : typeclass_instances.
-Hint Extern 0 (eq int63 _ _ ⋈ _) => eapply compat_eq_int : typeclass_instances.
+#[export] Hint Extern 0 (eq ZwB _ _ ≃ _) => eapply compat_eq_ZwB : typeclass_instances.
+#[export] Hint Extern 0 (eq int _ _ ≃ _) => eapply compat_eq_int : typeclass_instances.
+#[export] Hint Extern 0 (eq int63 _ _ ≃ _) => eapply compat_eq_int : typeclass_instances.
+#[export] Hint Extern 0 (eq ZwB _ _ ⋈ _) => eapply compat_eq_ZwB : typeclass_instances.
+#[export] Hint Extern 0 (eq int _ _ ⋈ _) => eapply compat_eq_int : typeclass_instances.
+#[export] Hint Extern 0 (eq int63 _ _ ⋈ _) => eapply compat_eq_int : typeclass_instances.
 
 (* addition on Z modulo 2^63 *)
 
 Program Definition ZwB_add : ZwB -> ZwB -> ZwB :=
-  fun n m => ((n.1 + m.1) mod wB ; _).
+  fun n m => ((n.1 + m.1) mod wB ; _)%Z.
 Next Obligation.
   now apply Z.mod_pos_bound. 
 Defined. 
+
+Declare Scope ZwB_scope.
 
 Notation "n + m" := (ZwB_add n m) : ZwB_scope.
 
@@ -134,9 +136,9 @@ Defined.
 
 Definition compat_add' : ZwB_add ≈ add := compat_inverse2 compat_add. 
 
-Hint Extern 0 (add _ _ = _) => eapply compat_add : typeclass_instances.
-Hint Extern 0 (ZwB_add _ _ = _) => eapply compat_add' : typeclass_instances.
-Hint Extern 0 (_ = to_ZwB (add _ _)) => eapply compat_add' : typeclass_instances.
+#[export] Hint Extern 0 (add _ _ = _) => eapply compat_add : typeclass_instances.
+#[export] Hint Extern 0 (ZwB_add _ _ = _) => eapply compat_add' : typeclass_instances.
+#[export] Hint Extern 0 (_ = to_ZwB (add _ _)) => eapply compat_add' : typeclass_instances.
 
 (* now property on 2wB_add can be lifted to add on int *)
 
@@ -145,7 +147,7 @@ Definition add_comm : forall (n m: int), n + m = m + n := ↑ ZwB_comm.
 (* multiplication on Z modulo 2^63 *)
 
 Program Definition ZwB_mul : ZwB -> ZwB -> ZwB :=
-  fun n m => ((n.1 * m.1) mod wB ; _).
+  fun n m => ((n.1 * m.1) mod wB ; _)%Z.
 Next Obligation.
   now apply Z.mod_pos_bound. 
 Defined. 
@@ -161,13 +163,13 @@ Defined.
 
 Definition compat_mul' : ZwB_mul ≈ mul := compat_inverse2 compat_mul. 
   
-Hint Extern 0 (mul _ _ = _) => eapply compat_mul : typeclass_instances.
-Hint Extern 0 (ZwB_mul _ _ = _) => eapply compat_mul' : typeclass_instances.
+#[export] Hint Extern 0 (mul _ _ = _) => eapply compat_mul : typeclass_instances.
+#[export] Hint Extern 0 (ZwB_mul _ _ = _) => eapply compat_mul' : typeclass_instances.
 
 (* substraction on Z modulo 2^63 *)
 
 Program Definition ZwB_sub : ZwB -> ZwB -> ZwB :=
-  fun n m => ((n.1 - m.1) mod wB ; _).
+  fun n m => ((n.1 - m.1) mod wB ; _)%Z.
 Next Obligation.
   now apply Z.mod_pos_bound. 
 Defined. 
@@ -183,13 +185,13 @@ Defined.
 
 Definition compat_sub' : ZwB_sub ≈ sub := compat_inverse2 compat_sub. 
   
-Hint Extern 0 (sub _ _ = _) => eapply compat_sub : typeclass_instances.
-Hint Extern 0 (ZwB_sub _ _ = _) => eapply compat_sub' : typeclass_instances.
+#[export] Hint Extern 0 (sub _ _ = _) => eapply compat_sub : typeclass_instances.
+#[export] Hint Extern 0 (ZwB_sub _ _ = _) => eapply compat_sub' : typeclass_instances.
 
 (* lsl on Z modulo 2^63 *)
 
 Program Definition ZwB_lsl : ZwB -> ZwB -> ZwB :=
-  fun n m => ((n.1 * Z.pow 2 m.1) mod wB ; _).
+  fun n m => ((n.1 * Z.pow 2 m.1) mod wB ; _)%Z.
 Next Obligation.
   now apply Z.mod_pos_bound. 
 Defined. 
@@ -207,10 +209,10 @@ Defined.
 
 Definition compat_lsl' : ZwB_lsl ≈ lsl := compat_inverse2 compat_lsl. 
   
-Hint Extern 0 (lsl _ _ = _) => eapply compat_lsl : typeclass_instances.
-Hint Extern 0 (ZwB_lsl _ _ = _) => eapply compat_lsl' : typeclass_instances.
-Hint Extern 0 (_ = to_ZwB (lsl _ _)) => eapply compat_lsl : typeclass_instances.
-Hint Extern 0 (ZwB_lsl _ _ = _) => eapply compat_lsl' : typeclass_instances.
+#[export] Hint Extern 0 (lsl _ _ = _) => eapply compat_lsl : typeclass_instances.
+#[export] Hint Extern 0 (ZwB_lsl _ _ = _) => eapply compat_lsl' : typeclass_instances.
+#[export] Hint Extern 0 (_ = to_ZwB (lsl _ _)) => eapply compat_lsl : typeclass_instances.
+#[export] Hint Extern 0 (ZwB_lsl _ _ = _) => eapply compat_lsl' : typeclass_instances.
 
 Local Open Scope Z_scope.
 Local Open Scope ZwB_scope.
@@ -274,10 +276,10 @@ Definition compat_pow' : ZwB_pow ≈ pow.
   - simpl. rewrite IHx0. simpl. rewrite mul_spec. now rewrite H.
 Defined.
 
-Hint Extern 0 (pow _ _ = _) => eapply compat_pow : typeclass_instances.
-Hint Extern 0 (ZwB_pow _ _ = _) => eapply compat_pow' : typeclass_instances.
-Hint Extern 0 (_ = to_ZwB (pow _ _)) => eapply compat_pow : typeclass_instances.
-Hint Extern 0 (ZwB_pow _ _ = _) => eapply compat_pow' : typeclass_instances.
+#[export] Hint Extern 0 (pow _ _ = _) => eapply compat_pow : typeclass_instances.
+#[export] Hint Extern 0 (ZwB_pow _ _ = _) => eapply compat_pow' : typeclass_instances.
+#[export] Hint Extern 0 (_ = to_ZwB (pow _ _)) => eapply compat_pow : typeclass_instances.
+#[export] Hint Extern 0 (ZwB_pow _ _ = _) => eapply compat_pow' : typeclass_instances.
 
 Opaque pow ZwB_pow. 
 

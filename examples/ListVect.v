@@ -2,7 +2,7 @@ Require Import UnivalentParametricity.theories.Basics.
 Require Import UnivalentParametricity.theories.StdLib.Basics.
 
 Set Universe Polymorphism.
-
+Unset Universe Minimization ToSet.
 
 (*****************************)
 (* A library parametrized by the underlying size-aware container type *)
@@ -32,7 +32,7 @@ Defined.
 Instance issig_lib_hd_map_inv C : Lib C ≃ Lib_sig C :=
   Equiv_inverse _.
 
-Hint Extern 0 => progress (unfold Lib_sig) :  typeclass_instances.
+#[export] Hint Extern 0 => progress (unfold Lib_sig) :  typeclass_instances.
 
 
 
@@ -42,7 +42,7 @@ Definition FP_Lib : Lib ≈ Lib.
   univ_param_record.
 Defined.
 
-Hint Extern 0 (Lib _ ≃ Lib _) => erefine (ur_type FP_Lib _ _ _).(equiv); simpl
+#[export] Hint Extern 0 (Lib _ ≃ Lib _) => erefine (ur_type FP_Lib _ _ _).(equiv); simpl
 :  typeclass_instances.
 
 
@@ -120,10 +120,11 @@ Definition foo : ({hd : forall (A : Type) (n : nat), t A (S n) -> A &
                   forall (n : nat) (A : Type) (B : DType) 
                     (f : A -> B) (v : sizedList A (S n)),
                     hd B n (map A B f (S n) v) = f (hd A n v) : Type}}).
-  tc. Defined. 
+  tc. 
+Defined. 
+#[export] Hint Extern 0 => apply foo :  typeclass_instances.
 
-Hint Extern 0 => apply foo :  typeclass_instances.
-
+Transparent vector_to_list.
 
 Definition liblist : {hd :forall {A : Type} {n : nat}, sizedList A (S n) -> A  &
                       {map : forall {A B} (f:A -> B) {n},
@@ -155,6 +156,7 @@ Definition app_list' {A:Type} {n n'} `{A ⋈ A} :
   -> {l: list A & length l = n + n'}.
    intros l l'. exists (app l.1 l'.1). eapply concat. apply app_length. apply ap2; [exact l.2 | exact l'.2].
 Defined.
+
 
 Eval compute in (app_list [[1;2]] [[1;2]]).
 
