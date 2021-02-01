@@ -79,11 +79,7 @@ Notation "[[ x ]]" := ([x]; eq_refl).
 Notation "[[ x ; y ; .. ; z ]]" := ((UR.cons x (UR.cons y .. (UR.cons z UR.nil) ..)) ;eq_refl).
 
 
-(* the lib_prop theorem has been lifted as expected. *)
-
-Check lib_list.(lib_prop).
-
-(* and can be effectively used *)
+(* the lib_prop theorem has been lifted and can be effectively used *)
 
 Time Eval lazy in (lib_list.(lib_prop) Dnat S [[S O; S (S O)]]).
 

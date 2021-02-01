@@ -279,8 +279,6 @@ induction x.
     intro H; right. intro e. inversion e. apply (H (logic_eq_is_eq H1)).
 Defined.
 
-Canonical Structure Ddatatypes_nat : DType := Build_DType Datatypes.nat _.
-
 (*! bool !*)
 
 Instance DecidableEq_eq_bool : DecidableEq bool.
