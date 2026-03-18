@@ -1,0 +1,37 @@
+{
+    "coqtop.binPath": "/Users/nicolastabareau/opam-coq.8.9.0/coq-master/bin/",
+    "coqtop.args": [
+
+//      "-allow-rewrite-rules",
+      "-bt",
+// "-indices-matter",
+//  "-noinit",
+//   "-boot",
+//   "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build/default/theories/Corelib", "Corelib",
+//   "-coqlib" "/Users/nicolastabareau/opam-coq.8.9.0/rocq/lib/coq/",
+//   "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/test-suite/prerequisite/", "TestSuite",
+//   "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/stldib/theories/", "StdLib",
+  //  "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/fiat_parsers/src/", "Fiat",
+//   "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/hott/theories/", "HoTT",
+//    "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/bbv/src/bbv/", "bbv",
+    // "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/fiat_crypto/rupicola/bedrock2/bedrock2/src/bedrock2/", "bedrock2",
+    // "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/fiat_crypto/rupicola/bedrock2/deps/riscv-coq/src/riscv/", "riscv",
+    // "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/fiat_crypto/rupicola/bedrock2/processor/src/processor/", "processor",
+    // "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/kami/Kami/", "Kami",
+//    "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/metarocq/utils/theories/", "MetaRocq.Utils",
+  // "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/category_theory/", "Category",
+  //   "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/color/", "CoLoR",
+//    "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/ext_lib/theories/", "ExtLib",
+//    "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/unimath/UniMath/", "UniMath",
+    // "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/iris/iris/proofmode/", "iris.proofmode",
+    // "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/iris/iris/bi/", "iris.bi",
+    // "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/iris/iris/prelude/", "iris.prelude",
+    // "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/iris/iris/algebra/", "iris.algebra",
+    // "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/iris/iris/program_logic/", "iris.program_logic",
+    // "-R", "/Users/nicolastabareau/Software/rocq-tabareau/rocq/_build_ci/iris/iris_heap_lang/", "iris.heap_lang",
+//    "-I", "/Users/nicolastabareau/Software/rocq-prover/rocq/_build/install/default/lib/",
+//     "-top", "Arguments_renaming",
+    ],
+    "coqtop.coqtopExe": "coqidetop"
+
+}

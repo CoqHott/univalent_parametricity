@@ -4,16 +4,39 @@
 (* to be independent from the HoTT framework, which requires a tailored version of Coq  *)
 (************************************************************************)
 
-Unset Universe Minimization ToSet.
+Sort Fib.
+
+Abbreviation Fib := Type@{Fib;_}.
 
 Set Universe Polymorphism.
 
-(* Basic notations *)
+Unset Collapse Sorts ToType.
 
+(* Basic notations *)
 Cumulative Inductive sigT {A:Type} (P:A -> Type) : Type :=
     existT : forall x:A, P x -> sigT P.
 
+Definition sigT_rect
+	 : forall (A : Type)
+         (P : forall _ : A, Type)
+         (P0 : forall _ : @sigT A P, Type)
+         (_ : forall (x : A) (p : P x), P0 (@existT A P x p)) 
+         (s : @sigT A P),
+       P0 s.
+Proof.
+  intros ? ? ? ? []; eauto.
+Defined. 
+
 Inductive prod (A B : Type) : Type :=  pair : A -> B -> prod A B.
+
+Definition prod_rect :
+forall (A B : Type) (P : forall _ : prod A B, Type)
+         (_ : forall (a : A) (b : B), P (pair A B a b)) 
+         (p : prod A B),
+       P p.
+Proof.
+  intros ? ? ? ? []; eauto.
+Defined. 
 
 Arguments pair {_ _} _ _.
 
@@ -21,23 +44,57 @@ Notation "x * y" := (prod x y) : type_scope.
 Notation "( x , y , .. , z )" := (pair .. (pair x y) .. z): type_scope.
 
 
-Section projections.
-  Context {A : Type} {B : Type}.
+Definition fst {A B} (p:prod A B) := prod_rect _ _ (fun _ => A) (fun x y => x) p.
 
-  Definition fst (p:prod A B) := prod_rect _ _ (fun _ => A) (fun x y => x) p.
+Definition snd {A B} (p:prod A B) := prod_rect _ _ (fun _ => B) (fun x y => y) p.
 
-  Definition snd (p:prod A B) := prod_rect _ _ (fun _ => B) (fun x y => y) p.
+Inductive path@{s;i} (A:Type@{s;i}) (x:A) : A -> Type@{Fib;i} :=
+  idpath : path A x x.
 
-End projections.
+Arguments idpath {_ _}.
 
-Inductive eq@{i} (A:Type@{i}) (x:A) : A -> Type@{i} :=
-    eq_refl : eq A x x.
+Definition path_Has_Leibniz_elim_@{s;l l' l''} : Has_Leibniz@{s Fib Fib;l l' l''} (@path).
+intros  A x P t y e . now destruct e.
+Defined. 
 
-Notation "x = y :> A" := (@eq A x y) : type_scope.
+Instance path_Has_Leibniz_elim@{s;l l' l''} : Has_Leibniz@{s Fib Fib;l l' l''} (@path)
+:= path_Has_Leibniz_elim_.
+
+Hint Resolve path_Has_Leibniz_elim : rewrite_instances.
+
+Definition path_Has_Leibniz_r_elim_@{s; l l' l''} : Has_Leibniz_r@{s Fib Fib;l l' l''} (@path).
+intros  A x P t y e . now destruct e.
+Defined. 
+
+Instance path_Has_Leibniz_r_elim@{s; l l' l''} : Has_Leibniz_r@{s Fib Fib;l l' l''} (@path) :=
+ path_Has_Leibniz_r_elim_.
+
+Hint Resolve path_Has_Leibniz_r_elim : rewrite_instances.
+
+Instance path_Has_refl@{s;l} : Has_refl@{s Fib;l l} (@path) :=
+  fun A x => idpath.
+
+Definition path_Has_Leibniz_J_@{s; l l' l''} : Has_J@{s Fib Fib;l l' l''} (@path) _.
+intros  A x P t y e . now destruct e.
+Defined. 
+
+Instance path_Has_Leibniz_J@{s; l l' l''} : Has_J@{s Fib Fib;l l' l''} (@path) _ :=
+  path_Has_Leibniz_J_.
+
+Hint Resolve path_Has_Leibniz_J : rewrite_instances.
+
+Definition path_Has_Leibniz_J_r_@{s; l l' l''} : Has_J_r@{s Fib Fib;l l' l''} (@path) _.
+intros  A x P t y e . now destruct e.
+Defined. 
+
+Instance path_Has_Leibniz_J_r@{s; l l' l''} : Has_J_r@{s Fib Fib;l l' l''} (@path) _ := 
+  path_Has_Leibniz_J_r_.
+
+Hint Resolve path_Has_Leibniz_J_r : rewrite_instances.
+
+Notation "x = y :> A" := (@path A x y) : type_scope.
 
 Notation "x = y" := (x = y :>_) : type_scope.
-
-Arguments eq_refl {_ _}. 
 
 Definition projT1 {A} {P:A -> Type} (p:sigT P) : A :=
   sigT_rect _ _ (fun _ => A) (fun x y => x) p.
@@ -52,8 +109,8 @@ Notation compose := (fun g f x => g (f x)).
 Notation "g ∘ f" := (compose g%function f%function) (at level 1): function_scope.
 
 Notation "{ x : A & P }" := (sigT (A:=A) (fun x => P)) : type_scope.
-Notation "x .1" := (projT1 x) (at level 3).
-Notation "x .2" := (projT2 x) (at level 3).
+Notation "x .1" := (projT1 x).
+Notation "x .2" := (projT2 x).
 Notation " ( x ; p ) " := (existT _ x p).
 
 Notation "f == g" := (forall x, f x = g x) (at level 70).
@@ -62,42 +119,40 @@ Notation "f == g" := (forall x, f x = g x) (at level 70).
 (* Equality-related definitions *)
 
 Definition ap {A B:Type} (f:A -> B) {x y:A} (p:x = y) : f x = f y
-  := match p with eq_refl => eq_refl end.
+  := match p with idpath => idpath end.
 
 Definition ap2 {A A' B:Type} (f:A -> A' -> B) {x y:A} (p:x = y)
   {x' y':A'} (q:x' = y') : f x x' = f y y'
-  := match p with eq_refl => match q with eq_refl => eq_refl end end.
+  := match p with idpath => match q with idpath => idpath end end.
 
 Definition ap3 {A A' A'' B:Type} (f:A -> A' -> A'' -> B) {x y:A} (p:x = y)
   {x' y':A'} (p':x' = y') {x'' y'':A''} (p'':x'' = y'') : f x x' x''= f y y' y''
-  := match p with eq_refl => match p' with eq_refl => match p'' with eq_refl => eq_refl end end end.
+  := match p with idpath => match p' with idpath => match p'' with idpath => idpath end end end.
 
 Definition ap4 {A A' A'' A''' B:Type} (f:A -> A' -> A'' -> A''' -> B) {x y:A} (p:x = y)
            {x' y':A'} (p':x' = y') {x'' y'':A''} (p'':x'' = y'')
            {x''' y''':A'''} (p''':x''' = y''') : f x x' x'' x'''= f y y' y'' y'''
-  := match p with eq_refl =>
-     match p' with eq_refl =>
-     match p'' with eq_refl =>
-     match p''' with eq_refl => eq_refl end end end end.
+  := match p with idpath =>
+     match p' with idpath =>
+     match p'' with idpath =>
+     match p''' with idpath => idpath end end end end.
 
 
 Definition eq_sym {A} {x y : A} (H : x = y) : y = x :=
-  match H with eq_refl => eq_refl end.
-
+  match H with idpath => idpath end.
 
 (* HSet *)
 
 Class HSet A := {is_hset : forall (x y : A) (e e' : x = y), e = e'}.
 
-
 (* From HoTT/Coq *)
 
 Definition apD10 {A} {B:A->Type} {f g : forall x, B x} (h:f=g)
   : f == g
-  := fun x => match h with eq_refl => eq_refl  end.
+  := fun x => match h with idpath => idpath  end.
 
 Definition transport_eq {A : Type} (P : A -> Type) {x y : A} (p : x = y) (u : P x) : P y :=
-  match p with eq_refl => u end.
+  match p with idpath => u end.
 
 Notation "p # x" := (transport_eq _ p x) (right associativity, at level 65, only parsing).
 
@@ -108,7 +163,7 @@ Defined.
 Notation "p @ q" := (concat p q) (at level 20).
 
 Definition inverse {A : Type} {x y : A} (p : x = y) : y = x
-    := match p with eq_refl => eq_refl end.
+    := match p with idpath => idpath end.
 
 Notation "p ^" := (inverse p) (at level 3, format "p '^'").
 
@@ -116,20 +171,20 @@ Definition transportD {A : Type} (B : A -> Type) (C : forall a:A, B a -> Type)
   {x1 x2 : A} (p : x1 = x2) (y : B x1) (z : C x1 y)
   : C x2 (p # y)
   :=
-  match p with eq_refl => z end.
+  match p with idpath => z end.
 
 Definition transportD2 {A : Type} (B : A -> Type) (B' : A -> Type) (C : forall a:A, B a -> B' a -> Type)
   {x1 x2 : A} (p : x1 = x2) (y : B x1)  (y' : B' x1) (z : C x1 y y')
   : C x2 (p # y) (p # y')
   :=
-  match p with eq_refl => z end.
+  match p with idpath => z end.
 
 Definition transportD3 {A : Type} (B : A -> Type) (B' : A -> Type) B''
            (C : forall (a:A) (x: B a) (y: B' a), B'' a x y -> Type)
   {x1 x2 : A} (p : x1 = x2) y y' y'' (z : C x1 y y' y'')
   : C x2 (p # y) (p # y') (transportD2 _ _ _ p _ _ y'')
   :=
-    match p with eq_refl => z end.
+    match p with idpath => z end.
 
 Definition transport_double A (P : A -> A -> Type) x y (e : x = y) (f : forall a, P a a) :
   transport_eq (fun X => P X _ ) e (transport_eq (fun X => P _ X) e (f x)) = f y.  
@@ -154,11 +209,11 @@ Defined.
 
 Definition transport_pp {A : Type} (P : A -> Type) {x y z : A} (p : x = y) (q : y = z) (u : P x) :
   p @ q # u = q # p # u :=
-  match q with eq_refl =>
-    match p with eq_refl => eq_refl end
+  match q with idpath =>
+    match p with idpath => idpath end
   end.
 
-Definition inverse_left_inverse A (x y : A) (p : x = y) : eq_refl = (p ^ @ p).
+Definition inverse_left_inverse A (x y : A) (p : x = y) : idpath = (p ^ @ p).
 Proof. destruct p; reflexivity. Defined.
 
 Definition transport_pV {A : Type} (P : A -> Type) {x y : A} (p : x = y) (z : P y)
@@ -180,12 +235,12 @@ Proof.
   destruct p; reflexivity.
 Defined.
 
-Definition concat_refl A (x y :A) (e: x = y) : e @ eq_refl = e.
+Definition concat_refl A (x y :A) (e: x = y) : e @ idpath = e.
 Proof.
   destruct e; reflexivity.
 Defined. 
 
-Definition inv_inv A (x y :A) (e: x = y) : e^ @ e = eq_refl.
+Definition inv_inv A (x y :A) (e: x = y) : e^ @ e = idpath.
 Proof.
   destruct e; reflexivity.
 Defined. 
@@ -266,10 +321,10 @@ Proof.
 Defined.
 
 Definition refl_V {A : Type} {x : A} (p : x = x) :
-  p^ = eq_refl -> p = eq_refl.
+  p^ = idpath -> p = idpath.
 Proof.
   pose (ep := inv_inv _ _ _ p).
-  intro e; rewrite e in ep. exact ep.
+  intro e. rewrite e in ep. exact ep.
 Defined.
 
 Definition unpack_prod {A B} `{P : A * B -> Type} (u : A * B) :
@@ -293,7 +348,7 @@ Lemma transport_path_prod_uncurried {A B} (P : A * B -> Type) {x y : A * B}
                          (pack_prod _ Px))).
 Proof.
   destruct x, y, H; simpl in *.
-  destruct e, e0. 
+  destruct p, p0. 
   reflexivity.
 Defined.
 
@@ -302,7 +357,7 @@ Lemma path_prod_uncurried_inv {A B} {x y : A * B}
   : (path_prod_uncurried _ _ H)^
     = path_prod_uncurried _ _ ((fst H)^, (snd H)^).
 Proof. 
-  destruct H, x ,y. cbn in *. destruct e, e0. reflexivity. 
+  destruct H, x ,y. cbn in *. destruct p, p0. reflexivity. 
 Defined.
 
 Definition transport_prod {A : Type} {P Q : A -> Type} {a a' : A} (p : a = a')
@@ -314,7 +369,7 @@ Defined.
 Definition transport_const {A B : Type} {x1 x2 : A} (p : x1 = x2) (y : B)
   : transport_eq (fun x => B) p y = y.
 Proof.
-  destruct p.  exact eq_refl.
+  destruct p.  exact idpath.
 Defined.
 
 Definition transport_paths_l {A : Type} {x1 x2 y : A} (p : x1 = x2) (q : x1 = y)
@@ -367,7 +422,7 @@ Definition concat_pA1 {A : Type} {f : A -> A} (p : forall x, x = f x) {x y : A} 
   destruct q; simpl. apply concat_refl.
 Defined.
 
-Definition inv_inv' A (x y :A) (e: x = y) : e @ e^ = eq_refl.
+Definition inv_inv' A (x y :A) (e: x = y) : e @ e^ = idpath.
 Proof.
   destruct e; reflexivity.
 Defined. 
@@ -395,18 +450,31 @@ Defined.
 
 (* Equivalences *)
 
-Class IsEquiv {A : Type} {B : Type} (f : A -> B) := BuildIsEquiv {
+Inductive Box (A:Type) : Fib := box : A -> Box A.
+
+Class IsEquiv {A : Type} {B : Type} (f : A -> B) : Type := BuildIsEquiv {
   e_inv : B -> A ;
   e_sect : forall x, e_inv (f x) = x;
   e_retr : forall y, f (e_inv y) = y;
   e_adj : forall x : A, e_retr (f x) = ap f (e_sect x);
 }.
 
-(** A class that includes all the data of an adjoint equivalence. *)
-Class Equiv A B := BuildEquiv {
-  e_fun : A -> B ;
-  e_isequiv :> IsEquiv e_fun
+(*
+Record IsEquiv@{s s' ; + | s -> Fib +} {A : Type@{s;_}} {B : Type@{s';_}} (f : A -> B) : Fib := BuildIsEquiv {
+  e_inv : Box (B -> A) ;
+  e_sect : forall x, e_inv (f x) = x;
+  e_retr : forall y, f (e_inv y) = y;
+  e_adj : forall x : A, e_retr (f x) = ap f (e_sect x);
 }.
+*)
+
+(** A class that includes all the data of an adjoint equivalence. *)
+Class Equiv A B : Fib := BuildEquiv {
+  e_fun : A -> B ;
+  e_isequiv : IsEquiv e_fun
+}.
+
+Hint Resolve e_isequiv : typeclass_instances.
 
 Notation "A ≃ B" := (Equiv A B) (at level 20).
 
@@ -419,7 +487,7 @@ Arguments e_isequiv {_ _ _}.
 
 Typeclasses Transparent e_fun e_inv.
 
-Coercion e_fun : Equiv >-> Funclass.
+(* Coercion e_fun : Equiv >-> Funclass.*)
 
 Definition univalent_transport {A B : Type} {e: A ≃ B} : A -> B := e_fun e.  
 
@@ -438,23 +506,23 @@ Definition issect'  {A B : Type} (f : A -> B) (g : B -> A)
 
 
 Definition moveR_M1 {A : Type} {x y : A} (p q : x = y) :
-  eq_refl = p^ @ q -> p = q.
+  idpath = p^ @ q -> p = q.
 Proof.
   destruct p. exact id. 
 Defined.
 
 Definition concat_1p {A : Type} {x y : A} (p : x = y) :
-  eq_refl @ p = p := eq_refl.
+  idpath @ p = p := idpath.
 
 Definition moveL_M1 {A : Type} {x y : A} (p q : x = y) :
-  eq_refl = q @ p^ -> p = q.
+  idpath = q @ p^ -> p = q.
 Proof.
   destruct p.
   intro h. exact (h @ (concat_refl _ _ _  _)).
 Defined.
 
 Definition moveL_M1' {A : Type} {x y : A} (p q : x = y) :
-  q^ @ p = eq_refl -> p = q.
+  q^ @ p = idpath -> p = q.
 Proof.
   destruct p. intro e. rewrite concat_refl in e.
   rewrite <- inv2. rewrite e. reflexivity.
@@ -477,21 +545,21 @@ Definition is_adjoint' {A B : Type} (f : A -> B) (g : B -> A)
 Proof.
   unfold issect'.
   apply moveL_M1.
-  repeat rewrite ap_pp. rewrite <- concat_p_pp; rewrite <- ap_compose.
+  repeat rewrite ap_pp. rewrite <- concat_p_pp, <- ap_compose.
   pose  (concat_pA1 (fun b => (isretr b)^) (ap f (issect a))).
-  eapply concat. 2: { apply ap2. reflexivity. exact e. }
-  cbn. clear e. 
+  eapply concat. 2: { apply ap2. reflexivity. exact p. }
+  cbn. clear p. 
   pose (concat_pA1 (fun b => (isretr b)^) (isretr (f a))).
   rewrite <- concat_p_pp.
   pose (concat_A1p (fun b => (isretr b)) (isretr (f a))).
-  apply moveL_Vp in e0.
-  rewrite <- concat_p_pp in e0. rewrite inv_inv' in e0.
-  rewrite concat_refl in e0.
-  rewrite ap_compose in e0.
+  apply moveL_Vp in p0.
+  rewrite <- concat_p_pp in p0. rewrite inv_inv' in p0.
+  rewrite concat_refl in p0.
+  rewrite ap_compose in p0.
   eapply concat.
   2: { apply ap2. reflexivity. rewrite concat_p_pp. eapply concat. 
        2: { apply ap2. eapply concat.
-            2:{ apply ap2. symmetry. apply e0. reflexivity. }
+            2:{ apply ap2. symmetry. apply p0. reflexivity. }
               symmetry. apply inv_inv'. reflexivity. }
               reflexivity. }
   repeat rewrite <- ap_compose. 
@@ -505,7 +573,7 @@ Definition isequiv_adjointify {A B : Type} (f : A -> B) (g : B -> A)
                   (is_adjoint' f g issect isretr).
 
 Definition Equiv_id A : A ≃ A := 
-  BuildEquiv _ _ id (BuildIsEquiv _ _ _ id (fun _ => eq_refl) (fun _ => eq_refl) (fun _ => eq_refl)).
+  BuildEquiv _ _ id (BuildIsEquiv _ _ _ id (fun _ => idpath) (fun _ => idpath) (fun _ => idpath)).
 
 Definition isequiv_compose A B C f g `{IsEquiv A B f} `{IsEquiv B C g}
   : IsEquiv (g ∘ f).
@@ -571,7 +639,7 @@ Definition ap_p_pp {A B : Type} (f : A -> B) {w : B} {x y z : A}
   (r : w = f x) (p : x = y) (q : y = z) :
   r @ (ap f (p @ q)) = (r @ ap f p) @ (ap f q).
 Proof.
-  destruct p, q. simpl. exact (concat_p_pp r eq_refl eq_refl).
+  destruct p, q. simpl. exact (concat_p_pp r idpath idpath).
 Defined.
 
 Definition concat_A1p' {A : Type} {f : A -> A} (p : forall x, f x = x) {x y : A} (q : x = y) :
@@ -606,12 +674,8 @@ Definition concat_pV_p {A : Type} {x y z : A} (p : x = z) (q : y = z) :
   destruct q. cbn. repeat rewrite concat_refl.
   reflexivity.
 Defined. 
-
-Section EquivInverse.
-
-  Context {A B : Type} (f : A -> B) {feq : IsEquiv f}.
                                                  
-Theorem other_adj (b : B) : e_sect f (e_inv f b) = ap (e_inv f) (e_retr f b).
+Theorem other_adj {A B : Type} (f : A -> B) {feq : IsEquiv f} (b : B) : e_sect f (e_inv f b) = ap (e_inv f) (e_retr f b).
 Proof.
     (* First we set up the mess. *)
     rewrite <- (concat_1p (e_sect _ _)).
@@ -643,9 +707,8 @@ Proof.
     rewrite concat_pV_p; apply concat_Vp.
 Qed.
 
-Definition isequiv_inverse : IsEquiv (e_inv f) 
-    := BuildIsEquiv _ _ (e_inv f) f (e_retr f) (e_sect f) other_adj.
-End EquivInverse.
+Definition isequiv_inverse {A B : Type} (f : A -> B) {feq : IsEquiv f} : IsEquiv (e_inv f) 
+    := BuildIsEquiv _ _ (e_inv f) f (e_retr f) (e_sect f) (other_adj f).
 
 Definition Equiv_inverse {A B : Type} (e: A ≃ B) : B ≃ A := BuildEquiv _ _ (e_inv (e_fun e)) (isequiv_inverse _).  
 
@@ -701,6 +764,7 @@ Proof.
   - intro e. destruct p. cbn. apply ap_id.
 Defined. 
 
+(*
 Definition IsEquiv_transport A (P : A -> Type) {x y : A} (p : x = y) 
   : IsEquiv (transport_eq P p).
 Proof.
@@ -710,14 +774,15 @@ Proof.
   - intro e. destruct p. reflexivity. 
   - intro e. destruct p. reflexivity. 
 Defined. 
+*)
 
 Definition concat_VpV_p {A : Type} {x z : A} (p : x = z) (q : x = z) :
-  q = p -> p^ @ q = eq_refl.
+  q = p -> p^ @ q = idpath.
   destruct p. cbn. apply id.
 Defined. 
 
 Definition ap_1 {A B : Type} (f : A -> B) {x : A} (p : x = x) :
-  p = eq_refl -> ap f p = eq_refl.
+  p = idpath -> ap f p = idpath.
 Proof.
   intro e; rewrite e. reflexivity.
 Defined.
@@ -736,8 +801,8 @@ Defined.
 Definition concat_V_pp {A : Type} {x y z : A} (p : x = y) (q : y = z) :
   p^ @ (p @ q) = q
   :=
-  match q with eq_refl =>
-    match p with eq_refl => eq_refl end
+  match q with idpath =>
+    match p with idpath => idpath end
   end.
 
 Instance isequiv_concat_r {A : Type} y z (p : y = z) (x : A)
@@ -762,17 +827,17 @@ Proof.
   destruct p. apply isequiv_concat_r.
 Defined.
 
-Definition moveL_M1_eq {A : Type} {x y : A} (p q : x = y) (e : eq_refl = p @ q^):
+Definition moveL_M1_eq {A : Type} {x y : A} (p q : x = y) (e : idpath = p @ q^):
   ap (concat p) (ap inverse (moveL_M1 q p e)^) =
   inv_inv' _ _ _ p @ e.
 Proof.
   destruct q. unfold whiskerL.
-  refine (transport_eq (fun X =>  ap (concat p) (ap inverse (moveL_M1 eq_refl p e)^)  = inv_inv' A x x p @ X) (e_sect (moveL_M1 eq_refl p) e) _).
-  generalize (moveL_M1 eq_refl p e). clear e; intro e.
+  refine (transport_eq (fun X =>  ap (concat p) (ap inverse (moveL_M1 idpath p e)^)  = inv_inv' A x x p @ X) (e_sect (moveL_M1 idpath p) e) _).
+  generalize (moveL_M1 idpath p e). clear e; intro e.
   destruct e. reflexivity.
 Defined.
 
-Definition logic_eq_is_eq {A} {x y:A} : @Logic.eq A x y -> x = y.
+Definition eq_is_path {A} {x y:A} : eq x y -> x = y.
 Proof.
   destruct 1. reflexivity.
 Defined. 
@@ -798,7 +863,7 @@ Defined.
                 
 Definition Move_equiv_equiv {A B} (e : A ≃ B) x y : (x = e_inv' e y) ≃ (e_fun e x = y).
 Proof.
-  apply (transport_eq (fun X =>  (x = e_inv' e y) ≃ (e x = X)) (e_retr _ y)).
+  apply (transport_eq (fun X =>  (x = e_inv' e y) ≃ ((e_fun e) x = X)) (e_retr _ y)).
   apply isequiv_ap.
 Defined.
 
@@ -908,9 +973,11 @@ Definition IsIrr_False : IsIrr False.
   intro e; destruct e.
 Defined. 
 
+(*
 Definition eq_is_logic_eq {A} {x y:A} : x = y -> Logic.eq x y.
   now destruct 1.
 Defined.
+
 
 Instance isEquiv_logic_eq_is_eq {A} {x y:A} : IsEquiv (@logic_eq_is_eq A x y).
 Proof.
@@ -927,6 +994,7 @@ Definition logic_eq_is_eq_inj {A} {x y:A} (e e': Logic.eq x y) :
 Proof.
   exact (e_inv (isequiv_ap _ _  e e')). 
 Defined. 
+*)
 
 Definition proj1 {A B : Prop} : A /\ B -> A.
   destruct 1; assumption.
@@ -948,14 +1016,15 @@ Definition IsIrr_conj (A B:Prop) : IsIrr A -> IsIrr B -> IsIrr (A /\ B).
   intros HA HB x y. apply path_conj_uncurried. split; [apply HA | apply HB].
 Defined.
 
-
-
 Definition inversionS n m : S n = S m -> n = m.
-  inversion 1. reflexivity.
+  inversion 1. eapply eq_is_path in H0. eauto.
 Defined. 
 
-Definition zeroS n : O = S n-> False.
-  inversion 1.
+Inductive Empty@{s;} : Type@{s;0} := .
+
+Definition zeroS n : O = S n -> Empty@{Fib;}.
+  inversion 1. enough False. destruct H0.
+  inversion H.   
 Defined.
 
 Inductive le (n : nat) : nat -> Prop :=
@@ -974,10 +1043,10 @@ fix F (n0 : nat) (l : le n n0) {struct l} : P n0 l :=
   | le_S _ m l0 => f0 m l0 (F m l0)
   end.
 
-Definition inv_eq m : Logic.eq (S m) m -> False.
+Definition inv_eq m : eq (S m) m -> False.
   induction m.
   - inversion 1.
-  - intro e. assert (Logic.eq (S m) m). inversion e. exact e. auto.
+  - intro e. assert (eq (S m) m). inversion e. exact e. auto.
 Defined. 
 
 Fixpoint apply_S_n (n:nat) m : nat :=
@@ -985,12 +1054,12 @@ Fixpoint apply_S_n (n:nat) m : nat :=
           | S n => S (apply_S_n n m)
   end. 
 
-Definition apply_prop n m : Logic.eq (apply_S_n n (S m)) (S (apply_S_n n m)).
+Definition apply_prop n m : eq (apply_S_n n (S m)) (S (apply_S_n n m)).
 Proof.
   induction n. reflexivity. cbn. f_equal; auto.
 Defined. 
 
-Definition inv_eq_gen m : forall n, Logic.eq (apply_S_n n m) m -> False.
+Definition inv_eq_gen m : forall n, eq (apply_S_n n m) m -> False.
 Proof.
   induction m. destruct n; cbn; intro; inversion H. 
   - intros. rewrite apply_prop in H. inversion H. apply (IHm _ H1).
@@ -1032,6 +1101,15 @@ Axiom funext : Funext.
 
 Instance funext_isequiv A P (f g : forall x : A, P x) : IsEquiv (@apD10 _ _ f g) := funext _ _ _ _.
 
+Ltac funext := 
+  let inv := fresh "inv" in 
+  let sect := fresh "sect" in 
+  let retr := fresh "retr" in 
+  let adj := fresh "adj" in 
+  match goal with | |- ?f = ?g => 
+    destruct (funext _ _ f g) as [inv sect retr adj]; eapply inv 
+  end.
+
 Instance univalence_isequiv A B : IsEquiv (eq_to_equiv A B) := univalence _ _.
 
 Definition transport_apD10 A B (f g : forall x:A, B x)
@@ -1054,9 +1132,9 @@ Proof.
   rewrite transport_apD10. rewrite e_retr. reflexivity.
 Defined.
 
-
-Definition IsIrr_forall A (B:A ->Type) : (forall a, IsIrr (B a)) -> IsIrr (forall a, B a).
-  intros H f g. apply funext; intro. apply H. 
+Definition IsIrr_forall (A:Type) (B:A ->Type) : 
+  (forall a, IsIrr (B a)) -> IsIrr (forall a, B a).
+  intros H f g. funext. intro. apply H. 
 Defined.
 
 (* for minor differences between Prop and Type (coming from impredicativity)  *)
@@ -1064,26 +1142,26 @@ Defined.
 (* a subtype of Type *)
 
 Definition Equiv_id_P (A:Prop) : A ≃ A := 
-  BuildEquiv _ _ id (BuildIsEquiv _ _ _ id (fun _ => eq_refl) (fun _ => eq_refl) (fun _ => eq_refl)).
+  BuildEquiv _ _ id (BuildIsEquiv _ _ _ id (fun _ => idpath) (fun _ => idpath) (fun _ => idpath)).
 
 Definition eq_to_equiv_P (A B:Prop) : A = B -> A ≃ B :=
   fun e => @transport_eq Prop (fun X => A ≃ X) A B e (Equiv_id_P A).
-             
+
 Axiom univalence_P : forall (A B:Prop), IsEquiv (eq_to_equiv_P A B).
 
-
 Definition ap2_slide {A A' B:Type} (f:A -> A' -> B) {x y:A} (p:x = y)
-           {x' y':A'} (q:x' = y') : ap2 f p eq_refl @ ap2 f eq_refl q =
-                                    ap2 f eq_refl q @ ap2 f p eq_refl.
+           {x' y':A'} (q:x' = y') : ap2 f p idpath @ ap2 f idpath q =
+                                    ap2 f idpath q @ ap2 f p idpath.
   etransitivity. apply ap2_pp. eapply inverse. etransitivity. apply ap2_pp.
   eapply (ap2 (fun X Y => ap2 f X Y)). eapply inverse. all : apply concat_refl. 
 Defined.
 
+(*
 Definition IsEquiv_eq A B (f : A -> B) (e e' : IsEquiv f)
            (Hinv  : forall x, @e_inv _ _ _ e x = @e_inv _ _ _ e' x)
            (Hsect : forall x, (Hinv (f x))^ @ (@e_sect _ _ _ e x) = @e_sect _ _ _ e' x)
            (Hretr : forall y, ap f (Hinv y)^ @ (@e_retr _ _ _ e y) = @e_retr _ _ _ e' y)
-           (Hadj  : forall x, (Hretr (f x))^ @ (ap2 HoTT.concat eq_refl (@e_adj _ _ _ e x)) @ (ap_pp _ _ _)^ @ ap (ap f) (Hsect x) =  (@e_adj _ _ _ e' x))
+           (Hadj  : forall x, (Hretr (f x))^ @ (ap2 HoTT.concat idpath (@e_adj _ _ _ e x)) @ (ap_pp _ _ _)^ @ ap (ap f) (Hsect x) =  (@e_adj _ _ _ e' x))
   : e = e'.
   destruct e, e'. pose (Hinv' := HoTT.e_inv apD10 Hinv).
   unshelve refine (let Hsect' := _ : (fun x : A => ((apD10 Hinv' (f x))^ @ HoTT.e_sect f x)) = HoTT.e_sect f in _). apply funext. intros x.
@@ -1095,22 +1173,22 @@ Definition IsEquiv_eq A B (f : A -> B) (e e' : IsEquiv f)
   unshelve eapply (@apD10 _ _ _ Hinv _ y). apply (HoTT.e_retr apD10). 
   reflexivity. apply Hretr.
   unshelve refine (let Hadj' := _ : (fun x : A =>
-         (((apD10 Hretr' (f x))^ @ ap2 HoTT.concat eq_refl (HoTT.e_adj f x)) @
+         (((apD10 Hretr' (f x))^ @ ap2 HoTT.concat idpath (HoTT.e_adj f x)) @
                                                                              (ap_pp f (apD10 Hinv' (f x))^ (HoTT.e_sect f x))^) @ ap (ap f) (apD10 Hsect' x)) = HoTT.e_adj f in _). apply funext. intros x.
   cbn in Hretr', Hsect'. unfold Hretr', Hsect', Hinv'. rewrite (HoTT.e_retr apD10 (fun y : B =>
         ap2 HoTT.concat (ap (ap f) (ap inverse (apD10 (HoTT.e_retr apD10 Hinv) y)))
-          eq_refl @ Hretr y)). rewrite (HoTT.e_retr apD10 (fun x0 : A =>
+          idpath @ Hretr y)). rewrite (HoTT.e_retr apD10 (fun x0 : A =>
            ap2 HoTT.concat (ap inverse (apD10 (HoTT.e_retr apD10 Hinv) (f x0)))
-               eq_refl @ Hsect x0)). rewrite <- Hadj. rewrite concat_inv.
+               idpath @ Hsect x0)). rewrite <- Hadj. rewrite concat_inv.
   repeat rewrite <- concat_p_pp. apply ap.
-  rewrite (ap_pp (ap f)). repeat rewrite concat_p_pp. apply (ap (fun X => X @ (ap (ap f) (Hsect x)))) . rewrite <- (concat_p_pp (ap2 HoTT.concat (ap (ap f) (ap inverse (apD10 (HoTT.e_retr apD10 Hinv) (f x)))) eq_refl)^).
+  rewrite (ap_pp (ap f)). repeat rewrite concat_p_pp. apply (ap (fun X => X @ (ap (ap f) (Hsect x)))) . rewrite <- (concat_p_pp (ap2 HoTT.concat (ap (ap f) (ap inverse (apD10 (HoTT.e_retr apD10 Hinv) (f x)))) idpath)^).
   rewrite concat_p_pp. rewrite ap2_inv. Opaque ap2. cbn. Transparent ap2.
   rewrite ap2_slide. repeat rewrite <- concat_p_pp. apply ap.
   pose (X := (ap inverse (apD10 (HoTT.e_retr apD10 Hinv) (f x)))).
     
-  assert (ap2 HoTT.concat (ap (ap f) X)^ eq_refl @
+  assert (ap2 HoTT.concat (ap (ap f) X)^ idpath @
             (ap_pp f (apD10 (HoTT.e_inv apD10 Hinv) (f x))^ (e_sect _ x))^ =
-          (ap_pp f (Hinv (f x))^ (e_sect _ x))^ @ ap (ap f) (ap2 HoTT.concat X^ eq_refl)). clear. destruct X. cbn. eapply inverse. apply concat_refl.
+          (ap_pp f (Hinv (f x))^ (e_sect _ x))^ @ ap (ap f) (ap2 HoTT.concat X^ idpath)). clear. destruct X. cbn. eapply inverse. apply concat_refl.
   rewrite concat_p_pp. unfold X in X0. etransitivity. eapply ap2. 
   exact X0. reflexivity. rewrite <- concat_p_pp. rewrite <- (ap_pp (ap f)).
   unfold X. rewrite ap2_pp. rewrite inv_inv. apply concat_refl. 
@@ -1127,30 +1205,29 @@ Definition IsEquiv_eq A B (f : A -> B) (e e' : IsEquiv f)
   apply funext. intro. repeat rewrite concat_refl.
   destruct (e_adj0 x). reflexivity. destruct X. reflexivity. 
 Defined.
+*)
 
 (* This property has been proven in https://github.com/HoTT/HoTT/blob/86c3bc0edb5c0dc2be76b47e4bbe0b348929a856/theories/EquivalenceVarieties.v#L86 *)
 
 Definition isequiv_hprop {A B} {f: A -> B} : IsHProp (IsEquiv f).
 Admitted.
 
-
 Definition path_Equiv {A B} {f g: A ≃  B} : e_fun f = e_fun g -> f = g.
   destruct f, g. cbn. intro e. destruct e.
-  assert (e_isequiv0 = e_isequiv1). apply isequiv_hprop.
-  destruct X; reflexivity.
+  destruct (isequiv_hprop e_isequiv0 e_isequiv1). 
+  destruct x; reflexivity.
 Defined.
-
 
 Definition transport_univalence A B C (e: A ≃ B) (e': C ≃ A)  :
   transport_eq (Equiv C) (e_inv (eq_to_equiv A B) e) e'
   = e ∘∘ e'.
 Proof.
   pose (@e_retr _ _ (eq_to_equiv A B) _ e). 
-  set (e_inv (eq_to_equiv A B) e) in *.  rewrite <- e0.
-  clear e0. destruct e1. cbn. apply path_Equiv. apply funext; reflexivity. 
+  set (e_inv (eq_to_equiv A B) e) in *.  rewrite <- p.
+  clear p. destruct p0. cbn. apply path_Equiv.
+  destruct (funext _ _ (e_fun e') (e_fun (Equiv_id A ∘∘ e'))).
+  eapply e_inv0. reflexivity. 
 Defined. 
-
-
 
 Definition Equiv_inverse_inverse A B (e : A ≃ B) : Equiv_inverse (Equiv_inverse e) = e.
   intros. apply path_Equiv. reflexivity.
@@ -1183,9 +1260,9 @@ Instance isequiv_forall_cod A B C (f : forall a : A, B a -> C a) `{!forall a, Is
 Proof.
   simple refine (isequiv_adjointify _ _ _ _).
   - intros h a;exact (e_inv (f a) (h a)).
-  - simpl. intros g;apply funext;intros a.
+  - simpl. intros g; funext;intros a.
     apply e_sect.
-  - simpl;intros h; apply funext; intros a.
+  - simpl;intros h; funext; intros a.
     apply e_retr.
 Defined.
 
@@ -1206,25 +1283,25 @@ Proof.
   eexists. apply univalence.
 Defined.
 
-
-
 Definition apD10_gen (A : Type) (B : A -> Type) (f g : forall x : A, B x) :
   f = g -> forall x y (e:y = x), f x = e # g y.
   intros H x y e. destruct e. cbn. apply apD10. auto.  
 Defined. 
 
+(*
 Instance funextGen (A : Type) (P : A -> Type) f g: IsEquiv (@apD10_gen A P f g).
 Proof.
   unshelve eapply isequiv_adjointify.
-  intros. apply funext. intros x. exact (X _ _ eq_refl).
-  cbn. intros e. cbn.
-  exact (e_sect (@apD10 _ _ f g) e).
+  intros. funext. intros x. exact (X _ _ idpath).
+  cbn. intros e. destruct funext. cbn.
+  exact (e_sect0 e).
+  destruct funext. 
   cbn; intro e.
-  apply funext. intro x.
-  apply funext. intro y.
-  apply funext. intro E.
+  funext. intro x.
+  funext. intro y.
+  funext. intro E.
   destruct E. cbn.
-  pose (funext _ _ f g).
-  pose (e_retr (@apD10 _ _ f g) (fun x => e x x eq_refl)).
-  exact (apD10 e0 y).
+  eapply 
+  exact (retr0 (apD10 e0 y)).
 Defined.
+*)
