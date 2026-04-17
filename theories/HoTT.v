@@ -4,9 +4,11 @@
 (* to be independent from the HoTT framework, which requires a tailored version of Coq  *)
 (************************************************************************)
 
+(* 
 Sort Fib.
 
 Abbreviation Fib := Type@{Fib;_}.
+*)
 
 Set Universe Polymorphism.
 
@@ -15,7 +17,7 @@ Unset Collapse Sorts ToType.
 (* Basic notations *)
 Cumulative Inductive sigT {A:Type} (P:A -> Type) : Type :=
     existT : forall x:A, P x -> sigT P.
-
+ 
 Definition sigT_rect
 	 : forall (A : Type)
          (P : forall _ : A, Type)
@@ -26,6 +28,8 @@ Definition sigT_rect
 Proof.
   intros ? ? ? ? []; eauto.
 Defined. 
+
+Register Scheme sigT_rect as rect_dep for sigT.
 
 Inductive prod (A B : Type) : Type :=  pair : A -> B -> prod A B.
 
@@ -38,6 +42,10 @@ Proof.
   intros ? ? ? ? []; eauto.
 Defined. 
 
+Register Scheme prod_rect as rect_dep for prod.
+
+Set Collapse Sorts ToType.
+
 Arguments pair {_ _} _ _.
 
 Notation "x * y" := (prod x y) : type_scope.
@@ -48,46 +56,53 @@ Definition fst {A B} (p:prod A B) := prod_rect _ _ (fun _ => A) (fun x y => x) p
 
 Definition snd {A B} (p:prod A B) := prod_rect _ _ (fun _ => B) (fun x y => y) p.
 
-Inductive path@{s;i} (A:Type@{s;i}) (x:A) : A -> Type@{Fib;i} :=
+Inductive path@{s s';i} (A:Type@{s;i}) (x:A) : A -> Type@{s';i} :=
   idpath : path A x x.
 
 Arguments idpath {_ _}.
 
-Definition path_Has_Leibniz_elim_@{s;l l' l''} : Has_Leibniz@{s Fib Fib;l l' l''} (@path).
+Definition path_Has_Leibniz_elim_@{s s';l l' l''} : Has_Leibniz@{s s' s';l l' l''} (@path).
 intros  A x P t y e . now destruct e.
 Defined. 
 
-Instance path_Has_Leibniz_elim@{s;l l' l''} : Has_Leibniz@{s Fib Fib;l l' l''} (@path)
+Instance path_Has_Leibniz_elim@{s s';l l' l''} : Has_Leibniz@{s s' s';l l' l''} (@path)
 := path_Has_Leibniz_elim_.
 
 Hint Resolve path_Has_Leibniz_elim : rewrite_instances.
 
-Definition path_Has_Leibniz_r_elim_@{s; l l' l''} : Has_Leibniz_r@{s Fib Fib;l l' l''} (@path).
+Definition path_Has_Leibniz_r_elim_@{s s'; l l' l''} : Has_Leibniz_r@{s s' s';l l' l''} (@path).
 intros  A x P t y e . now destruct e.
 Defined. 
 
-Instance path_Has_Leibniz_r_elim@{s; l l' l''} : Has_Leibniz_r@{s Fib Fib;l l' l''} (@path) :=
+Instance path_Has_Leibniz_r_elim@{s s'; l l' l''} : Has_Leibniz_r@{s s' s';l l' l''} (@path) :=
  path_Has_Leibniz_r_elim_.
 
 Hint Resolve path_Has_Leibniz_r_elim : rewrite_instances.
 
-Instance path_Has_refl@{s;l} : Has_refl@{s Fib;l l} (@path) :=
+Instance path_Has_refl@{s s';l} : Has_refl@{s s';l l} (@path) :=
   fun A x => idpath.
 
-Definition path_Has_Leibniz_J_@{s; l l' l''} : Has_J@{s Fib Fib;l l' l''} (@path) _.
+Definition path_Has_Leibniz_J_@{s s'; l l' l''} : Has_J@{s s' s';l l' l''} (@path) _.
 intros  A x P t y e . now destruct e.
 Defined. 
 
-Instance path_Has_Leibniz_J@{s; l l' l''} : Has_J@{s Fib Fib;l l' l''} (@path) _ :=
+Instance path_Has_Leibniz_J@{s s'; l l' l''} : Has_J@{s s' s';l l' l''} (@path) _ :=
   path_Has_Leibniz_J_.
+
+Definition path_Has_Prop_J_@{s s'; l l' l''} : Has_J@{s Prop s';l l' l''} (@path) _.
+intros  A x P t y e . now destruct e.
+Defined. 
+
+Instance path_Has_Prop_J@{s s'; l l' l''} : Has_J@{s Prop s';l l' l''} (@path) _ :=
+  path_Has_Prop_J_.
 
 Hint Resolve path_Has_Leibniz_J : rewrite_instances.
 
-Definition path_Has_Leibniz_J_r_@{s; l l' l''} : Has_J_r@{s Fib Fib;l l' l''} (@path) _.
+Definition path_Has_Leibniz_J_r_@{s s'; l l' l''} : Has_J_r@{s s' s';l l' l''} (@path) _.
 intros  A x P t y e . now destruct e.
 Defined. 
 
-Instance path_Has_Leibniz_J_r@{s; l l' l''} : Has_J_r@{s Fib Fib;l l' l''} (@path) _ := 
+Instance path_Has_Leibniz_J_r@{s s'; l l' l''} : Has_J_r@{s s' s';l l' l''} (@path) _ := 
   path_Has_Leibniz_J_r_.
 
 Hint Resolve path_Has_Leibniz_J_r : rewrite_instances.
@@ -450,8 +465,6 @@ Defined.
 
 (* Equivalences *)
 
-Inductive Box (A:Type) : Fib := box : A -> Box A.
-
 Class IsEquiv {A : Type} {B : Type} (f : A -> B) : Type := BuildIsEquiv {
   e_inv : B -> A ;
   e_sect : forall x, e_inv (f x) = x;
@@ -469,7 +482,7 @@ Record IsEquiv@{s s' ; + | s -> Fib +} {A : Type@{s;_}} {B : Type@{s';_}} (f : A
 *)
 
 (** A class that includes all the data of an adjoint equivalence. *)
-Class Equiv A B : Fib := BuildEquiv {
+Class Equiv A B : Type := BuildEquiv {
   e_fun : A -> B ;
   e_isequiv : IsEquiv e_fun
 }.
@@ -487,7 +500,7 @@ Arguments e_isequiv {_ _ _}.
 
 Typeclasses Transparent e_fun e_inv.
 
-(* Coercion e_fun : Equiv >-> Funclass.*)
+Coercion e_fun : Equiv >-> Funclass.
 
 Definition univalent_transport {A B : Type} {e: A ≃ B} : A -> B := e_fun e.  
 
@@ -1017,14 +1030,13 @@ Definition IsIrr_conj (A B:Prop) : IsIrr A -> IsIrr B -> IsIrr (A /\ B).
 Defined.
 
 Definition inversionS n m : S n = S m -> n = m.
-  inversion 1. eapply eq_is_path in H0. eauto.
+  inversion 1; reflexivity.
 Defined. 
 
 Inductive Empty@{s;} : Type@{s;0} := .
 
-Definition zeroS n : O = S n -> Empty@{Fib;}.
-  inversion 1. enough False. destruct H0.
-  inversion H.   
+Definition zeroS n : O = S n -> Empty.
+  inversion 1.   
 Defined.
 
 Inductive le (n : nat) : nat -> Prop :=
@@ -1147,7 +1159,7 @@ Definition Equiv_id_P (A:Prop) : A ≃ A :=
 Definition eq_to_equiv_P (A B:Prop) : A = B -> A ≃ B :=
   fun e => @transport_eq Prop (fun X => A ≃ X) A B e (Equiv_id_P A).
 
-Axiom univalence_P : forall (A B:Prop), IsEquiv (eq_to_equiv_P A B).
+Axiom UIP : forall (A:Prop) (x y : A), x = y.
 
 Definition ap2_slide {A A' B:Type} (f:A -> A' -> B) {x y:A} (p:x = y)
            {x' y':A'} (q:x' = y') : ap2 f p idpath @ ap2 f idpath q =

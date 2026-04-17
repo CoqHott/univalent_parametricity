@@ -14,7 +14,7 @@ Set Universe Polymorphism.
 
 Definition eta_sigma {A} `{P : A -> Type} (u : sigT P)
 	  : (u.1; u.2) = u 
-	  := match u with (x;y) => eq_refl end.
+	  := match u with (x;y) => idpath end.
 
 Ltac issig2 build pr1 pr2 :=
   (** Just in case the user supplied a goal which only *reduces* to one of the desired form. *)
@@ -28,10 +28,10 @@ Ltac issig2 build pr1 pr2 :=
                         (fun u => build u.1 u.2)
                        (fun v => existT fibration (pr1 v) (pr2 v))
                        eta_sigma
-                       (fun v => let (v1,v2) as v' return (build (pr1 v') (pr2 v') = v') := v in eq_refl)
+                       (fun v => let (v1,v2) as v' return (build (pr1 v') (pr2 v') = v') := v in idpath)
                        )).
                        (** Since [sigT] is primitve, we get judgmental η, and so we can just use the identity here *)
-                       (* (fun _ => eq_refl))). *)
+                       (* (fun _ => idpath))). *)
 
 (** This allows us to use the same notation for the tactics with varying numbers of variables. *)
 Tactic Notation "issig" constr(build) constr(pr1) constr(pr2) :=
@@ -81,7 +81,7 @@ Ltac issig3 build pr1 pr2 pr3 :=
                        (fun u => build u.1 u.2.1 u.2.2)
                        (fun v => (pr1 v; (pr2 v; pr3 v)))
                        eta2_sigma
-                       (fun v => let (v1, v2, v3) as v' return (build (pr1 v') (pr2 v') (pr3 v') = v') := v in eq_refl)
+                       (fun v => let (v1, v2, v3) as v' return (build (pr1 v') (pr2 v') (pr3 v') = v') := v in idpath)
                        )).
 
 Tactic Notation "issig" constr(build) constr(pr1) constr(pr2) constr(pr3) :=
@@ -105,7 +105,7 @@ Ltac issig4 build pr1 pr2 pr3 pr4 :=
                           (fun u => build u.1 u.2.1 u.2.2.1 u.2.2.2)
                           (fun v => (pr1 v; (pr2 v; (pr3 v; pr4 v))))
                           eta3_sigma
-                          (fun v => let (v1, v2, v3, v4) as v' return (build (pr1 v') (pr2 v') (pr3 v') (pr4 v') = v') := v in eq_refl))).
+                          (fun v => let (v1, v2, v3, v4) as v' return (build (pr1 v') (pr2 v') (pr3 v') (pr4 v') = v') := v in idpath))).
 
 Tactic Notation "issig" constr(build) constr(pr1) constr(pr2) constr(pr3) constr(pr4) :=
   issig4 build pr1 pr2 pr3 pr4.
@@ -127,7 +127,7 @@ Ltac issig5 build pr1 pr2 pr3 pr4 pr5 :=
                           (fun u => build u.1 u.2.1 u.2.2.1 u.2.2.2.1 u.2.2.2.2)
                           (fun v => (pr1 v; (pr2 v; (pr3 v; (pr4 v ; pr5 v)))))
                           eta4_sigma
-                          (fun v => let (v1, v2, v3, v4, v5) as v' return (build (pr1 v') (pr2 v') (pr3 v') (pr4 v') (pr5 v') = v') := v in eq_refl))).
+                          (fun v => let (v1, v2, v3, v4, v5) as v' return (build (pr1 v') (pr2 v') (pr3 v') (pr4 v') (pr5 v') = v') := v in idpath))).
 
 
 Tactic Notation "issig" constr(build) constr(pr1) constr(pr2) constr(pr3) constr(pr4) constr(pr5) :=

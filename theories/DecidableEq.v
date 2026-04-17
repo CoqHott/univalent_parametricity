@@ -32,7 +32,7 @@ Proof.
     destruct p.
     destruct (dec_paths a a) as [pr | f].
     - apply inverse_left_inverse.
-    - exact (f eq_refl).
+    - exact (f idpath).
   }
   intros p q.
   assert (p_given_by_dec := lemma p).
@@ -52,7 +52,7 @@ Definition DecidableEq_equiv A B (eB : A ≃ B) `{DecidableEq A} : DecidableEq B
 Proof.
   constructor. pose (eB' := Equiv_inverse eB).
   intros x y. destruct (dec_paths (↑ x) (↑ y)). 
-  - left. apply (@isequiv_ap _ _ eB'). exact e.
+  - left. apply (@isequiv_ap _ _ eB'). exact p.
   - right. intro e. apply f. exact (ap _ e).
 Defined. 
 
@@ -61,10 +61,10 @@ Instance DecidableEq_Sigma A (B : A -> Type) `{DecidableEq A} `{forall a, Decida
 Proof.
   constructor. intros [a b] [a' b' ].
   destruct (dec_paths a a').
-  - destruct e. destruct (dec_paths b b').
-    + apply inl. apply path_sigma_uncurried. exists eq_refl. exact e.
+  - destruct p. destruct (dec_paths b b').
+    + apply inl. apply path_sigma_uncurried. exists idpath. exact p.
     + apply inr; intro Hf; apply f. pose (Hf..2).
-      assert (Hf..1 = eq_refl). apply is_hset. rewrite X in e. exact e.
+      assert (Hf..1 = idpath). apply is_hset. rewrite X in p. exact p.
   - apply inr; intro Hf; apply f. exact (Hf..1).
 Defined.
 
@@ -79,9 +79,9 @@ Proof.
     destruct e0. apply Equiv_id.
     destruct (n0 e).
   - intro x. cbn. destruct (dec_paths x x); cbn.
-    assert (e = eq_refl) by (eapply is_hset).
+    assert (p = idpath) by (eapply is_hset).
     rewrite X. reflexivity.
-    destruct (f eq_refl).
+    destruct (f idpath).
 Defined. 
 
 
@@ -96,9 +96,9 @@ Instance Canonical_eq_decidable A `{DecidableEq A} : Canonical_eq A.
 Proof. 
   refine {| can_eq := @Canonical_eq_decidable_ A H |}.
   - unfold Canonical_eq_decidable_. intro x. cbn. destruct (dec_paths x x); cbn.
-    assert (e = eq_refl) by (eapply is_hset).
+    assert (p = idpath) by (eapply is_hset).
     rewrite X. reflexivity.
-    destruct (f eq_refl).
+    destruct (f idpath).
 Defined.
 
 
@@ -107,7 +107,7 @@ Defined.
 
 Definition URType_Refl_decidable A (dec:DecidableEq A)
   : A ⋈ A :=
-  URType_Refl_can A (@Canonical_eq_decidable  _ dec).
+  URType_Refl_can A.
 
 Structure DType@{i} :=
   { carrier :> Type@{i} ;
@@ -115,11 +115,8 @@ Structure DType@{i} :=
 
 Instance DTypeDec (A : DType) : DecidableEq A.(carrier) := A.(dec). 
 
-Instance UR_DType_def@{i j} : UR@{j j j} DType@{i} DType@{i} :=
-  Build_UR@{j j j} _ _ (fun A B => UR_Type@{i i i} A.(carrier) B.(carrier)).
-
-Program Definition URDType_Refl : URRefl DType DType (Equiv_id _) _ :=
-   {| ur_refl_ := fun a : DType => URType_Refl_decidable a.(carrier) (DTypeDec a) |}.
+Instance UR_DType_def@{i j} : UR@{Type Type Type Type ;j j j} DType@{i} DType@{i} :=
+  Build_UR@{Type Type Type Type ;j j j} _ _ (fun A B => UR_Type@{i i i} A.(carrier) B.(carrier)).
 
 Definition path_DType (A B : DType)
            (pq : {p : A.(carrier) = B.(carrier) & A.(dec) = p^ # B.(dec)})
@@ -157,12 +154,12 @@ Definition path_DType_simple A B (decA : DecidableEq A) (decB : DecidableEq B) (
 Defined. 
 
 Definition dec_hprop_hprop A (decA : DecidableEq A) :
-  dec_hprop A decA decA = eq_refl.
+  dec_hprop A decA decA = idpath.
   apply IsIrr_IsHprop'. apply dec_hprop. 
 Defined.
 
 Definition path_DType_simple_refl A (decA : DecidableEq A) :
-  path_DType_simple A A decA decA eq_refl = eq_refl.
+  path_DType_simple A A decA decA idpath = idpath.
 Proof.
   unfold path_DType_simple. cbn. rewrite dec_hprop_hprop.
   reflexivity. 
@@ -173,11 +170,12 @@ Definition path_DType_proj {A B : DType} :
   destruct 1. reflexivity.
 Defined. 
 
+(*
 Definition path_DType_eq (A B:DType)
            (e : @eq DType A B) :
   match A,B return forall (e:A = B), Type with (Build_DType A decA),(Build_DType B decB)
 => fun e => 
-     path_DType_simple A B decA decB (path_DType_proj e) = e end e.
+     path_DType_simple A B decA decB (path_DType_proj e) = e end  e.
   destruct e, A. cbn. rewrite dec_hprop_hprop. reflexivity. 
 Defined. 
 
@@ -215,7 +213,7 @@ Proof.
     set (path_DType_proj e). cbn in *. apply ap. destruct e0. clear e. 
     assert (decA = decB). apply dec_hprop. destruct X. cbn.
     rewrite path_DType_simple_refl. 
-    exact (@e_sect _ _ _ (univalence _ _) eq_refl).
+    exact (@e_sect _ _ _ (univalence _ _) idpath).
   - intro e; cbn.
     destruct e as [e eur ecoh ecanA ecanB].
     revert eur ecoh ecanA ecanB. rewrite <- (@e_retr _ _ _ (univalence _ _) _).
@@ -226,7 +224,7 @@ Proof.
     destruct eur as [eur].
     destruct ecoh as [ecoh].
     simpl in *.
-    change (Equiv_id A) with (eq_to_equiv A A eq_refl).
+    change (Equiv_id A) with (eq_to_equiv A A idpath).
     rewrite (@e_sect _ _ _ (univalence _ _) _). simpl.
     assert (decA = decB). apply dec_hprop. destruct X. cbn.
     rewrite path_DType_simple_refl. cbn. 
@@ -301,7 +299,7 @@ clear.
 intros. revert n' e le_mn2.
 induction le_mn1 using le_rect; intros. 
 - destruct le_mn2 using le_rect.
-  + assert (e = eq_refl). apply is_hset. rewrite X. reflexivity.
+  + assert (e = idpath). apply is_hset. rewrite X. reflexivity.
   + assert False. clear - e le_mn2. rewrite e in le_mn2. apply (inv_leq _ O le_mn2). destruct H.
 - destruct le_mn2 using le_rect; try clear IHle_mn2.
   + assert False. clear - e le_mn1. rewrite <- e in le_mn1. apply (inv_leq _ O le_mn1). destruct H. 
@@ -309,7 +307,7 @@ induction le_mn1 using le_rect; intros.
     specialize (IHle_mn1 _ X le_mn2). rewrite <- IHle_mn1.
     assert (e = ap S X). apply is_hset. rewrite X0 in *. clear e X0.
     destruct X. reflexivity. 
-- intros a b; apply inl. destruct (H _ _ eq_refl a b). reflexivity. 
+- intros a b; apply inl. destruct (H _ _ idpath a b). reflexivity. 
 Defined. 
 
 Require Import Arith. 
@@ -357,7 +355,7 @@ clear.
 intros. revert n' e le_mn2.
 induction le_mn1 using Peano_le_rect; intros. 
 - destruct le_mn2 using Peano_le_rect.
-  + assert (e = eq_refl). apply is_hset. rewrite X. reflexivity.
+  + assert (e = idpath). apply is_hset. rewrite X. reflexivity.
   + assert False. clear - e le_mn2. rewrite e in le_mn2. apply (Peano_inv_leq _ 0 le_mn2). destruct H.
 - destruct le_mn2 using Peano_le_rect; try clear IHle_mn2.
   + assert False. clear - e le_mn1. rewrite <- e in le_mn1. apply (Peano_inv_leq _ 0 le_mn1). destruct H. 
@@ -365,7 +363,7 @@ induction le_mn1 using Peano_le_rect; intros.
     specialize (IHle_mn1 _ X le_mn2). rewrite <- IHle_mn1.
     assert (e = ap Datatypes.S X). apply is_hset. rewrite X0 in *. clear e X0.
     destruct X. reflexivity. 
-- intros a b; apply inl. destruct (H _ _ eq_refl a b). reflexivity. 
+- intros a b; apply inl. destruct (H _ _ idpath a b). reflexivity. 
 Defined. 
 
 Definition DecidableEq_hprop : forall (A B : DType), A.(carrier) = B.(carrier) -> A = B.
@@ -374,3 +372,4 @@ Definition DecidableEq_hprop : forall (A B : DType), A.(carrier) = B.(carrier) -
   destruct decA, decB. destruct e. cbn. apply path_sum. destruct (dec_paths0 a b), (dec_paths1 a b); auto. 
   apply is_hset. apply funext. intro e. destruct (f e).
 Defined. 
+*)

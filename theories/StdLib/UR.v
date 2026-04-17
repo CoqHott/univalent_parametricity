@@ -28,8 +28,9 @@ Definition UREq A (x x' y y' : A) (H:x=x') (H':y=y') : UR (x = y) (x' = y') :=
 (* eq *)
 
 Inductive UR_eq (A_1 A_2 : Type) (A_R : A_1 -> A_2 -> Type) (x_1 : A_1) (x_2 : A_2) (x_R : A_R x_1 x_2):
-   forall (y_1 : A_1) (y_2 : A_2), A_R y_1 y_2 -> x_1 = y_1 -> x_2 = y_2 -> Type :=
-   UR_eq_refl : UR_eq A_1 A_2 A_R x_1 x_2 x_R x_1 x_2 x_R eq_refl eq_refl.
+   forall (y_1 : A_1) (y_2 : A_2), A_R y_1 y_2 -> 
+   path@{Type Prop | _} _ x_1 y_1 -> path@{Type SProp | _} _ x_2 y_2 -> Prop :=
+   UR_idpath : UR_eq A_1 A_2 A_R x_1 x_2 x_R x_1 x_2 x_R idpath idpath.
 
 (* lists *)
 
@@ -79,7 +80,7 @@ Definition vcons {A n} (val:A) (v:vector A n) := Vector.cons A val _ v.
 
 Inductive UR_vector {A B} (R : A -> B -> Type) : forall (n n':nat) (en : n ≈ n'),
   Vector.t A n -> Vector.t B n' -> Type :=
-  UR_vector_nil : UR_vector R O O eq_refl (nil A) (nil B) 
+  UR_vector_nil : UR_vector R O O idpath (nil A) (nil B) 
 | UR_vector_cons : forall {a b n n' v v'} (en : n ≈ n'),
     (R a b) -> (UR_vector R n n' en v v') ->
     UR_vector R (S n) (S n') (ap S en) (vcons a v) (vcons b v').

@@ -11,7 +11,7 @@ Set Universe Polymorphism.
 Class Transportable {A} (P:A -> Type) :=
   {
     transportable : forall x y, x = y -> P x ≃ P y;
-    transportable_refl : forall x, transportable x x eq_refl = Equiv_id _
+    transportable_refl : forall x, transportable x x idpath = Equiv_id _
   }.
 
 
@@ -32,7 +32,7 @@ Instance Transportable_Forall_default A B (P: (forall x: A, B x) -> Type) : Tran
 Instance Transportable_cst A B : Transportable (fun _ : A => B) :=
   {|
     transportable := fun (x y : A) _ => Equiv_id B;
-    transportable_refl := fun x : A => eq_refl
+    transportable_refl := fun x : A => idpath
   |}.
 
 
