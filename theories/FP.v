@@ -75,13 +75,7 @@ Definition FP_Type : Type ≈ Type := PR_Type_def.
 
 #[export] Hint Extern 0 (PR Set Set) => exact FP_Type : typeclass_instances. 
 
-(*! Establishing FP for Prop !*)
-
-Definition equiv_sprop (P : Prop) (Q : SProp) : Type := (prod (P -> Q) (Q -> P)).
-
-Notation "P ↔ Q" := (equiv_sprop P Q) (at level 50).
-
-Axiom SPropProp : path@{_ Type; _} Type Prop SProp.
+(* Axiom SPropProp : path@{_ Type; _} Type Prop SProp.
 
 Definition SPropProp_equiv : Prop ≃ SProp.
   unshelve econstructor.
@@ -92,43 +86,7 @@ Definition SPropProp_equiv : Prop ≃ SProp.
     + intro x; cbn. rewrite transport_pV. reflexivity.
 Defined.
 
-Axiom SPropProp_iff : forall P : Prop, P ↔ transport_eq id SPropProp P.
-(*Proof.
-  intros P; split.
-  - intros p. 
-    refine (path_Has_Leibniz_J@{Type Type; _ _ _} _ _ (fun X e => transport_eq id e _) _ _ SPropProp).
-
-    pose proof (e_sect SPropProp_equiv P).  cbn in X. 
-    assert (transport_eq id (eq_sym SPropProp) (transport_eq id SPropProp P)).
-    destruct (eq_sym X). exact p. 
-    clear X. 
-    pose proof (eq_sym (e_retr SPropProp_equiv (transport_eq id SPropProp P))).
-    cbn in X.
-    refine (path_Has_Leibniz_elim@{Type SProp; _ _ _} SProp _ (fun X => X) _ _ _).
-    
-    X).
-    revert X.    
-    destruct X. 
-    cbn in X. 
-    cbn in X.
-    pose (transport_eq id (eq_sym SPropProp)).*)
-
-
-(* Again, we avoid some kind of prop extensionality (even if we could) *)
-
-Instance PR_Prop : PR Prop SProp := {| pr := fun A B => A -> B -> SProp |}.
-
-Class UR_Prop (P:Prop) (Q:SProp) {Ur: PR P Q} :=
-  { 
-    iff : P ↔ Q;
-    pr_Coh : forall (p:P) (q:Q), p ≈ q
-  }.
-
-Arguments iff {_ _ _} _.
-Arguments pr_Coh {_ _ _} _.
-
-Infix "⋈P" := UR_Prop (at level 25).
-
+Axiom SPropProp_iff : forall P : Prop, P ↔ transport_eq id SPropProp P. *)
 
 
 (* Instance UrProp_IsEq : URIsEq Prop SProp SPropProp_equiv _ _.

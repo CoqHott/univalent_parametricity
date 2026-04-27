@@ -12,7 +12,7 @@ Set Primitive Projections.
 Set Polymorphic Inductive Cumulativity. 
 Unset Universe Minimization ToSet.
 
-(* basic classes for univalent relations *)
+(* basic class for parametric relations *)
 
 #[universes(collapse_sort_variables=no)]
 Class PR A B : Type := {
@@ -22,6 +22,8 @@ Class PR A B : Type := {
 Arguments pr {_ _ _} _ _.
 
 Notation "x ≈ y" := (pr x y) (at level 20).
+
+(* basic classes for univalent relations *)
 
 #[universes(collapse_sort_variables=no)]
 Class UR_Coh A B (e : A ≃ B) (H: PR@{_ _ _ Type | _ _ _} A B) := {
@@ -45,6 +47,24 @@ Arguments Ur_Can_B {_ _} _.*)
 
 #[export] Hint Extern 100 (_ ≃ _) => unshelve notypeclasses refine (equiv _): typeclass_instances. 
 #[export] Hint Extern 100 (UR_Coh _ _ _ _) => unshelve notypeclasses refine (Ur_Coh _): typeclass_instances. 
+
+Definition equiv_sprop (P : Prop) (Q : SProp) : Type := (prod (P -> Q) (Q -> P)).
+
+Notation "P ↔ Q" := (equiv_sprop P Q) (at level 50).
+
+Instance PR_Prop : PR Prop SProp := {| pr := fun A B => A -> B -> SProp |}.
+
+Class UR_Prop (P:Prop) (Q:SProp) {Ur: PR P Q} :=
+  { 
+    iff : P ↔ Q;
+    pr_Coh : forall (p:P) (q:Q), p ≈ q
+  }.
+
+Arguments iff {_ _ _} _.
+Arguments pr_Coh {_ _ _} _.
+
+Infix "⋈P" := UR_Prop (at level 25).
+
 
 (* some facilities to create an instance of UR_Type *)
 
