@@ -12,12 +12,13 @@ Abbreviation Fib := Type@{Fib;_}.
 
 Set Universe Polymorphism.
 
-Unset Collapse Sorts ToType.
 
 (* Basic notations *)
+#[universes(collapse_sort_variables=no)]
 Cumulative Inductive sigT {A:Type} (P:A -> Type) : Type :=
     existT : forall x:A, P x -> sigT P.
  
+#[universes(collapse_sort_variables=no)]
 Definition sigT_rect
 	 : forall (A : Type)
          (P : forall _ : A, Type)
@@ -31,8 +32,10 @@ Defined.
 
 Register Scheme sigT_rect as rect_dep for sigT.
 
+#[universes(collapse_sort_variables=no)]
 Inductive prod (A B : Type) : Type :=  pair : A -> B -> prod A B.
 
+#[universes(collapse_sort_variables=no)]
 Definition prod_rect :
 forall (A B : Type) (P : forall _ : prod A B, Type)
          (_ : forall (a : A) (b : B), P (pair A B a b)) 
@@ -44,16 +47,16 @@ Defined.
 
 Register Scheme prod_rect as rect_dep for prod.
 
-Set Collapse Sorts ToType.
-
 Arguments pair {_ _} _ _.
 
 Notation "x * y" := (prod x y) : type_scope.
 Notation "( x , y , .. , z )" := (pair .. (pair x y) .. z): type_scope.
 
 
+#[universes(collapse_sort_variables=no)]
 Definition fst {A B} (p:prod A B) := prod_rect _ _ (fun _ => A) (fun x y => x) p.
 
+#[universes(collapse_sort_variables=no)]
 Definition snd {A B} (p:prod A B) := prod_rect _ _ (fun _ => B) (fun x y => y) p.
 
 Inductive path@{s s';i} (A:Type@{s;i}) (x:A) : A -> Type@{s';i} :=
@@ -111,9 +114,11 @@ Notation "x = y :> A" := (@path A x y) : type_scope.
 
 Notation "x = y" := (x = y :>_) : type_scope.
 
+#[universes(collapse_sort_variables=no)]
 Definition projT1 {A} {P:A -> Type} (p:sigT P) : A :=
   sigT_rect _ _ (fun _ => A) (fun x y => x) p.
 
+#[universes(collapse_sort_variables=no)]
 Definition projT2  {A} {P:A -> Type} (p:sigT P) : P (projT1 p) :=
   sigT_rect _ _ (fun x => P (projT1 x)) (fun x y => y) p.
 

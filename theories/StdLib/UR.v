@@ -12,25 +12,34 @@ Unset Universe Minimization ToSet.
 
 (*! Sigma !*)
 
-Definition URSigma A A' (B : A -> Type)(B' : A' -> Type) `{UR A A'}
-           `{forall x y (H: x ≈ y), UR (B x) (B' y)} : UR (sigT B) (sigT B')
+Definition PRSigma (A A':Type) (B : A -> Type)(B' : A' -> Type) `{A ≈ A'}
+           `{forall x y (H: x ≈ y), B x ≈ B' y} : PR (sigT B) (sigT B')
   :=
-  {| ur := fun x y => sigT (fun (_ : x.1 ≈ y.1) => x.2 ≈ y.2) |}.
+  {| pr := fun x y => sigT (fun (_ : x.1 ≈ y.1) => x.2 ≈ y.2) |}.
 
-#[export] Hint Extern 0 (UR ({x:_ & _}) ({x:_ & _})) =>
-  erefine (@URSigma _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
+#[export] Hint Extern 0 (PR ({x:_ & _}) ({x:_ & _})) =>
+  erefine (@PRSigma _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
 
-Definition UREq A (x x' y y' : A) (H:x=x') (H':y=y') : UR (x = y) (x' = y') :=
-  {| ur := fun e e' => H^ @ e @ H' = e' |}.
+#[universes(collapse_sort_variables=no)]
+Definition PRProd (A A' B B' : Type) `{PR A A'}
+           `{PR B B'} : PR (A * B) (A' * B')
+  :=
+  {| pr := fun x y => prod (fst x ≈ fst y) (snd x ≈ snd y) |}.
 
-#[export] Hint Extern 0 (UR (_ = _)(_ = _)) => erefine (@UREq _ _ _ _ _ _ _) : typeclass_instances.
+#[export] Hint Extern 0 (PR (_ * _) (_ * _)) =>
+  erefine (@PRProd _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
 
 (* eq *)
 
-Inductive UR_eq (A_1 A_2 : Type) (A_R : A_1 -> A_2 -> Type) (x_1 : A_1) (x_2 : A_2) (x_R : A_R x_1 x_2):
+Inductive PR_eq (A_1 A_2 : Type) (A_R : A_1 -> A_2 -> Type) (x_1 : A_1) (x_2 : A_2) (x_R : A_R x_1 x_2):
    forall (y_1 : A_1) (y_2 : A_2), A_R y_1 y_2 -> 
-   path@{Type Prop | _} _ x_1 y_1 -> path@{Type SProp | _} _ x_2 y_2 -> Prop :=
-   UR_idpath : UR_eq A_1 A_2 A_R x_1 x_2 x_R x_1 x_2 x_R idpath idpath.
+   path@{Type Prop | _} _ x_1 y_1 -> path@{Type SProp | _} _ x_2 y_2 -> SProp :=
+   PR_idpath : PR_eq A_1 A_2 A_R x_1 x_2 x_R x_1 x_2 x_R idpath idpath.
+
+(* Definition PREq A (x x' y y' : A) (H:x=x') (H':y=y') : PR (x = y) (x' = y') :=
+  {| pr := fun e e' => H^ @ e @ H' = e' |}.
+
+#[export] Hint Extern 0 (PR (_ = _)(_ = _)) => erefine (@PREq _ _ _ _ _ _ _) : typeclass_instances. *)
 
 (* lists *)
 
@@ -47,28 +56,28 @@ Notation "[ x ; .. ; y ]" := (cons x .. (cons y nil) ..).
 
 Infix "::" := cons (at level 60, right associativity). 
 
-Inductive UR_list {A B} (R : A -> B -> Type) : list A -> list B -> Type :=
-  UR_list_nil : UR_list R nil nil
-| UR_list_cons : forall {a b l l'},
-    (R a b) -> (UR_list R l l') ->
-    UR_list R (a::l) (b::l').
+Inductive PR_list {A B} (R : A -> B -> Type) : list A -> list B -> Type :=
+  PR_list_nil : PR_list R nil nil
+| PR_list_cons : forall {a b l l'},
+    (R a b) -> (PR_list R l l') ->
+    PR_list R (a::l) (b::l').
 
-Instance UR_list_ A B `{UR A B} : UR (list A) (list B) :=
-  {| ur := UR_list ur |}.
+Instance PR_list_ (A B:Type) `{A ≈ B} : PR (list A) (list B) :=
+  {| pr := PR_list pr |}.
 
-#[export] Hint Extern 0 (UR (list ?A) (list ?B)) => unshelve notypeclasses refine (@UR_list _ _ _): typeclass_instances. 
+#[export] Hint Extern 0 (PR (list ?A) (list ?B)) => unshelve notypeclasses refine (@PR_list _ _ _): typeclass_instances. 
 
-#[export] Hint Extern 0 (UR_list ?R [] []) => exact (UR_list_nil R)  : typeclass_instances.
+#[export] Hint Extern 0 (PR_list ?R [] []) => exact (PR_list_nil R)  : typeclass_instances.
 
-#[export] Hint Extern 0 (UR_list ?R (_::_) (_::_)) => unshelve refine (UR_list_cons R _ _) : typeclass_instances.
+#[export] Hint Extern 0 (PR_list ?R (_::_) (_::_)) => unshelve refine (PR_list_cons R _ _) : typeclass_instances.
 
 (* nat *)
 
-Instance UR_nat : UR nat nat := UR_gen nat. 
+Instance PR_nat : PR nat nat := UR_gen nat. 
 
 (* bool *)
 
-Instance UR_bool : UR bool bool := UR_gen bool. 
+Instance PR_bool : PR bool bool := UR_gen bool. 
 
 (* vectors *)
 
@@ -78,12 +87,12 @@ Definition vector A (n:nat) := Vector.t A n.
 Definition vnil {A} := Vector.nil A.
 Definition vcons {A n} (val:A) (v:vector A n) := Vector.cons A val _ v.
 
-Inductive UR_vector {A B} (R : A -> B -> Type) : forall (n n':nat) (en : n ≈ n'),
+Inductive PR_vector {A B} (R : A -> B -> Type) : forall (n n':nat) (en : n ≈ n'),
   Vector.t A n -> Vector.t B n' -> Type :=
-  UR_vector_nil : UR_vector R O O idpath (nil A) (nil B) 
-| UR_vector_cons : forall {a b n n' v v'} (en : n ≈ n'),
-    (R a b) -> (UR_vector R n n' en v v') ->
-    UR_vector R (S n) (S n') (ap S en) (vcons a v) (vcons b v').
+  PR_vector_nil : PR_vector R O O idpath (nil A) (nil B) 
+| PR_vector_cons : forall {a b n n' v v'} (en : n ≈ n'),
+    (R a b) -> (PR_vector R n n' en v v') ->
+    PR_vector R (S n) (S n') (ap S en) (vcons a v) (vcons b v').
 
 
 

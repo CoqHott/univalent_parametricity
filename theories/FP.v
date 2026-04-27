@@ -20,15 +20,11 @@ Proof.
   refine (transport_eq (fun X =>  (a ≈ X) ≃ _) (e_retr _ b)^ (Equiv_id _)). 
 Defined.  *)
 
-Definition URType_Refl_can A : A ⋈ A.
+Definition URType_Refl_can A (ur:=UR_gen A): A ⋈ A.
 Proof.
   unshelve eexists.
   - apply Equiv_id.
-  - apply UR_gen.
-  - refine (Some {| ur_coh := _ |}). intros;apply Equiv_id.
-  - reflexivity.   
-(*  - apply HA.
-  - apply HA.     *)
+  - econstructor. intros;apply Equiv_id.
 Defined.
 
 (* Definition URType_Refl : URRefl Type Type (Equiv_id _) _.
@@ -75,15 +71,9 @@ Instance Canonical_eq_Type : Canonical_eq Type := Canonical_eq_gen _.
 
 (* We avoid the use of univalence and use `None` for the coherence condition *) 
 
-Instance FP_Type : Type ⋈ Type.
-Proof. 
-  unshelve econstructor. 
-  - eapply Equiv_id.
-  - exact None.
-  - intro T; cbn. apply URType_Refl_can.   
-Defined.
+Definition FP_Type : Type ≈ Type := PR_Type_def.
 
-#[export] Hint Extern 0 (UR_Type Set Set) => exact FP_Type : typeclass_instances. 
+#[export] Hint Extern 0 (PR Set Set) => exact FP_Type : typeclass_instances. 
 
 (*! Establishing FP for Prop !*)
 
@@ -126,11 +116,20 @@ Axiom SPropProp_iff : forall P : Prop, P ↔ transport_eq id SPropProp P.
 
 (* Again, we avoid some kind of prop extensionality (even if we could) *)
 
-Definition UR_Prop : UR Prop SProp.
-Proof. 
-  exact {| ur := fun A B => A -> B -> Prop |}.
-  (* exact {| ur := fun A B => A ↔ B |}. *)
-Defined.
+Instance PR_Prop : PR Prop SProp := {| pr := fun A B => A -> B -> SProp |}.
+
+Class UR_Prop (P:Prop) (Q:SProp) {Ur: PR P Q} :=
+  { 
+    iff : P ↔ Q;
+    pr_Coh : forall (p:P) (q:Q), p ≈ q
+  }.
+
+Arguments iff {_ _ _} _.
+Arguments pr_Coh {_ _ _} _.
+
+Infix "⋈P" := UR_Prop (at level 25).
+
+
 
 (* Instance UrProp_IsEq : URIsEq Prop SProp SPropProp_equiv _ _.
 Proof.
@@ -162,18 +161,18 @@ Proof.
     assert (Ur_Can_B = Canonical_eq_gen A) by apply Canonical_contr.
     destruct X, X0. reflexivity. 
 Defined. *)
-
 (* Instance Canonical_eq_Prop : Canonical_eq Prop := Canonical_eq_gen _. *)
 
-Instance FP_Prop : Prop ⋈ SProp.
+
+(* Instance FP_Prop : Prop ⋈ SProp.
 Proof.
   unshelve econstructor.
   - exact SPropProp_equiv.
-  - exact UR_Prop.
+  - econstructor. intros; cbn.  exact UR_Prop.
   - exact None.
   - intro P; cbn. exact (fun p p' => True).
     (* eapply SPropProp_iff. *)
-Defined.
+Defined. *)
 
 #[export] Hint Extern 0 (sigT _) => unshelve refine (existT _ _ _): typeclass_instances.
 
@@ -204,10 +203,11 @@ Proof.
     cbn. (* rewrite transportable_refl. *) apply e_retr.
 Defined.
 
-Instance isequiv_functor_forall_ur {A B : Type} `{P : A -> Type} `{Q : B -> Type} (e : B ≈ A) (e' : Q ≈ P) (* (eP : Transportable P)*)
-: IsEquiv (functor_forall (e_fun (equiv e))
+Instance isequiv_functor_forall_ur {A B : Type} `{P : A -> Type} `{Q : B -> Type} (e_ : B ≈ A) (e : B ⋈ A) 
+  (e'_ : Q ≈ P) (e' :  forall x y (H:x ≈ y) (ur:=e'_ x y H), Q x ⋈ P y) 
+: IsEquiv (functor_forall (equiv e)
                           (fun x => 
-                    (e_inv' ((equiv (e' x (equiv e x) (ur_refl_ e x))))))). 
+                    (e_inv' ((equiv (e' x (equiv e x) (ur_refl e x))))))). 
 Proof.
   apply isequiv_functor_forall.
   - apply (equiv e).
@@ -215,20 +215,21 @@ Proof.
     apply isequiv_inverse.
 Defined.
 
-Instance Equiv_forall (A A' : Type) (eA : A ≈ A') (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B') 
+Instance Equiv_forall (A A' : Type) (eA_ : A ≈ A') (eA : A ⋈ A') (B : A -> Type) (B' : A' -> Type) (eB_ : B ≈ B') 
+     (eB : forall x y (H:x ≈ y) (ur:=eB_ x y H), B x ⋈ B' y)
          : (forall x:A , B x) ≃ (forall x:A', B' x).
 Proof.
-  pose (e := UR_Type_Inverse _ _ eA). 
-  pose (e' := fun x y E => UR_Type_Inverse _ _ (ur_type eB y x E)).
-  assert (eB' : B' ≈ B). 
-  { econstructor; eauto. 
-    (* eapply Transportable_default. *)
+  pose (e_ := PR_inverse eA_). 
+  pose (e := UR_Type_Inverse _ _ _ eA). 
+  pose (eB'_ := fun x y (H:x ≈ y) => PR_inverse (eB_ y x H)).
+  pose (e' := fun x y E => UR_Type_Inverse _ _ (eB_ x y E) (eB x y E)).
+  assert (eB' : forall (x:A') (y:A) (H:@pr _ _ (PR_inverse eA_) x y) (ur:=eB'_ x y H), B' x ⋈ B y). 
+  { intros. exact (e' y x H).
   }
   unshelve refine
            (BuildEquiv _ _ (functor_forall (e_fun (equiv e))
-                                           (fun x => (e_inv' ((equiv (eB' x (e_fun (equiv e) x) (ur_refl_ e x)))))))
-                       _).
-  (* apply (isequiv_functor_forall_ur e eB').*)
+                                           (fun x => (e_inv' ((equiv (eB' x (e_fun (equiv e) x) (ur_refl e x)))))))
+                       _). 
 Defined.
 
 (* 
@@ -295,6 +296,7 @@ Defined.
 
 (* this instance of transportable is for the equality type, we can use the default one*)
 
+(* 
 #[export] Hint Extern 0 (Transportable (fun _ : _ => _ = _))
 => apply Transportable_default : typeclass_instances.
 
@@ -303,35 +305,23 @@ Defined.
 
 #[export] Hint Extern 0 (Canonical_eq (_ = _))
 => apply Canonical_eq_gen : typeclass_instances.
+*)
 
-#[export] Hint Extern 100 (UR _ _) => unshelve notypeclasses refine (Ur _): typeclass_instances.
-
-Definition option_map2 : forall [A B C : Type], (A -> B -> C) -> option A -> option B -> option C.
+(* Definition option_map2 : forall [A B C : Type], (A -> B -> C) -> option A -> option B -> option C.
 Proof.
   intros A B C f. destruct 1.
   - eapply option_map. exact (f a).
   - intros _; exact None.
-Qed. 
+Qed.  *)
 
 (* Definition option_forall : forall A (B:A -> Type), (forall a, option (B a)) -> option (forall a, B a).
 Proof.
   intros A B r.  *)
  
-Definition FP_forall_UR_Coh (A A' : Type) (eA : A ⋈ A')
-           (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B') :
-  option (UR_Coh (forall x : A, B x) (forall x : A', B' x) (Equiv_forall A A' eA B B' eB) (@URForall A A' B B' _ (fun x y e => _ (eB x y e)))).
+Definition FP_forall_UR_Coh (A A' : Type) (eA_ : A ≈ A') (eA : A ⋈ A') (B : A -> Type) (B' : A' -> Type) (eB_ : B ≈ B') 
+     (eB : forall x y (H:x ≈ y) (ur:=eB_ x y H), B x ⋈ B' y) :
+  UR_Coh (forall x : A, B x) (forall x : A', B' x) (Equiv_forall A A' eA_ eA B B' eB_ eB) (@URForall A A' B B' _ (fun x y e => eB_ x y e)).
 Proof.
-(* 
-  eapply option_map.
-  2: { eapply (Ur_Coh eA). }
-  intro coh.
-  econstructor.
-  intros f g. cbn.
-
-    intro cohA. 
-  intros cohA.
-  eapply option_map.
-  2: { eapply (Ur_Coh eA). }
    
   econstructor. intros f g. 
 
@@ -339,10 +329,10 @@ Proof.
   eapply (BuildEquiv _ _ (@apD10_gen _ _ f g) _).
   
   unshelve eapply Equiv_forall.
-  apply URType_Refl_can. apply eA. 
-  split; [typeclasses eauto | ].
-  intros a a' e. cbn in e. 
-  apply Canonical_UR. 
+  apply UR_gen. 2: apply URType_Refl_can.
+  (* econstructor.  
+  intros a a' e. cbn in e. cbn. eapply 
+  apply Canonical_PR. 
   unshelve eapply Equiv_forall. auto. 
   split; [typeclasses eauto | ]. 
   intros a'' b e'. 
@@ -416,44 +406,34 @@ Proof.
   etransitivity; try apply transport_e_fun. 
   cbn. unfold Move_equiv, e, ur_refl, alt_ur_coh. cbn.  
   rewrite inv2. exact X. 
-  destruct X0. apply Equiv_id.*)
-  exact None. 
-Defined. 
+  destruct X0. apply Equiv_id. *)
+Admitted. 
 
-#[export] Hint Extern 1 (UR (forall x:?A, _) (forall x:?A', _)) =>
+#[export] Hint Extern 1 (PR (forall x:?A, _) (forall x:?A', _)) =>
   erefine (@URForall A A' _ _ _ _); cbn in *; intros : typeclass_instances.
 
-Axiom todo : forall A, A.
-
-Definition FP_forall_ur_type (A A' : Type) (eA : A ⋈ A')
-           (B : A -> Type) (B' : A' -> Type) (eB : B ≈ B') :
+Definition FP_forall_ur_type (A A' : Type) (eA_ : A ≈ A') (eA : A ⋈ A') (B : A -> Type) (B' : A' -> Type) (eB_ : B ≈ B') 
+     (eB : forall x y (H:x ≈ y) (ur:=eB_ x y H), B x ⋈ B' y) :
   (forall x : A, B x) ⋈ (forall x : A', B' x).
-  unshelve econstructor.
-  - apply (@URForall A A' B B' _ (fun x y e => _ (eB x y e))).
-  - apply FP_forall_UR_Coh.
-  - intros f. intros x y e. cbn. 
-    pose proof (ur_refl_ (eB x y e) (f x)). cbn in X. unfold univalent_transport in X.
-
-    apply todo. 
+  unshelve econstructor. apply FP_forall_UR_Coh.
 Defined.
 
 Definition FP_forall :
             (fun A B => forall x:A , B x) ≈ (fun A' B' => forall x:A', B' x).
 Proof.
-  cbn. intros A A' eA. econstructor. 
-  intros B B' eB. eapply FP_forall_ur_type; eauto. 
+  intros A A' eA B B' eB. cbn. econstructor. exact (fun f g => forall (x:A) (y:A') (H:x ≈ y) (pr:= eB x y H), f x ≈ g y).
 Defined. 
 
-#[export] Hint Extern 0 (UR_Type (forall x:_ , _) (forall y:_, _)) => erefine (ur_type (FP_forall _ _ _) _ _ {| ur_type := _|}); cbn in *; intros : typeclass_instances.
+(* #[export] Hint Extern 0 (UR_Type (forall x:_ , _) (forall y:_, _)) => erefine (ur_type (FP_forall _ _ _) _ _ {| ur_type := _|}); cbn in *; intros : typeclass_instances.
 
-#[export] Hint Extern 100 ((forall x:_ , _) ≃ (forall y:_, _)) => erefine (Equiv_forall _ _ _ _ _ {| ur_type := _|}); cbn in *; intros : typeclass_instances.
+#[export] Hint Extern 100 ((forall x:_ , _) ≃ (forall y:_, _)) => erefine (Equiv_forall _ _ _ _ _ {| ur_type := _|}); cbn in *; intros : typeclass_instances. *)
 
-#[export] Hint Unfold ur : core. 
-Typeclasses Transparent ur.
-#[export] Hint Transparent ur : core. 
+#[export] Hint Unfold pr : core. 
+Typeclasses Transparent pr.
+#[export] Hint Transparent pr : core. 
 
-#[export] Hint Extern 0 (UR_Type (_ -> _) (_ -> _)) =>
-  erefine (ur_type (FP_forall _ _ _) _ _ {| ur_type := _|} ); cbn in *; intros : typeclass_instances.
+(* #[export] Hint Extern 0 (UR_Type (_ -> _) (_ -> _)) =>
+  erefine ((FP_forall _ _ _) _ _ {| ur_type := _|} ); cbn in *; intros : typeclass_instances. *)
 
 #[universes(collapse_sort_variables=no)]
 Definition FP_forallProp :
@@ -464,12 +444,12 @@ Defined.
 
 (* special cases for arrows *)
 
-Definition Equiv_Arrow (A A' B B': Type)
+(* Definition Equiv_Arrow (A A' B B': Type)
            (eA: A ≈ A') (e' : B ≈ B') :
-  (A -> B) ≃ (A' -> B') := Equiv_forall _ _ eA _ _ {| ur_type:= fun _ _ _ => e' |}.
+  (A -> B) ≃ (A' -> B') := Equiv_forall _ _ eA _ _ (fun _ => e').
 
 #[export] Hint Extern 0 ((_ -> _) ≃ (_ -> _)) =>
-  erefine (Equiv_Arrow _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
+  erefine (Equiv_Arrow _ _ _ _ _ _); cbn in *; intros : typeclass_instances. *)
 
 (*
 Instance Transportable_Arrow A (P Q: A -> Type)

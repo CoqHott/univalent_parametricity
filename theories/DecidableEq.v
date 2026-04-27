@@ -115,8 +115,8 @@ Structure DType@{i} :=
 
 Instance DTypeDec (A : DType) : DecidableEq A.(carrier) := A.(dec). 
 
-Instance UR_DType_def@{i j} : UR@{Type Type Type Type ;j j j} DType@{i} DType@{i} :=
-  Build_UR@{Type Type Type Type ;j j j} _ _ (fun A B => UR_Type@{i i i} A.(carrier) B.(carrier)).
+Instance UR_DType_def@{i j} : PR@{Type Type Type Type ; j j j} DType@{i} DType@{i} :=
+  Build_PR@{Type Type Type Type ;j j j} _ _ (fun A B => PR@{Type Type Type Type ; i i i} A.(carrier) B.(carrier)).
 
 Definition path_DType (A B : DType)
            (pq : {p : A.(carrier) = B.(carrier) & A.(dec) = p^ # B.(dec)})
