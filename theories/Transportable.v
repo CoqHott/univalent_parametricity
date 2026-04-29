@@ -38,7 +38,7 @@ Instance Transportable_cst A B : Transportable (fun _ : A => B) :=
 
 Definition Transportable_compose_ A B C (g : B -> C) (P : C -> Type) `{Transportable C P} x:
   forall f f': A -> B, f = f' -> P (g (f x)) ≃ P (g (f' x)).
-  intros. assert (g (f x) = g (f' x)). destruct X; reflexivity.
+  intros. assert (g (f x) = g (f' x)). destruct H0; reflexivity.
   now apply H. 
 Defined.
 

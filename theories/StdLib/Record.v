@@ -44,6 +44,7 @@ Record Contr (A : Type) := BuildContr {
   contr : (forall y : A, center = y)
 }.
 
+(*
 Definition issig_contr (A : Type)
   : { x : A & forall y:A, x = y } ≃ Contr A.
 Proof.
@@ -140,3 +141,4 @@ Ltac univ_param_record :=
   unshelve refine (UR_Type_Equiv_gen _ _ _ _ _ _ _ _);
   typeclasses eauto with typeclass_instances. 
 
+*)

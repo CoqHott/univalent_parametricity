@@ -20,11 +20,12 @@ Proof.
   refine (transport_eq (fun X =>  (a ≈ X) ≃ _) (e_retr _ b)^ (Equiv_id _)). 
 Defined.  *)
 
-Definition URType_Refl_can A (ur:=UR_gen A): A ⋈ A.
+Definition URType_Refl_can A : A ≈u A.
 Proof.
   unshelve eexists.
+  - apply UR_gen.
   - apply Equiv_id.
-  - econstructor. intros;apply Equiv_id.
+  - econstructor. intros; split; eauto.
 Defined.
 
 (* Definition URType_Refl : URRefl Type Type (Equiv_id _) _.
@@ -71,7 +72,7 @@ Instance Canonical_eq_Type : Canonical_eq Type := Canonical_eq_gen _.
 
 (* We avoid the use of univalence and use `None` for the coherence condition *) 
 
-Definition FP_Type : Type ≈ Type := PR_Type_def.
+Definition FP_Type : Type ≈p Type := {| pr := UR_Type |}.
 
 #[export] Hint Extern 0 (PR Set Set) => exact FP_Type : typeclass_instances. 
 
@@ -153,16 +154,18 @@ Proof.
     intros a y.
     generalize (e_inv (g _) y). clear y.
     (* exact (transportable _ _ ((e_retr f a))). *)
-    exact (fun t => path_Has_Leibniz_elim_ _ _ P t _ ((e_retr f a))).
+    exact (fun t => transport_eq P (e_retr f a) t).
   - intros h. apply funext. intro a. unfold functor_forall.
     destruct (e_retr f a). (* rewrite transportable_refl. *) apply e_sect. 
   - intros h;apply funext. unfold functor_forall. intros b.
-    rewrite e_adj. destruct (e_sect f b).
-    cbn. (* rewrite transportable_refl. *) apply e_retr.
+    rewrite e_adj. rewrite transport_ap.
+    rewrite <- (@e_retr _ _ (g b) (H b) (h b)).
+    apply ap. set (e_sect f b).
+    set (e_inv f (f b)) in *. destruct p. cbn. reflexivity.
 Defined.
 
-Instance isequiv_functor_forall_ur {A B : Type} `{P : A -> Type} `{Q : B -> Type} (e_ : B ≈ A) (e : B ⋈ A) 
-  (e'_ : Q ≈ P) (e' :  forall x y (H:x ≈ y) (ur:=e'_ x y H), Q x ⋈ P y) 
+Instance isequiv_functor_forall_ur {A B : Type} `{P : A -> Type} `{Q : B -> Type} (e : B ≈u A) 
+  (e' :  forall x y (H:x ≈ y), Q x ≈u P y) 
 : IsEquiv (functor_forall (equiv e)
                           (fun x => 
                     (e_inv' ((equiv (e' x (equiv e x) (ur_refl e x))))))). 
@@ -173,17 +176,13 @@ Proof.
     apply isequiv_inverse.
 Defined.
 
-Instance Equiv_forall (A A' : Type) (eA_ : A ≈ A') (eA : A ⋈ A') (B : A -> Type) (B' : A' -> Type) (eB_ : B ≈ B') 
-     (eB : forall x y (H:x ≈ y) (ur:=eB_ x y H), B x ⋈ B' y)
+Instance Equiv_forall (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' : A' -> Type) (eB : B ≈u B') 
          : (forall x:A , B x) ≃ (forall x:A', B' x).
 Proof.
-  pose (e_ := PR_inverse eA_). 
-  pose (e := UR_Type_Inverse _ _ _ eA). 
-  pose (eB'_ := fun x y (H:x ≈ y) => PR_inverse (eB_ y x H)).
-  pose (e' := fun x y E => UR_Type_Inverse _ _ (eB_ x y E) (eB x y E)).
-  assert (eB' : forall (x:A') (y:A) (H:@pr _ _ (PR_inverse eA_) x y) (ur:=eB'_ x y H), B' x ⋈ B y). 
-  { intros. exact (e' y x H).
-  }
+  pose (e := UR_Type_Inverse _ _ eA). 
+  pose (e' := fun x y E => UR_Type_Inverse _ _ (eB x y E)).
+  assert (eB' : forall (x:A') (y:A) (H:@pr _ _ _ (Ur e) x y) , B' x ≈u B y). 
+  { intros. exact (e' y x H). }
   unshelve refine
            (BuildEquiv _ _ (functor_forall (e_fun (equiv e))
                                            (fun x => (e_inv' ((equiv (eB' x (e_fun (equiv e) x) (ur_refl e x)))))))
@@ -276,9 +275,11 @@ Qed.  *)
 Proof.
   intros A B r.  *)
  
-Definition FP_forall_UR_Coh (A A' : Type) (eA_ : A ≈ A') (eA : A ⋈ A') (B : A -> Type) (B' : A' -> Type) (eB_ : B ≈ B') 
-     (eB : forall x y (H:x ≈ y) (ur:=eB_ x y H), B x ⋈ B' y) :
-  UR_Coh (forall x : A, B x) (forall x : A', B' x) (Equiv_forall A A' eA_ eA B B' eB_ eB) (@URForall A A' B B' _ (fun x y e => eB_ x y e)).
+(*
+Definition FP_forall_UR_Coh (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' : A' -> Type)  
+     (eB : B ≈u B') :
+  UR_Coh (forall x : A, B x) (forall x : A', B' x) 
+    (Equiv_forall A A' eA B B' eB) (@URForall _ A A' B B' _ (fun x y e => Ur (eB x y e))).
 Proof.
    
   econstructor. intros f g. 
@@ -366,21 +367,66 @@ Proof.
   rewrite inv2. exact X. 
   destruct X0. apply Equiv_id. *)
 Admitted. 
-
+*)
 #[export] Hint Extern 1 (PR (forall x:?A, _) (forall x:?A', _)) =>
   erefine (@URForall A A' _ _ _ _); cbn in *; intros : typeclass_instances.
 
-Definition FP_forall_ur_type (A A' : Type) (eA_ : A ≈ A') (eA : A ⋈ A') (B : A -> Type) (B' : A' -> Type) (eB_ : B ≈ B') 
-     (eB : forall x y (H:x ≈ y) (ur:=eB_ x y H), B x ⋈ B' y) :
-  (forall x : A, B x) ⋈ (forall x : A', B' x).
-  unshelve econstructor. apply FP_forall_UR_Coh.
+Definition FP_forall_ur_type (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' : A' -> Type) 
+     (eB : B ≈u B') :
+  (forall x : A, B x) ≈u (forall x : A', B' x).
+  unshelve econstructor.
+  - tc.
+  - econstructor. intros f g. split; cbn. 
+    + intros efg x y e. destruct efg. 
+      destruct (Ur_Coh (eB _ y (ur_refl (UR_Type_Inverse A A' eA) y))) as [ur_coh].
+      cbn in ur_coh.
+      pose proof (fst (ur_coh (f _) (f _)) idpath).
+      unfold univalent_transport in H.
+      pose proof (snd (alt_ur_coh (equiv eA) (Ur eA) _ _ _) e).
+      cbn in H0. destruct H0^. exact H.
+    + intros e. apply funext. intros x. 
+      destruct (Ur_Coh eA) as [ur_coh].  
+      pose proof (fst (ur_coh x _) idpath).
+      specialize (e _ _ H). unfold univalent_transport in *.
+      destruct (Ur_Coh (eB _ _ H)) as [ur_cohB].
+      eapply (snd (ur_cohB _ _)). clear ur_cohB. unfold univalent_transport. 
+      pose proof (e_sect (equiv eA) x). 
+      set (ur_refl (UR_Type_Inverse A A' eA)
+            (equiv eA x)) in *. cbn in p. clearbody p.
+      set (e_inv (equiv eA) (equiv eA x)) in *.
+      clearbody a. destruct H0. exact e.
 Defined.
 
-Definition FP_forall :
-            (fun A B => forall x:A , B x) ≈ (fun A' B' => forall x:A', B' x).
+Definition FP_forall_pr_type (A A' : Type) (eA : A ≈p A') (B : A -> Type) (B' : A' -> Type) 
+     (eB : B ≈p B') :
+  (forall x : A, B x) ≈p (forall x : A', B' x).
+Proof. tc. Defined.
+
+#[universes(collapse_sort_variables=no)]
+Definition FP_forall_plain :
+          (fun A B => forall x:A , B x) ≈p (fun A' B' => forall x:A', B' x).
 Proof.
-  intros A A' eA B B' eB. cbn. econstructor. exact (fun f g => forall (x:A) (y:A') (H:x ≈ y) (pr:= eB x y H), f x ≈ g y).
+  tc.
+Defined.
+
+#[universes(collapse_sort_variables=no)]
+Definition FP_forall_ur :
+            (fun A B => forall x:A , B x) ≈u (fun A' B' => forall x:A', B' x).
+Proof.
+  intros A A' eA B B' eB. eapply FP_forall_ur_type; eauto.
 Defined. 
+
+#[export] Hint Extern 100 (PR _ _ _) => 
+  unshelve notypeclasses refine (PR_Type_gen _ _ _ _); assumption: typeclass_instances.
+
+#[universes(collapse_sort_variables=no)]
+Definition FP_forall k :
+          pr k (fun A B => forall x:A , B x) (fun A' B' => forall x:A', B' x).
+Proof.
+  destruct k.
+  - apply FP_forall_plain.
+  - eapply FP_forall_ur.
+Defined.  
 
 (* #[export] Hint Extern 0 (UR_Type (forall x:_ , _) (forall y:_, _)) => erefine (ur_type (FP_forall _ _ _) _ _ {| ur_type := _|}); cbn in *; intros : typeclass_instances.
 
@@ -394,11 +440,32 @@ Typeclasses Transparent pr.
   erefine ((FP_forall _ _ _) _ _ {| ur_type := _|} ); cbn in *; intros : typeclass_instances. *)
 
 #[universes(collapse_sort_variables=no)]
-Definition FP_forallProp :
-            (fun A (B:A->Prop) => forall x:A , B x) ≈ (fun A' (B':A'->SProp) => forall x:A', B' x).
-Proof. cbn. 
-  intros A A' eA B B' eB. exact (fun f g => forall (x:A) (y:A') (H:x ≈ y), eB x y H (f x) (g y)).
+Definition FP_forall_plain_Prop :
+            (fun A (B:A->Prop) => forall x:A , B x) ≈p (fun A' (B':A'->SProp) => forall x:A', B' x).
+Proof. 
+  tc.
 Defined. 
+
+#[universes(collapse_sort_variables=no)]
+Definition FP_forall_univ_Prop :
+            (fun A (B:A->Prop) => forall x:A , B x) ≈u (fun A' (B':A'->SProp) => forall x:A', B' x).
+Proof.
+  intros A A' eA B B' eB.
+  unshelve econstructor.
+  - tc.
+  - split; intros.
+    + destruct (Ur_Coh (UR_Type_Inverse _ _ eA)) as [ur_coh].
+      pose proof (fst (ur_coh x x) idpath). 
+      destruct (eB _ _ H0).
+      eapply (fst equiv_P). eapply H.
+    + destruct (Ur_Coh eA) as [ur_coh].
+      pose proof (fst (ur_coh x x) idpath). 
+      destruct (eB _ _ H0).
+      apply (snd equiv_P). eapply H.
+  - cbn; intros. destruct (eB _ _ H). eapply pr_Coh.  
+Defined. 
+
+Hint Extern 0 (UR_Prop (forall x:_ , _) (forall y:_, _)) => unshelve eapply FP_forall_univ_Prop; cbn in *; intros : typeclass_instances.
 
 (* special cases for arrows *)
 

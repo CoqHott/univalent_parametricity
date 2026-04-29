@@ -9,6 +9,7 @@ Unset Universe Minimization ToSet.
 
 Require Import HoTT CanonicalEq UnivalentParametricity.theories.Transportable UnivalentParametricity.theories.UR UnivalentParametricity.theories.FP Coq.Program.Tactics.
 
+(*
 (* HSet and Hedberg *)
 
 Class DecidableEq A := { dec_paths : forall a b : A, (a = b) + (a = b -> False)}.
@@ -372,4 +373,6 @@ Definition DecidableEq_hprop : forall (A B : DType), A.(carrier) = B.(carrier) -
   destruct decA, decB. destruct e. cbn. apply path_sum. destruct (dec_paths0 a b), (dec_paths1 a b); auto. 
   apply is_hset. apply funext. intro e. destruct (f e).
 Defined. 
+*)
+
 *)

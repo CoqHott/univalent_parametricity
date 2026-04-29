@@ -33,28 +33,33 @@ Definition sigma_map_eq {A P} (f: A -> A) (g : forall a, P a -> P (f a))
            (H : forall x, f x = x) (H' : forall a (l : P a), H a # g a l = l) (l : sigT P) :
  sigma_map f g l = l.
 Proof.
-  induction l; unshelve refine (exist_eq _ _ _ _ _ _); eauto.
+  induction l using sigT_rect; unshelve refine (exist_eq _ _ _ _ _ _); eauto.
 Defined.
 
 (* Equiv_Sigma is similar to equiv_functor_sigma *)
 (* in the [https://github.com/HoTT] *)
 
-Definition Equiv_Sigma (A A':Type) (eA_ : A ≈ A') (e : A ⋈ A') (B : A -> Type) (B' : A' -> Type) (eB_ : B ≈ B') 
-     (e' : forall x y (H:x ≈ y) (ur:=eB_ x y H), B x ⋈ B' y) : (sigT B) ≃ (sigT B').          
+#[universes(collapse_sort_variables=no)]
+Axiom todo : forall A, A. 
+
+Definition Equiv_Sigma (A A':Type) (e : A ≈u A') (B : A -> Type) (B' : A' -> Type) 
+     (e' : B ≈u B') : (sigT B) ≃ (sigT B').          
   unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)).
-  - unshelve refine (sigma_map univalent_transport (fun a => univalent_transport)).
+  - unshelve refine (sigma_map univalent_transport (fun a => univalent_transport)); tc. 
     (* eapply (equiv e). eapply (e' a _ (ur_refl_ e a)). *)
   - unshelve refine (sigma_map univalent_transport (fun a => univalent_transport)).
     apply Equiv_inverse; typeclasses eauto.
-    pose (einv := UR_Type_Inverse _ _ _ e).
-    pose (einv' := fun x y E => UR_Type_Inverse _ _ (eB_ y x E) (e' y x E)).
+    pose (einv := UR_Type_Inverse _ _ e).
+    pose (einv' := fun x y E => UR_Type_Inverse _ _ (e' y x E)).
     unshelve refine (equiv (einv' a (e_fun (equiv einv) a) (ur_refl einv a))).
   - intro E. rewrite sigma_map_compose.
     unfold univalent_transport. simpl. 
     unshelve refine (sigma_map_eq _ _ _ _ _).
     apply e_sect. 
-    intros a l. clear E. apply transport_switch. cbn. 
-    rewrite e_adj. cbn. 
+    intros a l. clear E. apply transport_switch.
+    apply todo.
+    (* cbn. 
+    rewrite <- e_adj. cbn. 
     pose (equiv0 := fun a b c => equiv (e' a b c)).
     pose (equiv1 := equiv e).
     pose ((e_sect (e_fun (equiv e)) a)^ # l).
@@ -127,8 +132,9 @@ Definition Equiv_Sigma (A A':Type) (eA_ : A ≈ A') (e : A ⋈ A') (B : A -> Typ
     apply ap. unfold ur_refl.
     rewrite <- transport_e_fun. cbn. rewrite inv2. reflexivity. *)
     admit.
-  - admit.
-Admitted. 
+  - admit.*)
+  - apply todo. 
+Defined. 
 
 #[export] Hint Extern 0 (sigT _ ≃ sigT _) => erefine (@Equiv_Sigma _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
 
@@ -159,55 +165,51 @@ Defined.
 
 *)
 
-Instance isequiv_path_sigma {A : Type} {B:A-> Type} {z z' : sigT B}
-: IsEquiv (path_sigma_uncurried B z z') | 0.
+Definition isequiv_path_sigma {A : Type} {B:A-> Type} {u v : sigT B}
+: u = v -> {p : u.1 = v.1 & u.2 = transport_eq B p^ v.2}.
 Proof.
-  unshelve eexists. 
   - exact (fun r => (r..1 ; r..2)). 
-  - intro e. destruct e. cbn. destruct z, z'.
+(*  - intro e. destruct e. cbn. destruct z, z'.
     cbn in *. destruct x. cbn in *. destruct p. reflexivity.
   - intro e. destruct e. destruct z.  reflexivity.
-  - destruct z, z'. intros [e e']. cbn in *. destruct e. cbn in *. destruct e'. reflexivity. 
-Defined.
+  - destruct z, z'. intros [e e']. cbn in *. destruct e. cbn in *. destruct e'. reflexivity.  *)
+Qed.
 
 Definition equiv_path_sigma {A : Type} {P : A -> Type} (u v : {x : A & P x}) :
-       {p : u .1 = v .1 & u .2 = transport_eq P p^ v .2} ≃ (u = v)
-  := BuildEquiv _ _ (path_sigma_uncurried P u v) _. 
+       {p : u .1 = v .1 & u .2 = transport_eq P p^ v .2} ↔ (u = v).
+  split. apply path_sigma_uncurried. apply isequiv_path_sigma.
+Qed. 
 
-(* Definition FP_Sigma : @sigT ≈ @sigT.
-  cbn; intros. erefine (@PRSigma _ _ _ _ _ _); cbn in *; intros;tc.
-  cbn in *; intros. eapply PRSigma. tc.
-  econstructor.
-  intros. unshelve eexists.
-  - eapply URSigma. intros; eapply H0; eauto.
-  - (* econstructor. intros a a'.
-    assert ((a = a') ≃ {p : a.1 = a'.1 & a.2 = p^# a'.2}).
-    apply Equiv_inverse. eapply equiv_path_sigma.
-    eapply equiv_compose. exact X.
-    unshelve eapply Equiv_Sigma.
-    apply Canonical_UR. 
-    destruct a, a'. apply ur_coh.
-    cbn. split ; [typeclasses eauto | ].
-    intros e e' E.
-    apply Canonical_UR. 
-    destruct a, a'. cbn in *. unfold univalent_transport. 
-    destruct e.
-    apply  Move_equiv in E. rewrite <- E. 
-    apply ur_coh.*)
-    exact None.
-  - intros [a b]; unshelve econstructor; cbn; eapply ur_refl_.
+Definition FP_Sigma : @sigT ≈u @sigT.
+  cbn; intros. unshelve econstructor.
+  - eapply PRSigma. tc.
+  - eapply Equiv_Sigma; tc. 
+  - econstructor. intros [? ?] [? ?]; cbn in *. 
+    split; cbn; intro e. 
+    + apply isequiv_path_sigma in e. destruct e as [e1 e2]. cbn in *. 
+      unshelve eexists. 
+      eapply (fst (ur_coh _ _)); eauto.
+      destruct e1. cbn in *. 
+      eapply (fst (ur_coh _ _)); eauto.
+    + destruct e as [e1 e2]. eapply path_sigma_uncurried.
+      unshelve eexists; cbn in *. 
+      unshelve eapply (snd (ur_coh _ _)); eauto.
+      unfold univalent_transport in *.
+      destruct ur_coh. cbn in *.
+      set (p0 e1). clearbody p1. destruct p1. cbn.
+      unshelve eapply (snd (ur_coh _ _)) in e2; tc.
 Defined.
 
-#[export] Hint Extern 0 (UR_Type (sigT _) (sigT _)) => erefine (Ur (ur_type (FP_Sigma _ _ _) _ _ _)); cbn in *; intros : typeclass_instances. *)
+#[export] Hint Extern 0 (PR univalent (sigT _) (sigT _)) => erefine (PR_Type_univ_univ _ _ (FP_Sigma _ _ _ _ _ _)); cbn in *; intros : typeclass_instances. 
 
 Transparent functor_forall sigma_map. 
 #[export] Hint Transparent functor_forall sigma_map : core.
 #[export] Hint Unfold functor_forall sigma_map : core.
 
-#[export] Hint Extern 0 (PR (?A -> _) (?A' -> _)) =>
+#[export] Hint Extern 0 (PR _ (?A -> _) (?A' -> _)) =>
   erefine (@URForall_Type A A' _); cbn in *; intros : typeclass_instances.
 
-Lemma foo : (PR
+Lemma foo : (PR plain
 	              (forall (A : Type) (P : A -> Type) (x : A),
                    P x -> {x : A & P x})
                   (forall (A : Type) (P : A -> Type) (x : A),
@@ -215,9 +217,27 @@ Lemma foo : (PR
 tc.
 Defined.
 
-#[export] Hint Extern 0 (PR _ _) => exact foo : typeclass_instances.
+#[export] Hint Extern 0 (PR plain _ _) => exact foo : typeclass_instances.
 
-Definition FP_existT : @existT ≈ @existT.
+Definition FP_existT : @existT ≈p @existT.
+  intros A B H P Q H' x y e X Y E. 
+  exact (existT _ e E).
+Defined. 
+
+#[export] Hint Extern 0 ({e0 : ?x ≈ ?y & ?X ≈ ?Y}) => unshelve refine (FP_existT _ _ _ _ _ _ _ _ _ _ _ _ ): typeclass_instances.
+
+#[universes(collapse_sort_variables=no)]
+Lemma foo' : (PR univalent
+	              (forall (A : Type@{_}) (P : A -> Type@{_}) (x : A),
+                   P x -> {x : A & P x})
+                  (forall (A : Type@{_}) (P : A -> Type@{_}) (x : A),
+                   P x -> {x : A & P x})).
+tc. 
+Defined.
+
+#[export] Hint Extern 0 (PR univalent _ _) => exact foo' : typeclass_instances.
+
+Definition FP_existT_univ : @existT ≈u @existT.
   intros A B H P Q H' x y e X Y E. 
   exact (existT _ e E).
 Defined. 
@@ -226,7 +246,7 @@ Defined.
 
 (* Set Typeclasses Debug. *)
 
-Lemma qux : (PR
+Lemma qux : PR plain
 	              (forall (A : Type) (P : A -> Type)
                      (P0 : {x : A & P x} -> Type),
                    (forall (x : A) (p : P x), P0 (x; p)) ->
@@ -234,27 +254,48 @@ Lemma qux : (PR
                   (forall (A : Type) (P : A -> Type)
                      (P0 : {x : A & P x} -> Type),
                    (forall (x : A) (p : P x), P0 (x; p)) ->
-                   forall s : {x : A & P x}, P0 s)).
+                   forall s : {x : A & P x}, P0 s).
                    tc.
 Defined. 
 
-#[export] Hint Extern 0 (PR _ _) => exact qux : typeclass_instances.
+#[export] Hint Extern 0 (PR plain _ _) => exact qux : typeclass_instances.
 
-Definition FP_sigT_rect : @sigT_rect ≈ @sigT_rect.
+Definition FP_sigT_rect : @sigT_rect ≈p @sigT_rect.
 Proof.
 cbn. intros A B H P Q HPQ P' Q' HPQ'. cbn in *. intros. 
 destruct x0, y0, H1; cbn in *. apply H0. 
 Defined. 
 
-#[export] Hint Extern 0 (sigT_rect ?A ?P ?Q ?f ?s ≈ sigT_rect ?A' ?P' ?Q' ?f' ?s')
+#[universes(collapse_sort_variables=no)]
+Lemma qux' : PR univalent
+	              (forall (A : Type) (P : A -> Type)
+                     (P0 : {x : A & P x} -> Type),
+                   (forall (x : A) (p : P x), P0 (x; p)) ->
+                   forall s : {x : A & P x}, P0 s)
+                  (forall (A : Type) (P : A -> Type)
+                     (P0 : {x : A & P x} -> Type),
+                   (forall (x : A) (p : P x), P0 (x; p)) ->
+                   forall s : {x : A & P x}, P0 s).
+                   tc.
+Defined. 
+
+#[export] Hint Extern 0 (PR univalent _ _) => exact qux' : typeclass_instances.
+
+Definition FP_sigT_rect_univ : @sigT_rect ≈u @sigT_rect.
+Proof.
+cbn. intros A B H P Q HPQ P' Q' HPQ'. cbn in *. intros. 
+destruct x0, y0, H1; cbn in *. apply H0. 
+Defined. 
+
+#[export] Hint Extern 0 (sigT_rect ?A ?P ?Q ?f ?s ≈p sigT_rect ?A' ?P' ?Q' ?f' ?s')
                => unshelve refine (FP_sigT_rect A A' _ P P' _ Q Q'
                      _ f f' _ s s' _): typeclass_instances.
 
-#[export] Hint Extern 0 (sigT_rect ?A ?P ?Q ?f ?s ≈ _)
+#[export] Hint Extern 0 (sigT_rect ?A ?P ?Q ?f ?s ≈p _)
                => unshelve refine (FP_sigT_rect A _ _ P _ _ Q _
                      _ f _ _ s _ _) ; try eassumption : typeclass_instances.
 
-#[export] Hint Extern 0 (_ ≈ sigT_rect ?A ?P ?Q ?f ?s)
+#[export] Hint Extern 0 (_ ≈p sigT_rect ?A ?P ?Q ?f ?s)
                => unshelve refine (FP_sigT_rect _ A _ _ P _ _ Q
                      _ _ f _ _ s _ ) ; try eassumption : typeclass_instances.
 
@@ -262,45 +303,60 @@ Defined.
 
 Definition Equiv_prod (A B A' B' : Type) (e:A ≃ B) (e':A' ≃ B') : (A * A') ≃ (B * B').
 Proof.
-  equiv_pind (@prod_rect _ _) (@pair _ _).
+  clear_eq;
+  match goal with
+    e : ?ty ≃ ?ty'  , e1 : ?ty1 ≃ ?ty1' |- _ =>
+  let e' := fresh in set (e' := Equiv_inverse e);
+  let e'' := fresh in set (e'' := Equiv_inverse e1);
+  unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _))
+  end. 
+  define_map A (@prod_rect _ _) (@pair _ _).
+  define_map B (@prod_rect _ _) (@pair _ _).
+  simpl. intros l. induction l using prod_rect; simpl. eapply ap2; typeclasses eauto with equiv typeclass_instances.
+  simpl. intros l. induction l using prod_rect; simpl. eapply ap2; typeclasses eauto with equiv typeclass_instances.
+  (* equiv_pind (@prod_rect _ _) (@pair _ _). *)
 Defined.
 
-Instance isequiv_path_prod {A B : Type} {z z' : A * B}
-: IsEquiv (path_prod_uncurried z z') | 0.
+Definition isequiv_path_prod {A B : Type} {u v : A * B}
+: u = v -> (fst u = fst v) * (snd u = snd v).
 Proof.
-  unshelve refine (BuildIsEquiv _ _ _
-                                (fun r => (ap fst r, ap snd r)) _ _ _).
-  - intro e. destruct e. cbn. destruct z, z'.
+  exact (fun r => (ap fst r, ap snd r)).
+  (* - intro e. destruct e. cbn. destruct z, z'.
     cbn in *. destruct p, p0. reflexivity.
   - intro e. destruct e. destruct z.  reflexivity.
-  - destruct z, z'. intros [e e']. cbn in *. destruct e, e'. reflexivity. 
+  - destruct z, z'. intros [e e']. cbn in *. destruct e, e'. reflexivity.  *)
 Defined.
 
-Definition equiv_path_prod {A B : Type} (u v : A * B): ((fst u = fst v) * (snd u = snd v)) ≃ (u = v)
-  := BuildEquiv _ _ (path_prod_uncurried u v) _. 
+(* Definition equiv_path_prod {A B : Type} (u v : A * B): ((fst u = fst v) * (snd u = snd v)) ≃ (u = v)
+  := BuildEquiv _ _ (path_prod_uncurried u v) _.  *)
 
-Definition FP_Prod (x y : Type) (H_ : x ≈ y) (H : x ⋈ y) (x0 y0 : Type) (H0_ : x0 ≈ y0) (H0 : x0 ⋈ y0) : 
-  (x * x0) ⋈ (y * y0).
+Definition FP_Prod (x y : Type) (H : x ≈u y) (x0 y0 : Type) (H0 : x0 ≈u y0) : 
+  ((x * x0) ≈u (y * y0)) %type.
 Proof.
 unshelve econstructor.
 - unshelve refine (Equiv_prod _ _ _ _ _ _); tc.
 - econstructor. intros [X Y] [X' Y']. cbn.
-  assert ( ((X, Y) = (X', Y')) ≃ ((X=X') * (Y=Y'))).
-  apply Equiv_inverse. apply (equiv_path_prod (X, Y) (X', Y')).
-  eapply equiv_compose. exact X0.
-  eapply equiv_compose. apply Equiv_prod.
-  apply ur_coh. apply ur_coh. apply Equiv_id.
+  split; intro e.
+  + eapply isequiv_path_prod in e; cbn in *. destruct e. 
+    unshelve eexists; eapply (fst (ur_coh _ _)); eauto.
+  + destruct e as [e1 e2]. eapply path_prod_uncurried.
+    unshelve eexists; cbn in *; unshelve eapply (snd (ur_coh _ _)); eauto.
 Defined. 
 
 #[export] Hint Extern 0 ((_ * _) ≃ (_ * _)) => erefine (@Equiv_prod _ _ _ _ _ _)
 :  typeclass_instances.
 
-Definition FP_Prod_Prop (x x0 : Prop) (y y0: SProp) (H_ : PR x y) (H : x ⋈P y) (H0_ : PR x0 y0) (H0 : x0 ⋈P y0) : 
-  (x * x0) ⋈P (y * y0).
+Definition FP_Prod_Prop (x x0 : Prop) (y y0: SProp) (H : x ≈u y) (H0 : x0 ≈u y0) : 
+  (((prod@{Prop Prop Prop; _ _} x x0)) ≈u ((y * y0):SProp)).
 Proof.
-destruct (iff H); destruct (iff H0).
 unshelve econstructor.
-- split; intros X; pose (fst X); pose (snd X); constructor; eauto.
+- split; intros X.
+  + split. 
+    * eapply (fst (equiv_P H)). eapply (fst X).
+    * eapply (fst (equiv_P H0)). eapply (snd X).
+  + split. 
+    * eapply (snd (equiv_P H)). eapply (fst X).
+    * eapply (snd (equiv_P H0)). eapply (snd X).
 - intros; split; eapply pr_Coh; tc.
 Defined. 
 
@@ -410,150 +466,118 @@ destruct XX. cbn. apply inverse, concat_refl.
 Defined. 
 *)
 
-Definition FP_eq : path@{Type Prop | _} ≈ path@{Type SProp|_}.
-  intros A B eAB. exact (PR_eq A B (@pr _ _ eAB)).
+#[universes(collapse_sort_variables=no)]
+Definition FP_eq : @eq ≈p @path.
+  econstructor. eapply (PR_eq _ _ (@pr _ _ _ H)); eauto.
 Defined.
 
-(* split.
-  1: { destruct 1. destruct H.   
-  [typeclasses eauto| ]. 
-  unshelve eexists.
-  - econstructor. exact (UR_eq x y _ x0 y0 H0 x1 y1 H1).
-  - econstructor. intros e e'. cbn. 
-    eapply equiv_compose.
-    2: { apply Equiv_inverse.
-    apply UR_eq_equiv. }
-    eapply Equiv_inverse,  equiv_compose.
-    apply (@isequiv_ap _ _ (alt_ur_coh _ _ _ x1 y1) (transport_eq (ur x1) (eq_map x y H _ x0 y0 H0 x1 y1 H1 e')
-     (transport_eq (fun X : x => X ≈ y0) e H0)) H1).
-    rewrite alt_ur_coh_transport_l.
-    rewrite alt_ur_coh_transport_r. cbn. 
-    unfold eq_map. repeat rewrite can_eq_eq. repeat rewrite ap_pp. 
-    set ((alt_ur_coh _ _ _ x0 y0) H0).
-    set ((alt_ur_coh _ _ _ x1 y1) H1).
-    change ( ((e^ @ e0) @
-   ((ap (e_inv (equiv H)) (e_retr (equiv H) y0)^ @
-     ((ap (e_inv (equiv H)) (ap (equiv H) e0^) @
-       ap (e_inv (equiv H)) (ap (equiv H) e')) @
-      ap (e_inv (equiv H)) (ap (equiv H) e1))) @
-    ap (e_inv (equiv H)) (e_retr (equiv H) y1)) = e1) ≃ 
-                                                      (e = e')).
-    assert (forall y0,  ap (e_inv (equiv H)) (e_retr (equiv H) y0) = (e_sect _ _)).
-    intro.
-    apply (@isequiv_ap _ _ (@isequiv_ap _ _ (equiv H) _ _)). cbn.
-    rewrite <- e_adj. rewrite <- ap_compose. apply moveR_M1.
-    rewrite <- (ap_inv (fun x2 : y => (equiv H) (e_inv (equiv H) x2))).
-    rewrite <- (transport_paths_naturality' _ (e_retr (equiv H))).
-    apply inverse, inv_inv'.
-    rewrite ap_inv. 
-    repeat rewrite X. 
-    assert (e0 @ (e_sect (equiv H) (e_inv (equiv H) y0))^  @
-                                                               ((ap (e_inv (equiv H)) (ap (equiv H) e0^))) = (e_sect (equiv H) x0)^).
-    rewrite <- concat_p_pp.
-    rewrite <- ap_compose.
-    repeat rewrite ap_inv.
-    rewrite <- concat_inv. 
-    rewrite <- (transport_paths_naturality' _ (e_sect (equiv H))).
-    rewrite concat_inv. rewrite concat_p_pp. rewrite inv_inv'. reflexivity.
-    repeat rewrite <- concat_p_pp.
-    rewrite (concat_p_pp e0).
-    rewrite (concat_p_pp (e0 @ (e_sect (equiv H) (e_inv (equiv H) y0))^)).
-    rewrite X0. rewrite <- ap_compose. 
-    rewrite (concat_p_pp (e_sect (equiv H) x0)^).
-    rewrite <- (transport_paths_naturality _ (fun x => (e_sect (equiv H) x)^)).
-    rewrite <- ap_compose. 
-    repeat rewrite <- concat_p_pp.
-    rewrite (concat_p_pp (e_sect (equiv H) x1)^).
-    rewrite <- (transport_paths_naturality _ (fun x => (e_sect (equiv H) x)^)).
-    repeat rewrite <- concat_p_pp.
-    rewrite inv_inv. rewrite concat_refl.
-
-    eapply equiv_compose. apply (Equiv_inverse (BuildEquiv _ _ _ (isequiv_moveL_M1 (e^ @ (e' @ e1)) e1))). 
-    repeat rewrite concat_inv.     repeat rewrite <- concat_p_pp.
-    rewrite (concat_p_pp e1). rewrite inv_inv'. cbn. rewrite inv2. 
-    eapply equiv_compose. apply (BuildEquiv _ _ _ (isequiv_moveR_M1 _ _)). 
-    clear.
-    unshelve econstructor.
-    intro X; destruct X. reflexivity. 
-    unshelve refine (isequiv_adjointify _ _ _ _);
-      intro X; destruct X; reflexivity.
-  - apply Canonical_eq_gen.
-  - apply Canonical_eq_gen.    
-Defined. 
-*)
-
-#[export] Hint Extern 0 (PR (_ = _) (_ = _)) => econstructor; unshelve notypeclasses refine (FP_eq _ _ _ _ _ _ _ _ _) :  typeclass_instances.
-
-Definition FP_idpath : @idpath@{Type Prop; _} ≈ @idpath@{Type SProp; _}.
+#[universes(collapse_sort_variables=no)]
+Definition univ_eq : @eq ≈u @path.
 Proof.
-  cbn; intros; econstructor.
+  cbn; intros. unshelve econstructor.
+  - eapply (FP_eq x y (PR_Type_plain_univ _ _ H)); eauto.
+  - split; intro e.
+    + eapply (snd (alt_ur_coh _ _ _ _ _)) in H0.   
+      eapply (snd (alt_ur_coh _ _ _ _ _)) in H1.
+      destruct e. 
+      pose proof (H1^@ H0)^. eapply ap_inv_equiv; tc.
+    + eapply (snd (alt_ur_coh _ _ _ _ _)) in H0.   
+      eapply (snd (alt_ur_coh _ _ _ _ _)) in H1.
+      destruct (H0@ ap _ e @ H1^); reflexivity.
+  - intros e e'; destruct e, e'. econstructor.
 Defined.
 
-#[export] Hint Extern 0 ( UR_eq _ _ _ _ _ _ _ _ _ idpath idpath) =>
-erefine (FP_idpath _ _ _ _ _ _):  typeclass_instances.
+#[export] Hint Extern 0 (PR _ (eq _ _) (_ = _)) => econstructor; unshelve notypeclasses refine (FP_eq _ _ _ _ _ _ _ _ _) : typeclass_instances.
 
-#[export] Hint Extern 0 (UR (Has_J _ _) (Has_J _ _)) => unfold Has_J :  typeclass_instances.
-Set Typeclasses Debug.
-Lemma foo_ : UR@{Type Prop SProp Type ;
-                                 _ _ _}
-                                  (Has_J@{Type Prop Prop ;
-                                     _ _ _}
-                                     path@{Type Prop ;
-                                     _}
-                                     path_Has_refl@{Type Prop ;
-                                     _})
-                                  (Has_J@{Type SProp SProp ;
-                                     _ _ _}
-                                     path@{Type SProp ;
-                                     _}
-                                     path_Has_refl@{Type SProp ;
-                                     _}).
-Proof.
-  cbn. unfold Has_J.
-  erefine (URForall _ _ _ _); cbn in *; intros. tc.
-  erefine (URForall _ _ _ _); cbn in *; intros. tc.
-  erefine (URForall _ _ _ _); cbn in *; intros. tc.
-  erefine (URForall _ _ _ _);intros. econstructor.  eapply H1. cbn. econstructor.
-  erefine (URForall _ _ _ _); cbn in *; intros. tc.
-  erefine (URForall _ _ _ _); cbn in *; intros. tc.
-  econstructor. eapply H1. cbn in *. tc.
-Defined.                                                        
+#[export] Hint Extern 0 (UR_Prop (eq _ _) (_ = _)) => unshelve eapply univ_eq : typeclass_instances.
 
-#[export] Hint Extern 0 (UR _ _) => exact foo_ : typeclass_instances.
+Section TestCase.
 
-Definition FP_eq_rect : @path_Has_Leibniz_J_@{Type Prop| _ _ _} ≈ @path_Has_Leibniz_J_@{Type SProp| _ _ _}.
+  Parameter nat' : Set.
+
+  #[universes(collapse_sort_variables=no)]
+  Definition pr_nat : nat ≈u nat'.
+  Admitted.
+
+  Hint Extern 0 (UR_Type nat nat') => exact pr_nat :  typeclass_instances.
+
+  Parameter plus' : nat' -> nat' -> nat'.
+
+  #[universes(collapse_sort_variables=no)]
+  Definition pr_plus : plus ≈u plus'.
+  cbn.
+  Admitted.
+
+  Hint Extern 0 (plus _ _ ≈ plus' _ _) => unshelve eapply pr_plus :  typeclass_instances.
+
+  Lemma plus0 : forall m, eq (m + 0) m.
+  induction m; cbn. 
+  - reflexivity.
+  - f_equal ;tc.
+  Qed.
+
+  Lemma plusS : forall m n, eq (S (m + n)) (m + S n).
+  induction m; cbn; intros.
+  - reflexivity.
+  - f_equal; tc.
+  Qed.   
+
+  Lemma comm_plus : forall n m, eq (n + m) (m + n).
+  Proof.
+    induction n; intros. 
+    - symmetry. apply plus0.
+    - cbn. eapply eq_trans; [|apply plusS]. 
+      f_equal; eauto.
+  Qed.
+  
+  Lemma comm_plus' : forall n m, plus' n m = plus' m n.
+  Proof.
+    unshelve eapply (fst (equiv_P _)); [| | exact comm_plus]; tc.
+  Qed.  
+
+End TestCase.
+
+(* Definition FP_eq_rect : @path_Has_Leibniz_J_@{Type Prop| _ _ _} ≈ @path_Has_Leibniz_J_@{Type SProp| _ _ _}.
 Proof.
   cbn; intros. destruct H4. assumption.
-Defined.
+Defined. *)
 
-Axiom state: Type.
+Section SoftwareFoundations.
 
-Axiom state': Type. 
+  Axiom state: Type.
 
-Instance stateϵ: state ⋈ state'.
-Admitted. 
+  Axiom state': Type. 
 
-Axiom dcom: Type.
+  #[universes(collapse_sort_variables=no)]
+  Definition stateϵ : state ≈u state'.
+  Admitted.
 
-Axiom dcom': Type. 
+  Hint Extern 0 (UR_Type state state') => exact stateϵ :  typeclass_instances.
 
-Instance dcomϵ: dcom ⋈ dcom'.
-Admitted. 
+  Axiom dcom: Type.
 
-Definition Assertion := state -> Prop.
+  Axiom dcom': Type. 
 
-Definition Assertion' := state' -> SProp.
+  #[universes(collapse_sort_variables=no)]
+  Definition dcomϵ : dcom ≈u dcom'.
+  Admitted.
 
-Inductive decorated : Type :=
+  Hint Extern 0 (UR_Type dcom dcom') => exact dcomϵ :  typeclass_instances.
+
+  Definition Assertion := state -> Prop.
+
+  Definition Assertion' := state' -> SProp.
+
+  Inductive decorated : Type :=
   | Decorated : Assertion -> dcom -> decorated.
 
-Inductive decorated' : Type.
+  Axiom decorated' : Type.
 
-Axiom Decorated' : Assertion' -> dcom' -> decorated'. 
+  Axiom Decorated' : Assertion' -> dcom' -> decorated'. 
 
-#[export] Hint Extern 0 (UR Assertion Assertion') => unfold Assertion, Assertion' : typeclass_instances.
+  Hint Extern 0 (PR _ Assertion Assertion') => unfold Assertion, Assertion' : typeclass_instances.
 
-Inductive decoratedϵ : decorated -> decorated' -> Type :=
+  Inductive decoratedϵ : decorated -> decorated' -> Type :=
   | Decoratedϵ : forall (a:Assertion) (a':Assertion') (aϵ : a ≈ a') (d : dcom) (d':dcom') (dϵ : d ≈ d'),
      decoratedϵ (Decorated a d) (Decorated' a' d').
 

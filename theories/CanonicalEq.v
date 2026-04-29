@@ -11,7 +11,7 @@ Unset Universe Minimization ToSet.
 
 Class Canonical_eq@{i} (A:Type@{i}) :=
   { can_eq : forall (x y : A), x = y -> x = y ;
-    can_idpath : forall x, can_eq x x idpath = idpath }.
+    can_idpath : forall x, path@{_;i} _ (can_eq x x idpath) idpath }.
 
 Definition Canonical_eq_gen A : Canonical_eq A :=
   {| can_eq := fun x y e => e ;
@@ -28,12 +28,11 @@ Instance Canonical_eq_Forall A (B: A -> Type) : Canonical_eq (forall x:A, B x) :
 
 Definition can_eq_eq {A} (e :Canonical_eq A) : e.(can_eq) = fun x y e => e.
 Proof.
-  apply funext; intros x. apply funext; intros y. apply funext; intro E.
-  destruct E. apply can_idpath. 
+  reflexivity.
 Defined. 
 
 
-Definition Canonical_eq_eq A (e e':Canonical_eq A)
+(* Definition Canonical_eq_eq A (e e':Canonical_eq A)
            (H : e.(can_eq) = e'.(can_eq)) :
   (transport_eq (fun X => X = _) H  (can_eq_eq e) = (can_eq_eq e')) ->
   e = e'.
@@ -46,7 +45,7 @@ Proof.
   pose (H' := apD10 H x). apply ap_inv_equiv' in H'.
   pose (H'' := apD10 H' x). apply ap_inv_equiv' in H''.
   exact (apD10 H'' idpath).  
-  destruct X. reflexivity.
+  destruct H0. reflexivity.
 Defined. 
 
 Definition Canonical_contr A (e :Canonical_eq A) : e = Canonical_eq_gen A.
@@ -63,4 +62,4 @@ Proof.
   etransitivity; try apply p. clear p. apply ap. apply funext. intros e0. cbn.
   destruct e0. reflexivity.                  
 Defined.
-
+ *)
