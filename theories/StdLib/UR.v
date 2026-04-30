@@ -60,16 +60,18 @@ Notation "[ x ; .. ; y ]" := (cons x .. (cons y nil) ..).
 
 Infix "::" := cons (at level 60, right associativity). 
 
-Inductive PR_list {A B} (R : A -> B -> Type) : list A -> list B -> Type :=
+#[universes(collapse_sort_variables=no)]
+Inductive PR_list {A B} (R : A -> B -> Type) : list A -> list B -> SProp :=
   PR_list_nil : PR_list R nil nil
 | PR_list_cons : forall {a b l l'},
     (R a b) -> (PR_list R l l') ->
     PR_list R (a::l) (b::l').
 
+#[universes(collapse_sort_variables=no)]
 Instance PR_list_ (A B:Type) `{A ≈p B} : PR plain (list A) (list B) :=
   {| pr := PR_list (pr plain) |}.
 
-#[export] Hint Extern 0 (PR plain (list ?A) (list ?B)) => unshelve notypeclasses refine (@PR_list _ _ _): typeclass_instances. 
+#[export] Hint Extern 0 (PR plain (list ?A) (list ?B)) => unshelve notypeclasses refine (@PR_list_ _ _ _): typeclass_instances. 
 
 #[export] Hint Extern 0 (PR_list ?R [] []) => exact (PR_list_nil R)  : typeclass_instances.
 
@@ -77,11 +79,25 @@ Instance PR_list_ (A B:Type) `{A ≈p B} : PR plain (list A) (list B) :=
 
 (* nat *)
 
-Instance PR_nat : PR plain nat nat := UR_gen nat. 
+Inductive natϵ : nat -> nat -> SProp :=
+| Oϵ : natϵ O O 
+| Sϵ : forall {n m}, natϵ n m -> natϵ (S n) (S m).
+
+Instance PR_nat : PR plain nat nat := {pr := natϵ}. 
 
 (* bool *)
 
-Instance PR_bool : PR plain bool bool := UR_gen bool. 
+Inductive boolϵ : bool -> bool -> SProp :=
+| trueϵ : boolϵ true true 
+| falseϵ : boolϵ false false.
+
+Instance PR_bool : PR plain bool bool := {pr := boolϵ}.
+
+(* empty *)
+
+Inductive Emptyϵ : Empty -> Empty -> SProp :=.
+
+Instance PR_empty : PR plain (Empty:Type) (Empty:Type) := {pr := Emptyϵ}.
 
 (* vectors *)
 
@@ -93,10 +109,10 @@ Definition vcons {A n} (val:A) (v:vector A n) := Vector.cons A val _ v.
 
 Inductive PR_vector {A B} (R : A -> B -> Type) : forall (n n':nat) (en : n ≈ n'),
   Vector.t A n -> Vector.t B n' -> Type :=
-  PR_vector_nil : PR_vector R O O idpath (nil A) (nil B) 
+  PR_vector_nil : PR_vector R O O Oϵ (nil A) (nil B) 
 | PR_vector_cons : forall {a b n n' v v'} (en : n ≈ n'),
     (R a b) -> (PR_vector R n n' en v v') ->
-    PR_vector R (S n) (S n') (ap S en) (vcons a v) (vcons b v').
+    PR_vector R (S n) (S n') (Sϵ en) (vcons a v) (vcons b v').
 
 
 

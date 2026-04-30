@@ -9,11 +9,15 @@ Unset Universe Minimization ToSet.
 
 Require Import HoTT CanonicalEq UnivalentParametricity.theories.Transportable UnivalentParametricity.theories.UR UnivalentParametricity.theories.FP Coq.Program.Tactics.
 
-(*
+
 (* HSet and Hedberg *)
 
-Class DecidableEq A := { dec_paths : forall a b : A, (a = b) + (a = b -> False)}.
+Inductive Box (A:SProp) : Type := 
+{ box : A }.
 
+Class DecidableEq A := { dec_paths : forall a b : A, Box (a = b) + (a = b -> False)}.
+
+(*
 (**
 Hedberg theorem is a standard theorem of HoTT: it states that if a
 type [A] has decidable equality, then it is a hSet, i.e. its equality
@@ -102,21 +106,21 @@ Proof.
     destruct (f idpath).
 Defined.
 
-
+*)
 
 (*! Establishing FP for Type with a decidable equality !*)
 
+(*
 Definition URType_Refl_decidable A (dec:DecidableEq A)
-  : A ⋈ A :=
-  URType_Refl_can A.
+  : A ≈u A := URType_Refl_can A.
 
 Structure DType@{i} :=
   { carrier :> Type@{i} ;
-    dec : DecidableEq@{i} carrier }.
+    dec : DecidableEq@{i i} carrier }.
 
 Instance DTypeDec (A : DType) : DecidableEq A.(carrier) := A.(dec). 
 
-Instance UR_DType_def@{i j} : PR@{Type Type Type Type ; j j j} DType@{i} DType@{i} :=
+Instance UR_DType_def@{i j} : PR@{Type Type Type Type ; j j j} univalent DType@{i} DType@{i} :=
   Build_PR@{Type Type Type Type ;j j j} _ _ (fun A B => PR@{Type Type Type Type ; i i i} A.(carrier) B.(carrier)).
 
 Definition path_DType (A B : DType)

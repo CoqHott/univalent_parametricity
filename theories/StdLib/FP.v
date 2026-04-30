@@ -477,12 +477,12 @@ Proof.
   cbn; intros. unshelve econstructor.
   - eapply (FP_eq x y (PR_Type_plain_univ _ _ H)); eauto.
   - split; intro e.
-    + eapply (snd (alt_ur_coh _ _ _ _ _)) in H0.   
-      eapply (snd (alt_ur_coh _ _ _ _ _)) in H1.
+    + eapply (snd (alt_ur_coh _ _ _)) in H0.   
+      eapply (snd (alt_ur_coh _ _ _)) in H1.
       destruct e. 
       pose proof (H1^@ H0)^. eapply ap_inv_equiv; tc.
-    + eapply (snd (alt_ur_coh _ _ _ _ _)) in H0.   
-      eapply (snd (alt_ur_coh _ _ _ _ _)) in H1.
+    + eapply (snd (alt_ur_coh _ _ _)) in H0.   
+      eapply (snd (alt_ur_coh _ _ _)) in H1.
       destruct (H0@ ap _ e @ H1^); reflexivity.
   - intros e e'; destruct e, e'. econstructor.
 Defined.
@@ -581,44 +581,62 @@ Section SoftwareFoundations.
   | Decoratedϵ : forall (a:Assertion) (a':Assertion') (aϵ : a ≈ a') (d : dcom) (d':dcom') (dϵ : d ≈ d'),
      decoratedϵ (Decorated a d) (Decorated' a' d').
 
+End SoftwareFoundations.
+
+
 Goal forall d d', decoratedϵ d d' -> d = d.
 Proof.
-  intros d d'; destruct 1.
+  intros d d'. destruct 1.
   cbn in aϵ.
 Abort.
 
 (*! nat !*)
-(*
-Instance FP_nat : nat ⋈ nat := URType_Refl_decidable nat DecidableEq_eq_nat.
+
+Hint Extern 0 (natϵ 0 0) => exact Oϵ : typeclass_instances.
+
+Hint Extern 0 (natϵ (S _) (S _)) => apply Sϵ : typeclass_instances.
+
+Definition FP_nat : nat ≈u nat.
+Proof.
+  unshelve econstructor.
+  - eapply Equiv_id.
+  - econstructor. intros n m; split.
+    + destruct 1. induction n; intros; econstructor; eauto.
+    + cbn. induction 1; [econstructor | apply ap; eauto].
+Defined. 
 
 (*! FP for nat_rect !*)
 
-Definition FP_nat_rect : nat_rect ≈ nat_rect.
-  intros X X' [H H'] P P' e0 Q Q' e_S n n' en.    
-  equiv_elim. exact (e_S n n idpath _ _ IHn).
+Definition FP_nat_rect : nat_rect ≈p nat_rect : SProp.
+  intros X X' H P P' e0 Q Q' e_S n n' en.
+  induction en; eauto. eapply e_S; tc.
 Defined.
-
-Definition FP_nat_rect_cst (P Q:Type) (e : P ≈ Q) :
-  nat_rect (fun _ => P) ≈ nat_rect (fun _ => Q) :=
-  FP_nat_rect (fun _ => P) (fun _ => Q)
-              {| transport_ := Transportable_cst nat P ; ur_type := fun _ _ _ => e |}.
 
 (*! bool !*)
 
-Instance FP_bool : bool ⋈ bool := URType_Refl_decidable bool DecidableEq_eq_bool.
+Definition FP_bool : bool ≈u bool.
+Proof.
+  unshelve econstructor.
+  - eapply Equiv_id.
+  - econstructor. intros b b'; split.
+    + destruct 1. destruct b; intros; econstructor; eauto.
+    + cbn. induction 1; econstructor.
+Defined. 
 
 (*! False !*)
 
-Instance DecidableEq_eq_False : DecidableEq False.
-Proof.
-  econstructor. intros []. 
-Defined.
-
-Instance FP_False : False ⋈ False := URType_Refl_decidable False DecidableEq_eq_False.
+Definition FP_Empty : (Empty:Type) ≈u (Empty:Type).
+Proof. 
+unshelve econstructor.
+  - eapply Equiv_id.
+  - econstructor. intros b b'; split.
+    + destruct 1. destruct b; intros; econstructor; eauto.
+    + cbn. induction 1; econstructor.
+Defined. 
 
 (*! True !*)
 
-Instance DecidableEq_eq_True : DecidableEq True.
+(*Instance DecidableEq_eq_True : DecidableEq True.
 Proof.
   econstructor. intros [] []. exact (inl idpath). 
 Defined.
@@ -627,10 +645,10 @@ Instance FP_True : True ⋈ True := URType_Refl_decidable True DecidableEq_eq_Tr
 *)
 (*! List !*)
 
-Definition inversion_cons {A a a'} {l l':list A} (X: a::l = a'::l') :
+(* Definition inversion_cons {A a a'} {l l':list A} (X: a::l = a'::l') :
   {p : (a = a') * (l = l') & X = ap2 cons (fst p) (snd p)}
   := match X with
-       | idpath => ((idpath ,idpath) ; idpath) end.
+       | idpath => ((idpath ,idpath) ; idpath) end. *)
 
 (*
 Instance Transportable_list A (P: list A -> Type)
@@ -657,18 +675,18 @@ Proof.
     equiv_pind2 (@list_rect _) (@nil _) (@cons _).
 Defined.
 
-Instance Equiv_UR_list A B (R R' : A -> B -> Type)
-         (e:forall a b, R a b ≃ R' a b) : forall l l' , UR_list R l l' ≃ UR_list R' l l'.
+(* Instance Equiv_UR_list A B (R R' : A -> B -> Type)
+         (e:forall a b, R a b ≃ R' a b) : forall l l' , PR_list R l l' ≃ PR_list R' l l'.
 Proof.
   intros. 
-  equiv_pind2 (@UR_list_rect _ _ _) (@UR_list_nil _ _ _) (@UR_list_cons _ _ _).
-Defined.
+  equiv_pind2 (@PR_list_rect _ _ _) (@PR_list_nil _ _ _) (@PR_list_cons _ _ _).
+Defined. *)
 
-Definition eq_nil_refl {A} {l:list A} (e : [] = l) :
+(* Definition eq_nil_refl {A} {l:list A} (e : [] = l) :
   match l return [] = l -> Type with [] => fun e => e = idpath | _ => fun _ => False end e.
 Proof.
   destruct e. reflexivity. 
-Defined.
+Defined. *)
 
 (*
 Definition transport_UR_list_cons A B {equ:A ≃ B} (einv := Equiv_inverse equ)
@@ -718,16 +736,28 @@ Proof.
   refine (transport_eq (fun X => (l = X) ≃ _) (e_sect _ l')^ _). refine (Equiv_id _).
 Defined. 
 *)
-Definition FP_List : list ≈ list.
-  econstructor. 
-  intros A B e. destruct e.
-  econstructor; try typeclasses eauto. 
-  eapply option_map; [| exact Ur_Coh]. 
-  admit.
-  intro l; induction l ; cbn; econstructor; eauto.
+ 
+Definition FP_list : list ≈u list.
+  unshelve econstructor.
+  - econstructor. intros l l'; split.
+    + destruct 1. induction l; intros; econstructor; eauto. eapply (fst (ur_coh _ _) idpath). 
+    + apply todo. 
 Defined.
 
-Definition FP_List_rect : @list_rect ≈ @list_rect.
+#[export] Hint Extern 0 (UR_Type (list ?A) (list ?B)) => unshelve notypeclasses refine (@FP_list _ _ _): typeclass_instances. 
+
+Definition FP_cons : @cons ≈u @cons. 
+Proof. 
+  typeclasses eauto. 
+Defined.
+
+Definition FP_nil : @nil ≈u @nil.
+Proof. 
+  typeclasses eauto.  
+Defined.
+
+(* 
+Definition FP_List_rect : @list_rect ≈p @list_rect.
 Proof.
   cbn. intros A B e X X' eX P P' P_nil Q Q' Q_cons l l' el. 
   induction el; typeclasses eauto with typeclass_instances. 
@@ -737,21 +767,19 @@ Defined.
 unshelve notypeclasses refine (FP_List_rect _ _ _ X X' _ P P' _ Q Q' _ l l' _); intros
 :  typeclass_instances.
 
-Definition FP_cons : @cons ≈ @cons. 
-Proof. 
-  typeclasses eauto. 
-Defined.
-
-Definition FP_nil : @nil ≈ @nil.
-Proof. 
-  typeclasses eauto.  
-Defined.
-
 Instance Equiv_List_instance : forall x y : Type, x ⋈ y -> (list x) ⋈ (list y) := ur_type FP_List.
+*)
 
+#[universes(collapse_sort_variables=no)]
+Goal list Type ≈p list Type.
+tc.
+Defined.
 
+#[universes(collapse_sort_variables=no)]
+Goal list Type ≈u list Type.
+eapply FP_list; cbn.  
+Abort.
 
-Require Import Vector.
 
 
 Definition Equiv_Vector_not_eff A B (e:A ≃ B) n n' (en :n = n') : Vector.t A n ≃ Vector.t B n'.

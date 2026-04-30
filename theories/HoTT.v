@@ -55,7 +55,6 @@ Arguments pair {_ _} _ _.
 Notation "x * y" := (prod x y) : type_scope.
 Notation "( x , y , .. , z )" := (pair .. (pair x y) .. z): type_scope.
 
-
 #[universes(collapse_sort_variables=no)]
 Definition fst {A B} (p:prod A B) := prod_rect _ _ (fun _ => A) (fun x y => x) p.
 

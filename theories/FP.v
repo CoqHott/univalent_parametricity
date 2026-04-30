@@ -382,7 +382,7 @@ Definition FP_forall_ur_type (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' 
       cbn in ur_coh.
       pose proof (fst (ur_coh (f _) (f _)) idpath).
       unfold univalent_transport in H.
-      pose proof (snd (alt_ur_coh (equiv eA) (Ur eA) _ _ _) e).
+      pose proof (snd (alt_ur_coh eA _ _) e).
       cbn in H0. destruct H0^. exact H.
     + intros e. apply funext. intros x. 
       destruct (Ur_Coh eA) as [ur_coh].  

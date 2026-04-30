@@ -11,6 +11,7 @@ Set Universe Polymorphism.
 Set Primitive Projections.
 Set Polymorphic Inductive Cumulativity. 
 Unset Universe Minimization ToSet.
+Set Polymorphic Inductive Cumulativity.
 
 #[universes(collapse_sort_variables=no)]
 Definition iff P Q : Type := (prod (P -> Q) (Q -> P)).
@@ -166,8 +167,7 @@ Defined.
 (* The definition of Ur_coh given in the paper is equivalent to *)
 (* the definition given here, but technically, this one is more convenient to use *)
 
-Definition alt_ur_coh {A B:Type} (e:A ≃ B) (H:A ≈p B) 
-  (HCoh : UR_Coh A B e H) (einv := Equiv_inverse e):
+Definition alt_ur_coh {A B:Type} (H:A ≈u B) (einv := Equiv_inverse (equiv H)):
   forall (a:A) (b:B), (a = ↑ b) ↔ (a ≈ b).
 Proof.
   intros a b. cbn. 
@@ -175,6 +175,7 @@ Proof.
                        (e_sect _ b) _). 
   unshelve refine (ur_coh _ _). 
 Defined.
+
 
 Definition alt_ur_coh_inv {A B:Type}  (e:A ≃ B) (H:A ≈p B) (einv := Equiv_inverse e)
            (HCoh : forall (a:A) (b:B), (a = ↑ b) ↔ (a ≈ b)):
@@ -264,7 +265,7 @@ intro e. unshelve econstructor.
 - apply Equiv_inverse; tc.
 - apply alt_ur_coh_inv. 
   intros b a. cbn.
-  destruct (alt_ur_coh _ _ (Ur_Coh e) a b) as [l r].  
+  destruct (alt_ur_coh e a b) as [l r].  
   split; intro.
   + eapply l. rewrite H. eapply inverse, e_sect.
   + eapply r in H. rewrite H. eapply inverse, e_retr.
