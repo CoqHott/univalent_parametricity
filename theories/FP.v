@@ -74,7 +74,7 @@ Instance Canonical_eq_Type : Canonical_eq Type := Canonical_eq_gen _.
 
 Definition FP_Type : Type ≈p Type := {| pr := UR_Type |}.
 
-#[export] Hint Extern 0 (PR Set Set) => exact FP_Type : typeclass_instances. 
+#[export] Hint Extern 0 (PR Set _) => exact FP_Type : typeclass_instances.
 
 (* Axiom SPropProp : path@{_ Type; _} Type Prop SProp.*)
 
@@ -187,15 +187,15 @@ Proof.
   - eapply FP_forall_ur.
 Defined.  
 
-(* #[export] Hint Extern 0 (UR_Type (forall x:_ , _) (forall y:_, _)) => erefine (ur_type (FP_forall _ _ _) _ _ {| ur_type := _|}); cbn in *; intros : typeclass_instances.
+(* #[export] Hint Extern 0 (UR_Type (forall x:_ , _) _) => erefine (ur_type (FP_forall _ _ _) _ _ {| ur_type := _|}); cbn in *; intros : typeclass_instances.
 
-#[export] Hint Extern 100 ((forall x:_ , _) ≃ (forall y:_, _)) => erefine (Equiv_forall _ _ _ _ _ {| ur_type := _|}); cbn in *; intros : typeclass_instances. *)
+#[export] Hint Extern 100 ((forall x:_ , _) ≃ _) => erefine (Equiv_forall _ _ _ _ _ {| ur_type := _|}); cbn in *; intros : typeclass_instances. *)
 
 #[export] Hint Unfold pr : core. 
 Typeclasses Transparent pr.
 #[export] Hint Transparent pr : core. 
 
-(* #[export] Hint Extern 0 (UR_Type (_ -> _) (_ -> _)) =>
+(* #[export] Hint Extern 0 (UR_Type (_ -> _) _) =>
   erefine ((FP_forall _ _ _) _ _ {| ur_type := _|} ); cbn in *; intros : typeclass_instances. *)
 
 #[universes(collapse_sort_variables=no)]
@@ -225,7 +225,7 @@ Proof.
   - cbn; intros. destruct (eB _ _ H). eapply pr_Coh.  
 Defined. 
 
-Hint Extern 0 (UR_Prop (forall x:_ , _) (forall y:_, _)) => unshelve eapply FP_forall_univ_Prop; cbn; intros : typeclass_instances.
+Hint Extern 0 (UR_Prop (forall x:_ , _) _) => unshelve eapply FP_forall_univ_Prop; cbn; intros : typeclass_instances.
 
 (* special cases for arrows *)
 
@@ -233,7 +233,7 @@ Hint Extern 0 (UR_Prop (forall x:_ , _) (forall y:_, _)) => unshelve eapply FP_f
            (eA: A ≈ A') (e' : B ≈ B') :
   (A -> B) ≃ (A' -> B') := Equiv_forall _ _ eA _ _ (fun _ => e').
 
-#[export] Hint Extern 0 ((_ -> _) ≃ (_ -> _)) =>
+#[export] Hint Extern 0 ((_ -> _) ≃ _) =>
   erefine (Equiv_Arrow _ _ _ _ _ _); cbn in *; intros : typeclass_instances. *)
 
 (*

@@ -106,7 +106,7 @@ Definition PR_Type_gen k (A B:Type) (H:@pr _ _ _ (PR_Type k) A B) : PR k A B :=
 Definition PR_Prop_plain : PR plain Prop SProp := 
   {| pr := PR@{Type _ _ SProp; _ _ _} plain |}.
 
-#[export] Hint Extern 100 (PR plain Prop SProp) => 
+#[export] Hint Extern 100 (PR plain Prop _) =>
   exact PR_Prop_plain : typeclass_instances.
 
 Record UR_Prop (P:Prop) (Q:SProp) :=
@@ -123,7 +123,7 @@ Arguments pr_Coh {_ _} _.
 Definition PR_Prop_univalent : PR univalent Prop SProp := 
   {| pr := UR_Prop |}.
 
-#[export] Hint Extern 100 (PR univalent Prop SProp) => 
+#[export] Hint Extern 100 (PR univalent Prop _) =>
   exact PR_Prop_univalent : typeclass_instances.
 
 #[universes(collapse_sort_variables=no)]
@@ -221,11 +221,11 @@ Definition URForall k A A' (B : A -> Type) (B' : A' -> Type) {HA : PR k A A'}
   :=
   {| pr := fun f g => forall x y (H:x ≈[ k ] y), f x ≈[ k ] g y |}.
 
-#[export] Hint Extern 0 (PR ?k (forall x:?A, _) (forall x:?A', _)) =>
-  unshelve erefine (@URForall_Type k A A' _); intros : typeclass_instances.
+#[export] Hint Extern 0 (PR ?k (forall x:?A, _) _) =>
+  unshelve erefine (@URForall_Type k A _ _); intros : typeclass_instances.
 
-#[export] Hint Extern 1 (PR ?k (forall x:?A, _) (forall x:?A', _)) =>
-  unshelve erefine (@URForall k A A' _ _ _ _); intros : typeclass_instances.
+#[export] Hint Extern 1 (PR ?k (forall x:?A, _) _) =>
+  unshelve erefine (@URForall k A _ _ _ _ _); intros : typeclass_instances.
 
 #[export] Hint Extern 0 =>
   match goal with H : @pr _ _ _
