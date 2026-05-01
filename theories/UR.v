@@ -56,6 +56,13 @@ Inductive UR_Type A B :=
     Ur_Coh :: UR_Coh A B equiv Ur
   }.
 
+Ltac shelve_non_PR :=
+  lazymatch goal with
+  | [ |- PR _ _ _ ] => idtac
+  | [ |- UR_Type _ _ ] => idtac
+  | [ |- _ ] => shelve
+  end.
+
 Instance PR_Type_univ@{i j} : PR@{Type Type Type Type | j j j} univalent Type@{i} Type@{i} :=
   Build_PR@{Type Type Type Type | j j j} _ _ _ UR_Type@{i i i i i i}.
 
@@ -222,10 +229,10 @@ Definition URForall k A A' (B : A -> Type) (B' : A' -> Type) {HA : PR k A A'}
   {| pr := fun f g => forall x y (H:x ≈[ k ] y), f x ≈[ k ] g y |}.
 
 #[export] Hint Extern 0 (PR ?k (forall x:?A, _) _) =>
-  unshelve erefine (@URForall_Type k A _ _); intros : typeclass_instances.
+  unshelve erefine (@URForall_Type k A _ _); intros; shelve_non_PR : typeclass_instances.
 
 #[export] Hint Extern 1 (PR ?k (forall x:?A, _) _) =>
-  unshelve erefine (@URForall k A _ _ _ _ _); intros : typeclass_instances.
+  unshelve erefine (@URForall k A _ _ _ _ _); intros; shelve_non_PR : typeclass_instances.
 
 #[export] Hint Extern 0 =>
   match goal with H : @pr _ _ _
