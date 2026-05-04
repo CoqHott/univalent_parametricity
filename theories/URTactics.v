@@ -80,8 +80,6 @@ Ltac equiv_elim :=
   clear_eq;
   match goal with | [x: ?A |- _] => induction x; simpl; try typeclasses eauto with typeclass_instances end.
 
-#[export] Hint Extern 0 => progress (cbn in *): typeclass_instances. 
-
 #[export] Hint Extern 0 => eassumption : typeclass_instances. 
 
 Tactic Notation "erefine" uconstr(c) := unshelve notypeclasses refine c.

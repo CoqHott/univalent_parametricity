@@ -180,6 +180,7 @@ Definition equiv_path_sigma {A : Type} {P : A -> Type} (u v : {x : A & P x}) :
   split. apply path_sigma_uncurried. apply isequiv_path_sigma.
 Qed. 
 
+#[universes(collapse_sort_variables=no)]
 Definition FP_Sigma : @sigT ≈u @sigT.
   cbn; intros. unshelve econstructor.
   - eapply PRSigma. tc.
@@ -200,7 +201,8 @@ Definition FP_Sigma : @sigT ≈u @sigT.
       unshelve eapply (snd (ur_coh _ _)) in e2; tc.
 Defined.
 
-#[export] Hint Extern 0 (PR univalent (sigT _) (sigT _)) => erefine (PR_Type_univ_univ _ _ (FP_Sigma _ _ _ _ _ _)); cbn in *; intros : typeclass_instances. 
+#[export] Hint Extern 0 (PR univalent (sigT _) (sigT _)) => 
+  unshelve erefine (PR_Type_univ_univ (FP_Sigma _ _ _ _ _ _)); intros : typeclass_instances. 
 
 Transparent functor_forall sigma_map. 
 #[export] Hint Transparent functor_forall sigma_map : core.
@@ -209,77 +211,27 @@ Transparent functor_forall sigma_map.
 #[export] Hint Extern 0 (PR _ (?A -> _) (?A' -> _)) =>
   erefine (@URForall_Type A A' _); cbn in *; intros : typeclass_instances.
 
-Lemma foo : (PR plain
-	              (forall (A : Type) (P : A -> Type) (x : A),
-                   P x -> {x : A & P x})
-                  (forall (A : Type) (P : A -> Type) (x : A),
-                   P x -> {x : A & P x})).
-tc.
-Defined.
-
-#[export] Hint Extern 0 (PR plain _ _) => exact foo : typeclass_instances.
-
+#[universes(collapse_sort_variables=no)]
 Definition FP_existT : @existT ≈p @existT.
   intros A B H P Q H' x y e X Y E. 
   exact (existT _ e E).
 Defined. 
 
-#[export] Hint Extern 0 ({e0 : ?x ≈ ?y & ?X ≈ ?Y}) => unshelve refine (FP_existT _ _ _ _ _ _ _ _ _ _ _ _ ): typeclass_instances.
-
 #[universes(collapse_sort_variables=no)]
-Lemma foo' : (PR univalent
-	              (forall (A : Type@{_}) (P : A -> Type@{_}) (x : A),
-                   P x -> {x : A & P x})
-                  (forall (A : Type@{_}) (P : A -> Type@{_}) (x : A),
-                   P x -> {x : A & P x})).
-tc. 
-Defined.
-
-#[export] Hint Extern 0 (PR univalent _ _) => exact foo' : typeclass_instances.
-
 Definition FP_existT_univ : @existT ≈u @existT.
   intros A B H P Q H' x y e X Y E. 
   exact (existT _ e E).
 Defined. 
 
-#[export] Hint Extern 0 ({e0 : ?x ≈ ?y & ?X ≈ ?Y}) => unshelve refine (FP_existT _ _ _ _ _ _ _ _ _ _ _ _ ): typeclass_instances.
+#[export] Hint Extern 0 ((?x; ?y) ≈u (?x'; ?y')) => unshelve refine (FP_existT _ _ _ _ _ _ _ _ _ _ _ _ ): typeclass_instances.
+#[export] Hint Extern 0 ({e0 : ?x ≈[_] ?y & ?X ≈[_] ?Y}) => unshelve refine (FP_existT _ _ _ _ _ _ _ _ _ _ _ _ ): typeclass_instances.
 
-(* Set Typeclasses Debug. *)
-
-Lemma qux : PR plain
-	              (forall (A : Type) (P : A -> Type)
-                     (P0 : {x : A & P x} -> Type),
-                   (forall (x : A) (p : P x), P0 (x; p)) ->
-                   forall s : {x : A & P x}, P0 s)
-                  (forall (A : Type) (P : A -> Type)
-                     (P0 : {x : A & P x} -> Type),
-                   (forall (x : A) (p : P x), P0 (x; p)) ->
-                   forall s : {x : A & P x}, P0 s).
-                   tc.
-Defined. 
-
-#[export] Hint Extern 0 (PR plain _ _) => exact qux : typeclass_instances.
-
+#[universes(collapse_sort_variables=no)]
 Definition FP_sigT_rect : @sigT_rect ≈p @sigT_rect.
 Proof.
 cbn. intros A B H P Q HPQ P' Q' HPQ'. cbn in *. intros. 
 destruct x0, y0, H1; cbn in *. apply H0. 
 Defined. 
-
-#[universes(collapse_sort_variables=no)]
-Lemma qux' : PR univalent
-	              (forall (A : Type) (P : A -> Type)
-                     (P0 : {x : A & P x} -> Type),
-                   (forall (x : A) (p : P x), P0 (x; p)) ->
-                   forall s : {x : A & P x}, P0 s)
-                  (forall (A : Type) (P : A -> Type)
-                     (P0 : {x : A & P x} -> Type),
-                   (forall (x : A) (p : P x), P0 (x; p)) ->
-                   forall s : {x : A & P x}, P0 s).
-                   tc.
-Defined. 
-
-#[export] Hint Extern 0 (PR univalent _ _) => exact qux' : typeclass_instances.
 
 Definition FP_sigT_rect_univ : @sigT_rect ≈u @sigT_rect.
 Proof.
@@ -321,10 +273,6 @@ Definition isequiv_path_prod {A B : Type} {u v : A * B}
 : u = v -> (fst u = fst v) * (snd u = snd v).
 Proof.
   exact (fun r => (ap fst r, ap snd r)).
-  (* - intro e. destruct e. cbn. destruct z, z'.
-    cbn in *. destruct p, p0. reflexivity.
-  - intro e. destruct e. destruct z.  reflexivity.
-  - destruct z, z'. intros [e e']. cbn in *. destruct e, e'. reflexivity.  *)
 Defined.
 
 (* Definition equiv_path_prod {A B : Type} (u v : A * B): ((fst u = fst v) * (snd u = snd v)) ≃ (u = v)
@@ -474,8 +422,7 @@ Defined.
 #[universes(collapse_sort_variables=no)]
 Definition univ_eq : @eq ≈u @path.
 Proof.
-  cbn; intros. unshelve econstructor.
-  - eapply (FP_eq x y (PR_Type_plain_univ _ _ H)); eauto.
+  cbn. intros. unshelve econstructor.
   - split; intro e.
     + eapply (snd (alt_ur_coh _ _ _)) in H0.   
       eapply (snd (alt_ur_coh _ _ _)) in H1.
@@ -487,9 +434,23 @@ Proof.
   - intros e e'; destruct e, e'. econstructor.
 Defined.
 
-#[export] Hint Extern 0 (PR _ (eq _ _) (_ = _)) => econstructor; unshelve notypeclasses refine (FP_eq _ _ _ _ _ _ _ _ _) : typeclass_instances.
-
 #[export] Hint Extern 0 (UR_Prop (eq _ _) (_ = _)) => unshelve eapply univ_eq : typeclass_instances.
+
+Hint Extern 0 (natϵ 0 0) => exact Oϵ : typeclass_instances.
+
+Hint Extern 0 (natϵ (S _) (S _)) => apply Sϵ : typeclass_instances.
+
+Definition FP_nat : nat ≈u nat.
+Proof.
+  unshelve econstructor.
+  - eapply Equiv_id.
+  - econstructor. intros n m; split.
+    + destruct 1. induction n; intros; econstructor; eauto.
+    + cbn. induction 1; [econstructor | apply ap; eauto].
+Defined. 
+
+(* Hint Extern 0 (nat ≈u nat) => exact FP_nat : typeclass_instances.
+Hint Extern 0 (UR_Type nat nat) => exact FP_nat : typeclass_instances. *)
 
 Section TestCase.
 
@@ -499,7 +460,11 @@ Section TestCase.
   Definition pr_nat : nat ≈u nat'.
   Admitted.
 
-  Hint Extern 0 (UR_Type nat nat') => exact pr_nat :  typeclass_instances.
+  Hint Extern 0 (PR univalent nat nat') => 
+    unshelve notypeclasses refine (PR_Type_univ_univ _) : typeclass_instances.
+
+  Hint Extern 0 (nat ≈u nat') => exact pr_nat : typeclass_instances.
+  Hint Extern 0 (UR_Type nat nat') => exact pr_nat : typeclass_instances.
 
   Parameter plus' : nat' -> nat' -> nat'.
 
@@ -508,7 +473,7 @@ Section TestCase.
   cbn.
   Admitted.
 
-  Hint Extern 0 (plus _ _ ≈ plus' _ _) => unshelve eapply pr_plus :  typeclass_instances.
+  Hint Extern 0 (plus _ _ ≈u plus' _ _) => unshelve eapply pr_plus :  typeclass_instances.
 
   Lemma plus0 : forall m, eq (m + 0) m.
   induction m; cbn. 
@@ -531,9 +496,8 @@ Section TestCase.
   Qed.
   
   Lemma comm_plus' : forall n m, plus' n m = plus' m n.
-  Proof.
-    unshelve eapply (fst (equiv_P _)); [| | exact comm_plus]; tc.
-  Qed.  
+    unshelve eapply (fst (equiv_P _)); [| | exact comm_plus]; tc. 
+  Qed. 
 
 End TestCase.
 
@@ -541,6 +505,8 @@ End TestCase.
 Proof.
   cbn; intros. destruct H4. assumption.
 Defined. *)
+
+Axiom SPropProp : Prop = SProp.
 
 Section SoftwareFoundations.
 
@@ -552,7 +518,10 @@ Section SoftwareFoundations.
   Definition stateϵ : state ≈u state'.
   Admitted.
 
+  Hint Extern 0 (state ≈u state') => exact stateϵ :  typeclass_instances.
   Hint Extern 0 (UR_Type state state') => exact stateϵ :  typeclass_instances.
+  Hint Extern 0 (PR univalent state state') => 
+    unshelve notypeclasses refine (PR_Type_univ_univ _) :  typeclass_instances.
 
   Axiom dcom: Type.
 
@@ -563,6 +532,9 @@ Section SoftwareFoundations.
   Admitted.
 
   Hint Extern 0 (UR_Type dcom dcom') => exact dcomϵ :  typeclass_instances.
+  Hint Extern 0 (dcom ≈u dcom') => exact dcomϵ :  typeclass_instances.
+  Hint Extern 0 (PR univalent dcom dcom') => 
+    unshelve notypeclasses refine (PR_Type_univ_univ _):  typeclass_instances.
 
   Definition Assertion := state -> Prop.
 
@@ -571,39 +543,93 @@ Section SoftwareFoundations.
   Inductive decorated : Type :=
   | Decorated : Assertion -> dcom -> decorated.
 
-  Axiom decorated' : Type.
+  (* Axiom decorated' : Type. *)
+  (* Axiom Decorated' : Assertion' -> dcom' -> decorated'.  *)
 
-  Axiom Decorated' : Assertion' -> dcom' -> decorated'. 
+  Inductive decorated' : Type :=
+  | Decorated' : Assertion' -> dcom' -> decorated'.
 
   Hint Extern 0 (PR _ Assertion Assertion') => unfold Assertion, Assertion' : typeclass_instances.
 
-  Inductive decoratedϵ : decorated -> decorated' -> Type :=
-  | Decoratedϵ : forall (a:Assertion) (a':Assertion') (aϵ : a ≈ a') (d : dcom) (d':dcom') (dϵ : d ≈ d'),
+  Inductive decoratedϵ : decorated -> decorated' -> SProp :=
+  | Decoratedϵ : forall (a:Assertion) (a':Assertion') (aϵ : a ≈u a') 
+      (d : dcom) (d':dcom') (dϵ : d ≈u d'),
      decoratedϵ (Decorated a d) (Decorated' a' d').
+
+  Definition dec_fun : decorated -> decorated'.
+  Proof. 
+    induction 1. refine (Decorated' (fun s => _) (↑ d)).
+    rewrite <- SPropProp. pose (UR_Type_Inverse _ _ stateϵ). exact (a (↑ s)).
+  Defined.
+
+  Definition dec_fun' : decorated' -> decorated.
+  Proof. 
+    induction 1. pose (UR_Type_Inverse _ _ dcomϵ). refine (Decorated (fun s => _) (↑ d)).
+    rewrite SPropProp. exact (a (↑ s)).
+  Defined.
+
+  Instance dec_eq : decorated ≃ decorated'.
+  unshelve econstructor.
+    + apply dec_fun. 
+    + unshelve eapply isequiv_adjointify.
+     * apply dec_fun'.
+     * apply todo.
+     * apply todo.
+  Defined.
+
+  #[universes(collapse_sort_variables=no)]
+  Goal decorated ≈p decorated'.
+  cbn. 
+  unshelve econstructor. exact decoratedϵ.
+  Defined.
+
+Parameter imported_Corelib__Init__Datatypes__bool : Set.
+Parameter Corelib__Init__Datatypes__bool_iso : bool ≈u imported_Corelib__Init__Datatypes__bool.
+Hint Extern 0 (UR_Type bool _) => exact Corelib__Init__Datatypes__bool_iso : typeclass_instances. 
+Hint Extern 0 (bool ≈u _) => exact Corelib__Init__Datatypes__bool_iso : typeclass_instances. 
+Hint Extern 0 (PR univalent bool _) => 
+  unshelve notypeclasses refine (PR_Type_univ_univ _) : typeclass_instances. 
+
+Goal forall b, @Corelib.Init.Datatypes.true ≈u b.
+Abort.
+
+Parameter imported_Corelib__Init__Datatypes__list : Type -> Type.
+Parameter Corelib__Init__Datatypes__list_iso : Datatypes.list ≈u imported_Corelib__Init__Datatypes__list.
+Hint Extern 0 (UR_Type (Datatypes.list _) _) => unshelve refine (Corelib__Init__Datatypes__list_iso _ _ _) : typeclass_instances.
+Hint Extern 0 (Datatypes.list _ ≈u _) => unshelve refine (Corelib__Init__Datatypes__list_iso _ _ _) : typeclass_instances.
+Hint Extern 0 (PR univalent (Datatypes.list _) _) => 
+  unshelve notypeclasses refine (PR_Type_univ_univ _) : typeclass_instances. 
+
+Parameter imported_Corelib__Init__Datatypes__app: forall [A : Type],
+       imported_Corelib__Init__Datatypes__list A -> imported_Corelib__Init__Datatypes__list A -> imported_Corelib__Init__Datatypes__list A.
+
+Goal @Datatypes.app ≈u @imported_Corelib__Init__Datatypes__app.
+Abort. 
+
+
+  Goal decorated ≈u decorated'.
+  unshelve econstructor.
+  - econstructor. exact decoratedϵ.
+  - econstructor; intros.
+    split.
+    + destruct 1. cbn. induction a. econstructor. 
+      cbn. intros. pose proof ((snd (alt_ur_coh _ _ _) H)). unfold univalent_transport in H0. cbn in H0.
+      destruct H0. 
+      apply todo.
+      eapply (fst (ur_coh _ _ )). reflexivity.
+    + cbn. set (dec_fun a'). assert (dec_fun' d = a'). unfold d. exact (e_sect' dec_eq a').
+      rewrite <- H. clearbody d. clear H. destruct 1.
+      cbn. apply ap2. apply funext. intros s. cbn in aϵ.         
+
+  Goal forall d d', decoratedϵ d d' -> d = d.
+  Proof.
+   intros d d'. destruct 1.
+   cbn in aϵ.
+  Abort.
 
 End SoftwareFoundations.
 
-
-Goal forall d d', decoratedϵ d d' -> d = d.
-Proof.
-  intros d d'. destruct 1.
-  cbn in aϵ.
-Abort.
-
 (*! nat !*)
-
-Hint Extern 0 (natϵ 0 0) => exact Oϵ : typeclass_instances.
-
-Hint Extern 0 (natϵ (S _) (S _)) => apply Sϵ : typeclass_instances.
-
-Definition FP_nat : nat ≈u nat.
-Proof.
-  unshelve econstructor.
-  - eapply Equiv_id.
-  - econstructor. intros n m; split.
-    + destruct 1. induction n; intros; econstructor; eauto.
-    + cbn. induction 1; [econstructor | apply ap; eauto].
-Defined. 
 
 (*! FP for nat_rect !*)
 
@@ -777,7 +803,8 @@ Defined.
 
 #[universes(collapse_sort_variables=no)]
 Goal list Type ≈u list Type.
-eapply FP_list; cbn.  
+eapply FP_list; cbn.
+(* woudl require univalence *)  
 Abort.
 
 

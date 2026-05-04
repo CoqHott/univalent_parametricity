@@ -13,13 +13,13 @@ Unset Universe Minimization ToSet.
 (*! Sigma !*)
 
 #[universes(collapse_sort_variables=no)]
-Definition PRSigma (A A':Type) (B : A -> Type)(B' : A' -> Type) `{PR plain A A'}
+Instance PRSigma (A A':Type) (B : A -> Type)(B' : A' -> Type) `{PR plain A A'}
            `{forall x y (H: x ≈p y), PR plain (B x) (B' y)} : PR plain (sigT B) (sigT B')
   :=
-  {| pr := fun x y => sigT (fun (_ : x.1 ≈ y.1) => x.2 ≈ y.2) |}.
+  {| pr := fun x y => sigT (fun (_ : x.1 ≈p y.1) => x.2 ≈p y.2) |}.
 
 #[export] Hint Extern 0 (PR plain ({x:_ & _}) ({x:_ & _})) =>
-  erefine (@PRSigma _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
+  unshelve erefine (@PRSigma _ _ _ _ _ _); intros : typeclass_instances.
 
 #[universes(collapse_sort_variables=no)]
 Definition PRProd (A A' B B' : Type) `{PR plain A A'}
@@ -28,7 +28,7 @@ Definition PRProd (A A' B B' : Type) `{PR plain A A'}
   {| pr := fun x y => prod (fst x ≈p fst y) (snd x ≈p snd y) |}.
 
 #[export] Hint Extern 0 (PR plain (_ * _) (_ * _)) =>
-  erefine (@PRProd _ _ _ _ _ _); cbn in *; intros : typeclass_instances.
+  unshelve erefine (@PRProd _ _ _ _ _ _); intros : typeclass_instances.
 
 (* eq *)
 
@@ -40,10 +40,10 @@ Inductive PR_eq (A_1 A_2 : Type) (A_R : A_1 -> A_2 -> Type) (x_1 : A_1) (x_2 : A
    eq x_1 y_1 -> x_2 = y_2 -> SProp :=
    PR_idpath : PR_eq A_1 A_2 A_R x_1 x_2 x_R x_1 x_2 x_R eq_refl idpath.
 
-(* Definition PREq A (x x' y y' : A) (H:x=x') (H':y=y') : PR (x = y) (x' = y') :=
-  {| pr := fun e e' => H^ @ e @ H' = e' |}.
-
-#[export] Hint Extern 0 (PR (_ = _)(_ = _)) => erefine (@PREq _ _ _ _ _ _ _) : typeclass_instances. *)
+#[universes(collapse_sort_variables=no)]
+Instance PREq k (A_1 A_2 : Type) (A_R : A_1 ≈[k] A_2) (x_1 : A_1) (x_2 : A_2) (x_R : x_1 ≈[k] x_2)
+   (y_1 : A_1) (y_2 : A_2) (y_R : y_1 ≈[k] y_2) : PR k (eq x_1 y_1) (x_2 = y_2)  :=
+  {| pr := fun e e' => PR_eq _ _ _ _ _ x_R _ _ y_R e e' |}.
 
 (* lists *)
 
@@ -107,10 +107,10 @@ Definition vector A (n:nat) := Vector.t A n.
 Definition vnil {A} := Vector.nil A.
 Definition vcons {A n} (val:A) (v:vector A n) := Vector.cons A val _ v.
 
-Inductive PR_vector {A B} (R : A -> B -> Type) : forall (n n':nat) (en : n ≈ n'),
+Inductive PR_vector {A B} (R : A -> B -> Type) : forall (n n':nat) (en : n ≈p n'),
   Vector.t A n -> Vector.t B n' -> Type :=
   PR_vector_nil : PR_vector R O O Oϵ (nil A) (nil B) 
-| PR_vector_cons : forall {a b n n' v v'} (en : n ≈ n'),
+| PR_vector_cons : forall {a b n n' v v'} (en : n ≈p n'),
     (R a b) -> (PR_vector R n n' en v v') ->
     PR_vector R (S n) (S n') (Sϵ en) (vcons a v) (vcons b v').
 
