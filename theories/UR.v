@@ -92,6 +92,25 @@ Definition PR_Type_gen k (A B:Type) (H:@pr _ _ _ (PR_Type k) A B) : PR k A B :=
   | univalent => fun H => PR_Type_univ_univ H
   end H.
 
+Ltac head_is_var term :=
+  lazymatch term with
+  | ?head _ => head_is_var head
+  | _ => is_var term
+  end.
+
+Ltac check_blacklist_PR_Type_univ_univ lhs :=
+  lazymatch lhs with
+  | Type => fail
+  | Prop => fail
+  | SProp => fail
+  | forall _, _ => fail
+  | _ => tryif head_is_var lhs then fail else idtac
+  end.
+
+#[export] Hint Extern 2 (PR univalent ?lhs _) =>
+  check_blacklist_PR_Type_univ_univ lhs;
+  unshelve notypeclasses refine (PR_Type_univ_univ _); intros; shelve_non_PR: typeclass_instances.
+
 #[export] Hint Extern 100 (PR univalent _ _) => 
   unshelve notypeclasses refine (PR_Type_univ_univ _); solve [eassumption]: typeclass_instances.
 
