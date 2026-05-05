@@ -182,9 +182,8 @@ Ltac check_blacklist_PR_Prop_univ_univ lhs :=
   check_blacklist_PR_Sort_univ_univ lhs;
   lazymatch type of lhs with
   | Prop => idtac
-  | Type => fail
   | SProp => fail
-  | _ => idtac
+  | _ => fail
   end.
 
 #[export] Hint Extern 2 (PR univalent ?lhs _) =>
@@ -201,6 +200,59 @@ Ltac check_blacklist_PR_Prop_univ_univ lhs :=
 
 #[export] Hint Extern 100 (PR univalent _ (?P ?x)) => 
   unshelve notypeclasses refine (PR_Prop_univ_univ _);
+  match goal with | H : _ ≈[_] ?P |- _ => eapply H end
+  : typeclass_instances.
+
+
+Definition PR_SProp_plain : PR plain SProp SProp :=
+  {| pr := PR@{Type _ SProp SProp; _ _ _} plain |}.
+
+#[export] Hint Extern 100 (PR plain SProp _) =>
+  exact PR_SProp_plain : typeclass_instances.
+
+Record UR_SProp (P:SProp) (Q:SProp) :=
+  {
+    Ur_SP :: PR@{Type SProp SProp SProp | _ _ _} plain P Q;
+    equiv_SP: iff@{SProp SProp SProp; _ _ _ _} P Q; (* P ↔ Q *)
+    pr_CohS : forall(p:P) (q:Q), p ≈p q
+  }.
+
+Arguments Ur_SP {_ _} _.
+Arguments equiv_SP {_ _} _.
+Arguments pr_CohS {_ _} _.
+
+Definition PR_SProp_univalent : PR univalent SProp SProp :=
+  {| pr := UR_SProp |}.
+
+#[export] Hint Extern 100 (PR univalent SProp _) =>
+  exact PR_SProp_univalent : typeclass_instances.
+
+#[universes(collapse_sort_variables=no)]
+Definition PR_SProp_univ_univ {A : SProp} {B : SProp} (H: A ≈u B) : PR univalent A B :=
+  {| pr := @pr plain _ _ (Ur_SP H) |}.
+
+Ltac check_blacklist_PR_SProp_univ_univ lhs :=
+  check_blacklist_PR_Sort_univ_univ lhs;
+  lazymatch type of lhs with
+  | SProp => idtac
+  | Prop => fail
+  | _ => fail
+  end.
+
+#[export] Hint Extern 2 (PR univalent ?lhs _) =>
+  check_blacklist_PR_SProp_univ_univ lhs;
+  unshelve notypeclasses refine (PR_SProp_univ_univ _); intros; shelve_non_PR: typeclass_instances.
+
+#[export] Hint Extern 100 (PR univalent _ _) =>
+  unshelve notypeclasses refine (PR_SProp_univ_univ _); solve [eassumption]: typeclass_instances.
+
+#[export] Hint Extern 100 (PR univalent (?P ?x) _) =>
+  unshelve notypeclasses refine (PR_SProp_univ_univ _);
+  match goal with | H : P ≈[_] _ |- _ => eapply H end
+  : typeclass_instances.
+
+#[export] Hint Extern 100 (PR univalent _ (?P ?x)) =>
+  unshelve notypeclasses refine (PR_SProp_univ_univ _);
   match goal with | H : _ ≈[_] ?P |- _ => eapply H end
   : typeclass_instances.
 
