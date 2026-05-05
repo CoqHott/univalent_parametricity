@@ -114,17 +114,30 @@ Ltac check_blacklist_PR_Type_univ_univ lhs :=
 #[export] Hint Extern 100 (PR univalent _ _) => 
   unshelve notypeclasses refine (PR_Type_univ_univ _); solve [eassumption]: typeclass_instances.
 
+  #[export] Hint Extern 100 (PR plain _ _) => 
+  unshelve notypeclasses refine (PR_Type_plain_univ _); solve [eassumption]: typeclass_instances.
+
 #[export] Hint Extern 100 (PR _ _ _) => 
   unshelve notypeclasses refine (PR_Type_gen _ _ _ _); solve [eassumption]: typeclass_instances.
 
-#[export] Hint Extern 100 (PR univalent (?P ?x) (?Q ?y)) => 
+#[export] Hint Extern 100 (PR univalent (?P ?x) _) => 
   unshelve notypeclasses refine (PR_Type_univ_univ _);
-  match goal with | H : P ≈[_] Q |- _ => eapply H end
+  match goal with | H : P ≈[_] _ |- _ => eapply H end
   : typeclass_instances.
 
-#[export] Hint Extern 100 (PR _ (?P ?x) (?Q ?y)) => 
+#[export] Hint Extern 100 (PR univalent _ (?P ?x)) => 
+  unshelve notypeclasses refine (PR_Type_univ_univ _);
+  match goal with | H : _ ≈[_] P |- _ => eapply H end
+  : typeclass_instances.
+
+#[export] Hint Extern 100 (PR _ (?P ?x) _) => 
   unshelve notypeclasses refine (PR_Type_gen _ _ _ _);
-  match goal with | H : P ≈[_] Q |- _ => eapply H end
+  match goal with | H : P ≈[_] _ |- _ => eapply H end
+  : typeclass_instances.
+
+#[export] Hint Extern 100 (PR _ _ (?P ?x)) => 
+  unshelve notypeclasses refine (PR_Type_gen _ _ _ _);
+  match goal with | H : _ ≈[_] P |- _ => eapply H end
   : typeclass_instances.
 
 #[export] Hint Extern 100 (_ ≃ _) => unshelve notypeclasses refine (equiv _): typeclass_instances. 
@@ -139,7 +152,7 @@ Definition PR_Prop_plain : PR plain Prop SProp :=
 Record UR_Prop (P:Prop) (Q:SProp) :=
   { 
     Ur_P :: PR@{Type Prop SProp SProp | _ _ _} plain P Q;
-    equiv_P: iff@{Prop SProp Prop ; _ _ _ _} P Q; (* P ↔ Q *)
+    equiv_P: iff@{Prop SProp Prop; _ _ _ _} P Q; (* P ↔ Q *)
     pr_Coh : forall (p:P) (q:Q), p ≈p q
   }.
 
@@ -157,8 +170,18 @@ Definition PR_Prop_univalent : PR univalent Prop SProp :=
 Definition PR_Prop_univ_univ {A : Prop} {B : SProp} (H: A ≈u B) : PR univalent A B :=
   {| pr := @pr plain _ _ (Ur_P H) |}.
 
-#[export] Hint Extern 100 (PR _ _ _) => 
-  unshelve notypeclasses refine (PR_Prop_univ_univ _); solve [eauto]: typeclass_instances.
+#[export] Hint Extern 100 (PR univalent _ _) => 
+  unshelve notypeclasses refine (PR_Prop_univ_univ _); solve [eassumption]: typeclass_instances.
+
+#[export] Hint Extern 100 (PR univalent (?P ?x) _) => 
+  unshelve notypeclasses refine (PR_Prop_univ_univ _);
+  match goal with | H : P ≈[_] _ |- _ => eapply H end
+  : typeclass_instances.
+
+#[export] Hint Extern 100 (PR univalent _ (?P ?x)) => 
+  unshelve notypeclasses refine (PR_Prop_univ_univ _);
+  match goal with | H : _ ≈[_] ?P |- _ => eapply H end
+  : typeclass_instances.
 
 (* some facilities to create an instance of UR_Type *)
 
@@ -180,31 +203,6 @@ Proof.
 Defined.  
 
 #[export] Hint Extern 100 (_ ≈[ _ ] _) => unshelve notypeclasses refine  (ur_refl _ _): typeclass_instances.
-
-(*
-Class URRefl@{i j k} A B (e : Equiv@{i j} A B) (H: PR@{Type Type Type Type;i j k} A B) := {
-  ur_refl_ : forall a : A,  a ≈ ↑ a 
-}.
-
-Arguments ur_refl_ {_ _ _ _ _} _.
-
-
-Definition URIsEq@{i j k} A B (e : A ≃ B) (H: PR@{Type Type Type Type;i j k} A B) (H:URRefl@{i j k} A B e H)
-  :=  forall (a a':A), @IsEquiv (a = a') (a ≈ (↑ a'))
-                                (fun e => transport_eq (fun X => a ≈ (↑ X)) e (ur_refl_ a)).
-
-Existing Class URIsEq.
-Typeclasses Transparent URIsEq.
-
-Instance Ur_Coh_from_ur_refl A B (e:A ≃ B) (H:A ≈ B)
-           (Hrefl : URRefl A B e H) : URIsEq A B e H Hrefl ->
-                                      UR_Coh A B e H.
-Proof.
-  intros Hiseq. econstructor. intros a a'.
-  exact (BuildEquiv _ _ (fun e => transport_eq (fun X => a ≈ (↑ X)) e (ur_refl_ a))
-                     (Hiseq a a')).
-Defined. 
-*)
 
 (* The definition of Ur_coh given in the paper is equivalent to *)
 (* the definition given here, but technically, this one is more convenient to use *)
@@ -251,7 +249,13 @@ Definition URForall k A A' (B : A -> Type) (B' : A' -> Type) {HA : PR k A A'}
 #[export] Hint Extern 0 (PR ?k (forall x:?A, _) _) =>
   unshelve erefine (@URForall_Type k A _ _); intros; shelve_non_PR : typeclass_instances.
 
+#[export] Hint Extern 0 (PR ?k _ (forall x:?A, _)) =>
+  unshelve erefine (@URForall_Type k A _ _); intros; shelve_non_PR : typeclass_instances.
+
 #[export] Hint Extern 1 (PR ?k (forall x:?A, _) _) =>
+  unshelve erefine (@URForall k A _ _ _ _ _); intros; shelve_non_PR : typeclass_instances.
+
+#[export] Hint Extern 1 (PR ?k _ (forall x:?A, _)) =>
   unshelve erefine (@URForall k A _ _ _ _ _); intros; shelve_non_PR : typeclass_instances.
 
 #[export] Hint Extern 0 =>
@@ -261,49 +265,6 @@ Definition URForall k A A' (B : A -> Type) (B' : A' -> Type) {HA : PR k A A'}
 #[export] Hint Extern 0 =>
   match goal with H : @pr _ _ _
     (@URForall_Type _ _ _ _) _ _ |- _ => cbn in H end : typeclass_instances. 
-
-(* Definition ur_hprop A A' (H : A ⋈ A') (HA: forall x y:A, x = y) (x:A) (y:A')
-  : x ≈ y. 
-  intros. apply (alt_ur_coh _ _ _). apply HA. 
-Defined. *)
-
-(*
-Definition UR_Type_equiv (A A' : Type) (eA : A ⋈ A') (eA': A ≃ A')
-  (e  : equiv eA = eA') Coh:
-  Ur_Coh eA = Some Coh ->
-  eA =
-  Build_UR_Type _ _ eA' (Ur eA)
-                (Some (transport_eq (fun X => UR_Coh A A' X _) e Coh)). 
-  destruct e, eA; cbn; inversion 1. reflexivity.
-Defined. 
-*)
-
-(* Definition UR_Type_eq (A A' : Type) (eA eA': A ⋈ A')
-           (equiv_eq  : equiv eA = equiv eA')
-           (ur_eq  : Ur eA = Ur eA')
-           (coh_eq  : transport_eq 
-            (fun X => option (UR_Coh A A' _ X)) ur_eq 
-            (transport_eq (fun X => option (UR_Coh A A' X _)) equiv_eq (Ur_Coh eA))
-                      = Ur_Coh eA')
-            (refl_eq : ur_refl_ eA = ur_refl_ eA')
-  : eA = eA'. 
-  destruct eA, eA'.
-  cbn in *. rewrite <- coh_eq. destruct equiv_eq, ur_eq. cbn. 
-  reflexivity.
-Defined.                   *)
-
-(* Definition transport_Ur_Coh (A A': Type)
-            (equiv : A ≃ A')
-            (_pr _ur' : A -> A' -> Type)
-            (ur_coh : forall a a' : A, (a = a') ≃ (_pr a (equiv a')))
-            (e : _pr = _ur')
-  :   transport_eq (fun X => UR_Coh A A' equiv {| pr := X |}) e
-                   (Build_UR_Coh _ _ equiv {| pr := _pr |} ur_coh)
-      =
-      Build_UR_Coh _ _ equiv {| pr := _ur' |} (fun a a' => transport_eq (fun X =>
-                                               (a = a') ≃ (X a (equiv a'))) e (ur_coh a a')).
-  destruct e. reflexivity.
-Defined. *)
 
 Definition UR_Equiv_refl k (A B:Type) (e:A ≃ B) (e_inv := Equiv_inverse e) `{PR k A B} : PR k B B :=
   {| pr := fun b b' => ↑ b ≈[k] b' |}.
@@ -352,75 +313,6 @@ Proof.
     split; intro; eauto. 
 Defined.      
 
-(* alt_ur_coh is an equivalence UR_Coh A B e H ≃ forall (a:A) (b:B), (a ≈ b) ≃ (a = ↑ b) *)
-
-(* Instance is_equiv_alt_ur_coh_inv {A B:Type}  (e:A ≃ B) (H:A ≈p B) : IsEquiv (alt_ur_coh e H). 
-Proof.
-  unshelve refine (isequiv_adjointify _ _ _ _).
-  - intro. apply alt_ur_coh_inv. assumption.
-  - intros [f]. apply (ap (Build_UR_Coh _ _ _ _)).
-    apply funext. intro a. apply funext. intro a'. unfold alt_ur_coh, alt_ur_coh_inv.
-    apply path_Equiv. apply funext. intro E.
-    rewrite transport_inverse. rewrite <- transport_e_fun. cbn.
-    unfold univalent_transport. rewrite transport_paths_r. cbn.
-    change (Equiv_inverse (transport_eq (fun X : B => (a ≈ X) ≃ (a = e_inv e (e a'))) (e_retr e (e a')) (Equiv_inverse (f a (e_inv e (e a')))))
-    (E @ (e_sect e a')^) = (f a a') E).
-    rewrite transport_inverse'.
-    rewrite Equiv_inverse_inverse. 
-    rewrite e_adj. rewrite transport_ap. rewrite <- (transport_e_fun' _ _ (fun x => (a ≈ e x))). 
-    rewrite (transport_fun_eq A a (fun x : A => (a ≈ e x)) (fun a' => e_fun (f a a'))).
-    rewrite <- concat_p_pp. rewrite inv_inv. rewrite concat_refl. reflexivity.
-  - intros f. apply funext. intro a. apply funext. intro a'.
-    apply path_Equiv. apply funext. intro E. unfold alt_ur_coh, alt_ur_coh_inv. 
-    cbn. rewrite Equiv_inverse_inverse.
-    rewrite other_adj. rewrite transport_ap. unfold univalent_transport.
-    rewrite (transport_double _ (fun X X' => (a ≈ X) ≃ (a = e_inv e X'))).
-    reflexivity. 
-Defined. *)
-
-(* Definition ur_coh_equiv {A B:Type} (e:A ≃ B) (H:A ≈ B) (einv := Equiv_inverse e):
-  UR_Coh A B e H ≃ forall (a:A) (b:B), (a ≈ b) ≃ (a = ↑ b)
-  := BuildEquiv _ _ (alt_ur_coh e H) _. *)
-
-
-(* transport and path lemmas on UR_Type *)
-
-(* 
-Definition transport_UR_Type A B C (e: B = C) e1 e2 e3 :
-  transport_eq (fun X : Type => A ⋈ X)
-               e (Build_UR_Type A B e1 e2 e3) =
-  Build_UR_Type A C (e # e1) (e#e2) (transportD2 _ _ (fun a b c => option (@UR_Coh A a b c)) e _ _ e3)
-  :=
-  match e with idpath => idpath end.
-*)
-  (*
- Definition transport_UR_Type' A B C (e: A = C) e1:
-  transport_eq (fun X : Type => X ⋈ B)
-               e (Build_UR_Type A B e1) =
-  Build_UR_Type C B (e # e1) 
-  :=
-  match e with idpath => idpath end. *)
-
-(* Definition path_UR_Type A B (X Y:UR_Type A B) (e1:X.(equiv) = Y.(equiv))
-           (e2 : X.(Ur) = Y.(Ur))
-           (e3 : forall a a',
-               e_fun (@ur_coh _ _ _ _ (transport_eq (fun X => UR_Coh A B X _ ) e1
-                                   (transport_eq (fun X => UR_Coh A B _ X ) e2 X.(Ur_Coh))) a a') =
-               e_fun (@ur_coh _ _ _ _ Y.(Ur_Coh) a a'))
-           (e4 : X.(Ur_Can_A) = Y.(Ur_Can_A))
-           (e5 : X.(Ur_Can_B) = Y.(Ur_Can_B))
-                               : X = Y. 
-Proof.
-  destruct X, Y. cbn in *. 
-  destruct e1, e2, e4, e5. cbn.
-  destruct Ur_Coh0, Ur_Coh1. 
-  assert (ur_coh0 = ur_coh1).
-  apply funext. intro a.
-  apply funext. intro a'.
-  apply path_Equiv. apply e3. destruct X. reflexivity. 
-Defined. 
-*)
-
 Definition transport_UR k A B C (e: B = C) e1 :
   transport_eq_gen (fun X : Type => PR k A X)
                e (Build_PR k A B e1) =
@@ -432,12 +324,6 @@ Definition transport_UR' k A B C (e: A = C) e1 :
                e (Build_PR k A B e1) =
   Build_PR k C B (fun x b => e1 ((eq_to_equiv _ _ e^).(e_fun) x) b)
   :=  match e with idpath => idpath end.
-
-(* Definition path_UR k A B (X Y: PR k A B) : (forall a b, @pr _ _ _ X a b = @pr _ _ _ Y a b) -> X = Y.
-  intros e. pose ((funext _ _ _ _).(@e_inv _ _ _) (fun a => (funext _ _ _ _).(@e_inv _ _ _) (e a))).
-  destruct X, Y. cbn in *. 
-  destruct p. reflexivity. 
-Defined. *)
 
 (* some generic ways of getting UR instances *)
 
