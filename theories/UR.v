@@ -60,6 +60,7 @@ Ltac shelve_non_PR :=
   lazymatch goal with
   | [ |- PR _ _ _ ] => idtac
   | [ |- UR_Type _ _ ] => idtac
+  | [ |- pr _ _ _ ] => idtac
   | [ |- _ ] => shelve
   end.
 
