@@ -1,0 +1,29 @@
+opam-version: "2.0"
+name: "coq-univalent-parametricity"
+version: "dev"
+synopsis: "Univalent Parametricity for Effective Transport"
+description: """
+Companion code of the article "The Marriage of Univalence and
+Parametricity" (arXiv:1909.05027), previously published at ICFP'18 as
+"Equivalences for Free: Univalent Parametricity for Effective
+Transport".
+"""
+maintainer: "Nicolas Tabareau"
+authors: [
+  "Nicolas Tabareau"
+  "Éric Tanter"
+  "Matthieu Sozeau"
+]
+license: "MIT"
+homepage: "https://github.com/CoqHott/univalent_parametricity"
+bug-reports: "https://github.com/CoqHott/univalent_parametricity/issues"
+dev-repo: "git+https://github.com/CoqHott/univalent_parametricity.git"
+depends: [
+  "coq" {>= "9.3~" | = "dev"}
+]
+build: [
+  [make "-j%{jobs}%"]
+]
+install: [
+  [make "install"]
+]
