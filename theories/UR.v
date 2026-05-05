@@ -98,13 +98,21 @@ Ltac head_is_var term :=
   | _ => is_var term
   end.
 
-Ltac check_blacklist_PR_Type_univ_univ lhs :=
+Ltac check_blacklist_PR_Sort_univ_univ lhs :=
   lazymatch lhs with
   | Type => fail
   | Prop => fail
   | SProp => fail
   | forall _, _ => fail
   | _ => tryif head_is_var lhs then fail else idtac
+  end.
+
+Ltac check_blacklist_PR_Type_univ_univ lhs :=
+  check_blacklist_PR_Sort_univ_univ lhs;
+  lazymatch type of lhs with
+  | Prop => fail
+  | SProp => fail
+  | _ => idtac
   end.
 
 #[export] Hint Extern 2 (PR univalent ?lhs _) =>
@@ -170,7 +178,20 @@ Definition PR_Prop_univalent : PR univalent Prop SProp :=
 Definition PR_Prop_univ_univ {A : Prop} {B : SProp} (H: A ≈u B) : PR univalent A B :=
   {| pr := @pr plain _ _ (Ur_P H) |}.
 
-#[export] Hint Extern 100 (PR univalent _ _) => 
+Ltac check_blacklist_PR_Prop_univ_univ lhs :=
+  check_blacklist_PR_Sort_univ_univ lhs;
+  lazymatch type of lhs with
+  | Prop => idtac
+  | Type => fail
+  | SProp => fail
+  | _ => idtac
+  end.
+
+#[export] Hint Extern 2 (PR univalent ?lhs _) =>
+  check_blacklist_PR_Prop_univ_univ lhs;
+  unshelve notypeclasses refine (PR_Prop_univ_univ _); intros; shelve_non_PR: typeclass_instances.
+
+#[export] Hint Extern 100 (PR univalent _ _) =>
   unshelve notypeclasses refine (PR_Prop_univ_univ _); solve [eassumption]: typeclass_instances.
 
 #[export] Hint Extern 100 (PR univalent (?P ?x) _) => 
