@@ -16,7 +16,7 @@ Ltac tc := typeclasses eauto with typeclass_instances.
 Ltac resolve_eq := intros; 
                    progress (repeat (try reflexivity;
                    try eassumption;
-                   cbn; try rewrite concat_refl;
+                   cbn; 
                    try rewrite inv_inv;
                    try repeat eapply ap; 
                    try repeat eapply ap2)).
