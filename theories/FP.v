@@ -132,8 +132,8 @@ Defined.
 Typeclasses Transparent pr.
 #[export] Hint Transparent pr : core. 
 
-Hint Extern 0 (UR_Type (forall x:_ , _) _) => unshelve eapply FP_forall_ur; cbn; intros : typeclass_instances.
-Hint Extern 0 (UR_Type _ (forall x:_ , _)) => unshelve eapply FP_forall_ur; cbn; intros : typeclass_instances.
+Hint Extern 0 (UR_Type (forall x:_ , _) _) => unshelve eapply FP_forall_ur; cbn; intros; shelve_non_PR : typeclass_instances.
+Hint Extern 0 (UR_Type _ (forall x:_ , _)) => unshelve eapply FP_forall_ur; cbn; intros; shelve_non_PR : typeclass_instances.
 
-Hint Extern 0 ((forall x : _, _) ≈[ _] _) => unshelve eapply FP_forall; cbn; intros : typeclass_instances.
-Hint Extern 0 (_ ≈[ _] (forall x : _, _)) => unshelve eapply FP_forall; cbn; intros : typeclass_instances.
+Hint Extern 0 ((forall x : _, _) ≈[ _] _) => unshelve eapply FP_forall; cbn; intros; shelve_non_PR : typeclass_instances.
+Hint Extern 0 (_ ≈[ _] (forall x : _, _)) => unshelve eapply FP_forall; cbn; intros; shelve_non_PR : typeclass_instances.
