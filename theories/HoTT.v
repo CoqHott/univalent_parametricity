@@ -175,6 +175,11 @@ Definition apD10 {A} {B:A->Type} {f g : forall x, B x} (h:f=g)
 Definition transport_eq_gen {A : Type} (P : A -> Type) {x y : A} (p : x = y) (u : P x) : P y :=
   match p with idpath => u end.
 
+#[universes(collapse_sort_variables=no)]
+Definition transport_eq_gen_refl {A : Type} (P : A -> Type) {x : A} (u : P x) :
+  transport_eq_gen P idpath u = u.
+Proof. cbn. reflexivity. Defined.  
+
 Definition transport_eq {A : Type} (P : A -> Type) {x y : A} (p : x = y) (u : P x) : P y :=
   match p with idpath => u end.
 
@@ -275,11 +280,12 @@ Proof.
   destruct e; reflexivity.
 Defined. 
 
+#[universes(collapse_sort_variables=no)]
 Definition transport_ap {A B : Type} (P : B -> Type) (f : A -> B) {x y : A}
-           (p : x = y) (z : P (f x)) : transport_eq P (ap f p) z =
-                                       transport_eq (fun x => P (f x)) p z.
+           (p : x = y) (z : P (f x)) : transport_eq_gen P (ap f p) z =
+                                       transport_eq_gen (fun x => P (f x)) p z.
 Proof.
-  destruct p; reflexivity.
+  destruct p. repeat rewrite transport_eq_gen_refl. reflexivity.
 Defined.
 
 Definition naturality  {A B} `{P : A -> Type} `{Q : B -> Type}

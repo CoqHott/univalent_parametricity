@@ -45,6 +45,7 @@ Definition functor_forall {A B} `{P : A -> Type} `{Q : B -> Type}
     (f : B -> A) (g : forall b:B, P (f b) -> Q b)
   : (forall a:A, P a) -> (forall b:B, Q b) := fun H b => g b (H (f b)).
 
+#[universes(collapse_sort_variables=no)]
 Instance isequiv_functor_forall {A B} {P : A -> Type} {Q : B -> Type} (* (eP : Transportable P) *)
          (f : B -> A) `{!IsEquiv f} (g : forall b, P (f b) -> Q b) `{!forall b, IsEquiv (g b)}
   : IsEquiv (functor_forall f g).
@@ -54,7 +55,7 @@ Proof.
     intros a y.
     generalize (e_inv (g _) y). clear y.
     (* exact (transportable _ _ ((e_retr f a))). *)
-    exact (fun t => transport_eq P (e_retr f a) t).
+    exact (fun t => transport_eq_gen P (e_retr f a) t).
   - intros h. apply funext. intro a. unfold functor_forall.
     destruct (e_retr f a). apply e_sect. 
   - intros h;apply funext. unfold functor_forall. intros b.
@@ -62,24 +63,6 @@ Proof.
     rewrite <- (@e_retr _ _ (g b) (H b) (h b)).
     apply ap. set (e_sect f b).
     set (e_inv f (f b)) in *. destruct p. cbn. reflexivity.
-Defined.
-
-Instance isequiv_functor_forall_Prop {A B} {P : A -> Prop} {Q : B -> SProp} (* (eP : Transportable P) *)
-         (f : B -> A) `{!IsEquiv f} (g : forall b, P (f b) -> Q b) `{!forall b, IsEquiv@{_ Prop _;_ _ _} (g b)}
-  : IsEquiv@{_ Prop SProp;_ _ _} (functor_forall f g).
-Proof.
-  simple refine (isequiv_adjointify _ _ _ _).
-  - refine (functor_forall (e_inv f) _).
-    intros a y.
-    generalize (e_inv (g _) y). clear y.
-    exact (fun t => transport_eq P (e_retr f a) t).
-  - intros h. apply funext. intro a. unfold functor_forall.
-    destruct (e_retr f a). apply e_sect.
-  - intros h;apply funext. unfold functor_forall. intros b.
-    rewrite e_adj. rewrite transport_ap.
-    rewrite <- (@e_retr _ _ (g b) (H b) (h b)).
-    apply ap. set (e_sect f b).
-    set (e_inv f (f b)) in *. clearbody p. destruct p. cbn. reflexivity.
 Defined.
 
 #[universes(collapse_sort_variables=no)]
@@ -91,22 +74,10 @@ Instance isequiv_functor_forall_ur {A B : Type} `{P : A -> Type} `{Q : B -> Type
 Proof.
   apply isequiv_functor_forall.
   - apply (equiv e).
-  - intros b. unfold e_inv'.
-    apply isequiv_inverse.
-Defined.
-
-#[universes(collapse_sort_variables=no)]
-Instance isequiv_functor_forall_ur_Prop {A B : Type} `{P : A -> Prop} `{Q : B -> SProp} (e : B ≈u A) 
-  (e' :  forall x y (H:x ≈u y), Q x ≈u P y) 
-: IsEquiv@{_ Prop SProp;_ _ _} (functor_forall (equiv e)
-                          (fun x => 
-                    (e_inv' ((equiv (e' x (equiv e x) (ur_refl e x))))))). 
-Proof.
-  apply isequiv_functor_forall_Prop.
-  - apply (equiv e).
   - intros b. unfold e_inv'. apply isequiv_inverse.
 Defined.
 
+#[universes(collapse_sort_variables=no)]
 Instance Equiv_forall (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' : A' -> Type) (eB : B ≈u B') 
          : (forall x:A , B x) ≃ (forall x:A', B' x).
 Proof.
@@ -120,19 +91,7 @@ Proof.
                        _). 
 Defined.
 
-Instance Equiv_forall_Prop (A A' : Type) (eA : A ≈u A') (B : A -> Prop) (B' : A' -> SProp) (eB : B ≈u B') 
-         : (forall x:A , B x) ≃ (forall x:A', B' x).
-Proof.
-  pose (e := UR_Type_Inverse _ _ eA). 
-  pose (e' := fun x y E => UR_Type_Inverse _ _ (eB x y E)).
-  assert (eB' : forall (x:A') (y:A) (H:@pr _ _ _ (Ur e) x y) , B' x ≈u B y). 
-  { intros. exact (e' y x H). }
-  unshelve refine
-           (BuildEquiv _ _ (functor_forall (e_fun (equiv e))
-                                           (fun x => (e_inv' ((equiv (eB' x (e_fun (equiv e) x) (ur_refl e x)))))))
-                       _). 
-Defined.
-
+#[universes(collapse_sort_variables=no)]
 Definition FP_forall_ur_type (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' : A' -> Type) 
      (eB : B ≈u B') :
   (forall x : A, B x) ≈u (forall x : A', B' x).
@@ -158,6 +117,7 @@ Definition FP_forall_ur_type (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' 
       clearbody a. destruct H0. exact e.
 Defined.
 
+#[universes(collapse_sort_variables=no)]
 Definition FP_forall_pr_type (A A' : Type) (eA : A ≈p A') (B : A -> Type) (B' : A' -> Type) 
      (eB : B ≈p B') :
   (forall x : A, B x) ≈p (forall x : A', B' x).
@@ -190,40 +150,5 @@ Defined.
 Typeclasses Transparent pr.
 #[export] Hint Transparent pr : core. 
 
-#[universes(collapse_sort_variables=no)]
-Definition FP_forall_plain_Prop :
-            (fun A (B:A->Prop) => forall x:A , B x) ≈p (fun A' (B':A'->SProp) => forall x:A', B' x).
-Proof. 
-  cbn. tc.
-Defined. 
-
-
-#[universes(collapse_sort_variables=no)]
-Definition FP_forall_univ_Prop :
-            (fun A (B:A->Prop) => forall x:A , B x) ≈u (fun A' (B':A'->SProp) => forall x:A', B' x).
-Proof.
-  intros A A' eA B B' eB.
-  unshelve econstructor.
-  - econstructor. intros f g. split; cbn. 
-    + intros efg x y e. destruct efg. 
-      destruct (Ur_Coh (eB _ y (ur_refl (UR_Type_Inverse A A' eA) y))) as [ur_coh].
-      cbn in ur_coh.
-      pose proof (fst (ur_coh (f _) (f _)) idpath).
-      unfold univalent_transport in H.
-      pose proof (snd (alt_ur_coh eA _ _) e).
-      cbn in H0. destruct H0^. exact H.
-    + intros e. apply funext. intros x. 
-      destruct (Ur_Coh eA) as [ur_coh].  
-      pose proof (fst (ur_coh x _) idpath).
-      specialize (e _ _ H). unfold univalent_transport in *.
-      destruct (Ur_Coh (eB _ _ H)) as [ur_cohB].
-      eapply (snd (ur_cohB _ _)). clear ur_cohB. unfold univalent_transport. 
-      pose proof (e_sect (equiv eA) x). 
-      set (ur_refl (UR_Type_Inverse A A' eA)
-            (equiv eA x)) in *. cbn in p. clearbody p.
-      set (e_inv (equiv eA) (equiv eA x)) in *.
-      clearbody a. destruct H0. exact e.
-Defined. 
-
-Hint Extern 0 (UR_Type (forall x:_ , _) _) => unshelve eapply FP_forall_univ_Prop; cbn; intros : typeclass_instances.
-Hint Extern 0 (UR_Type _ (forall x:_ , _)) => unshelve eapply FP_forall_univ_Prop; cbn; intros : typeclass_instances.
+Hint Extern 0 (UR_Type (forall x:_ , _) _) => unshelve eapply FP_forall_ur; cbn; intros : typeclass_instances.
+Hint Extern 0 (UR_Type _ (forall x:_ , _)) => unshelve eapply FP_forall_ur; cbn; intros : typeclass_instances.

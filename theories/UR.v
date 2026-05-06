@@ -154,46 +154,6 @@ Goal PR univalent Prop SProp. tc. Abort.
 Goal PR plain SProp SProp. tc. Abort. 
 Goal PR univalent SProp SProp. tc. Abort. 
 
-
-(* #[export] Hint Extern 100 (PR plain Prop _) =>
-  exact (PR_Type plain) : typeclass_instances.
-
-Definition UR_Prop (P:Prop) (Q:SProp) := UR_Type P Q. *)
-
-(* Record UR_Prop (P:Prop) (Q:SProp) :=
-  { 
-    Ur_P :: PR@{Type Prop SProp SProp | _ _ _} plain P Q;
-    equiv_P: iff@{Prop SProp Prop; _ _ _ _} P Q; (* P ↔ Q *)
-    pr_Coh : forall (p:P) (q:Q), p ≈p q
-  }. *)
-
-(* Arguments Ur_P {_ _} _.
-Arguments equiv_P {_ _} _.
-Arguments pr_Coh {_ _} _. *)
-
-(* Definition PR_Prop_univalent : PR univalent Prop SProp := 
-  {| pr := UR_Prop |}.
-
-#[export] Hint Extern 100 (PR univalent Prop _) =>
-  exact PR_Prop_univalent : typeclass_instances.
-
-  #[universes(collapse_sort_variables=no)]
-Definition PR_Prop_univ_univ {A : Prop} {B : SProp} (H: A ≈u B) : PR univalent A B :=
-  {| pr := @pr plain _ _ (Ur H) |}.
-
-#[export] Hint Extern 100 (PR univalent _ _) => 
-  unshelve notypeclasses refine (PR_Prop_univ_univ _); solve [eassumption]: typeclass_instances.
-
-#[export] Hint Extern 100 (PR univalent (?P ?x) _) => 
-  unshelve notypeclasses refine (PR_Prop_univ_univ _);
-  match goal with | H : P ≈[_] _ |- _ => eapply H end
-  : typeclass_instances.
-
-#[export] Hint Extern 100 (PR univalent _ (?P ?x)) => 
-  unshelve notypeclasses refine (PR_Prop_univ_univ _);
-  match goal with | H : _ ≈[_] ?P |- _ => eapply H end
-  : typeclass_instances. *)
-
 (* some facilities to create an instance of UR_Type *)
 
 #[universes(collapse_sort_variables=no)]
@@ -323,18 +283,6 @@ Proof.
     refine (transport_eq_gen (fun X => _ ↔ (a = X)) (e_sect' H _)^ _). 
     split; intro; eauto. 
 Defined.      
-
-(* Definition transport_UR k A B C (e: B = C) e1 :
-  transport_eq_gen (fun X : Type => PR k A X)
-               e (Build_PR k A B e1) =
-  Build_PR k A C (fun a x => e1 a ((eq_to_equiv _ _ e^).(e_fun) x))
-  :=  match e with idpath => idpath end.
-
-Definition transport_UR' k A B C (e: A = C) e1 :
-  transport_eq (fun X : Type => PR k X B)
-               e (Build_PR k A B e1) =
-  Build_PR k C B (fun x b => e1 ((eq_to_equiv _ _ e^).(e_fun) x) b)
-  :=  match e with idpath => idpath end. *)
 
 (* some generic ways of getting UR instances *)
 
