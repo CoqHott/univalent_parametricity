@@ -2,56 +2,38 @@
 (* This file introduces the univalent logical relation framework, and
    defines the relation for basic type constructors *)
 (************************************************************************)
-
 Require Import HoTT CanonicalEq.
 Require Import UnivalentParametricity.theories.Transportable.
 Require Import URTactics.
-
 Set Universe Polymorphism.
 Set Primitive Projections.
 Set Polymorphic Inductive Cumulativity. 
-Unset Universe Minimization ToSet.
-Set Polymorphic Inductive Cumulativity.
-
+Unset Collapse Sorts ToType.
 (* basic class for parametric relations *)
-
 Variant parametricity_kind : Set := 
   | plain 
   | univalent.
 
-#[universes(collapse_sort_variables=no)]
 Class PR (k : parametricity_kind) A B : Type := {
   pr : A -> B -> Type 
 }.
 
-(* #[universes(collapse_sort_variables=no)]
-Class UR A B : Type := {
-  ur : A -> B -> Type 
-}. *)
-
 Arguments pr k {_ _ _} a b.
-
 Notation "x ≈[ k ] y" := (pr k x y) (at level 20).
-
 Notation "x ≈p y" := (x ≈[plain] y) (at level 20).
-
 Notation "x ≈u y" := (x ≈[univalent] y) (at level 20).
-
 Instance PR_Type_plain@{s sA sB;i j} : PR@{Type Type Type Type | j j j} plain Type@{sA|i} Type@{sB|i} :=
   Build_PR@{Type Type Type Type | j j j} _ _ _ (PR@{Type sA sB s; i i i} plain).
 
-#[universes(collapse_sort_variables=no)]
 Class UR_Coh (A B :Type) (e : A ≃ B) (H: PR@{Type _ _ SProp | _ _ _} plain A B) : Type := {
   ur_coh : forall (a a':A), (a = a') ↔ (a ≈p ↑ a')}.
 
-#[universes(collapse_sort_variables=no)]
 Inductive UR_Type A B :=
   { 
     Ur : PR plain A B;
     equiv : A ≃ B;
     Ur_Coh :: UR_Coh A B equiv Ur
   }.
-
 Ltac shelve_non_PR :=
   lazymatch goal with
   | [ |- PR _ _ _ ] => idtac
@@ -59,41 +41,33 @@ Ltac shelve_non_PR :=
   | [ |- pr _ _ _ ] => idtac
   | [ |- _ ] => shelve
   end.
-
 Instance PR_Type_univ@{sA sB;i j} : PR@{Type Type Type Type | j j j} univalent Type@{sA;i} Type@{sB;i} :=
   Build_PR@{Type Type Type Type | j j j} _ _ _ UR_Type@{Type Type Type sB Type Type sA ; i i i i i i}.
-
 Instance PR_Type@{s sA sB;i j} k : PR@{Type Type Type Type | j j j} k Type@{sA;i} Type@{sB;i} :=
   match k with 
   | plain => PR_Type_plain@{s sA sB; i j}
   | univalent => PR_Type_univ@{sA sB; i j}
   end.  
-
 Arguments Ur {_ _} _.
 Arguments equiv {_ _} _.
 Arguments Ur_Coh {_ _} _.
 Arguments ur_coh {_ _ _ _ _} _ _.
 
-#[universes(collapse_sort_variables=no)]
 Definition PR_Type_plain_univ {A B : Type} (H: A ≈u B) : PR plain A B := Ur H. 
 
-#[universes(collapse_sort_variables=no)]
 Definition PR_Type_univ_univ {A B : Type} (H: A ≈u B) : PR univalent A B :=
   {|pr := @pr plain _ _ (Ur H) |}.
 
-#[universes(collapse_sort_variables=no)]
 Definition PR_Type_gen k (A B:Type) (H:@pr _ _ _ (PR_Type k) A B) : PR k A B :=
   match k return pr k A B -> PR k A B with 
   | plain => fun H => H
   | univalent => fun H => PR_Type_univ_univ H
   end H.
-
 Ltac head_is_var term :=
   lazymatch term with
   | ?head _ => head_is_var head
   | _ => is_var term
   end.
-
 Ltac check_blacklist_PR_Type_univ_univ lhs :=
   lazymatch lhs with
   | Type => fail
@@ -102,70 +76,54 @@ Ltac check_blacklist_PR_Type_univ_univ lhs :=
   | forall _, _ => fail
   | _ => tryif head_is_var lhs then fail else idtac
   end.
-
 #[export] Hint Extern 2 (PR _ ?lhs _) =>
   check_blacklist_PR_Type_univ_univ lhs;
   unshelve notypeclasses refine (PR_Type_univ_univ _); intros; shelve_non_PR: typeclass_instances.
-
 #[export] Hint Extern 100 (PR _ _ _) => 
   unshelve notypeclasses refine (PR_Type_univ_univ _); solve [eassumption]: typeclass_instances.
-
 #[export] Hint Extern 100 (PR plain (?P ?x) _ ) => 
   match goal with | H : P ≈[_] _ |- _ => eapply H end
   : typeclass_instances.
-
 #[export] Hint Extern 100 (PR plain _ (?P ?x)) => 
   match goal with | H : _ ≈[_] P |- _ => eapply H end
   : typeclass_instances.
-
 #[export] Hint Extern 100 (PR plain _ _) => 
   unshelve notypeclasses refine (PR_Type_plain_univ _); solve [eassumption]: typeclass_instances.
 
-
 #[export] Hint Extern 100 (PR _ _ _) => 
   unshelve notypeclasses refine (PR_Type_gen _ _ _ _); solve [eassumption]: typeclass_instances.
-
 #[export] Hint Extern 100 (PR univalent (?P ?x) _) => 
   unshelve notypeclasses refine (PR_Type_univ_univ _);
   match goal with | H : P ≈[_] _ |- _ => eapply H end
   : typeclass_instances.
-
 #[export] Hint Extern 100 (PR univalent _ (?P ?x)) => 
   unshelve notypeclasses refine (PR_Type_univ_univ _);
   match goal with | H : _ ≈[_] P |- _ => eapply H end
   : typeclass_instances.
-
 #[export] Hint Extern 100 (PR _ (?P ?x) _) => 
   unshelve notypeclasses refine (PR_Type_gen _ _ _ _);
   match goal with | H : P ≈[_] _ |- _ => eapply H end
   : typeclass_instances.
-
 #[export] Hint Extern 100 (PR _ _ (?P ?x)) => 
   unshelve notypeclasses refine (PR_Type_gen _ _ _ _);
   match goal with | H : _ ≈[_] P |- _ => eapply H end
   : typeclass_instances.
-
 #[export] Hint Extern 100 (_ ≃ _) => unshelve notypeclasses refine (equiv _): typeclass_instances. 
 #[export] Hint Extern 100 (UR_Coh _ _ _ _) => unshelve notypeclasses refine (Ur_Coh _): typeclass_instances. 
-
 (* test Prop SProp instances *)
+
 Goal PR plain Prop SProp. tc. Abort. 
 Goal PR univalent Prop SProp. tc. Abort. 
 Goal PR plain SProp SProp. tc. Abort. 
 Goal PR univalent SProp SProp. tc. Abort. 
-
 (* some facilities to create an instance of UR_Type *)
 
-#[universes(collapse_sort_variables=no)]
 Definition UR_gen A : PR plain A A := {| pr := (path A) |}.
 
-#[universes(collapse_sort_variables=no)]
 Definition PR_inverse k {A B : Type} (ur: PR k A B) : PR k B A := 
   {| pr := fun b a => pr k a b |}.
-
 (* This is the Black Box Property *)
 
-#[universes(collapse_sort_variables=no)]
 Definition ur_refl {A B: Type} (e : A ≈u B) :
   forall a : A, a ≈u ↑ a.
 Proof.
@@ -178,7 +136,6 @@ Defined.
 (* The definition of Ur_coh given in the paper is equivalent to *)
 (* the definition given here, but technically, this one is more convenient to use *)
 
-#[universes(collapse_sort_variables=no)]
 Definition alt_ur_coh {A B:Type} (H:A ≈u B) 
   (einv := Equiv_inverse (equiv H))
   :
@@ -190,7 +147,6 @@ Proof.
   unshelve refine (ur_coh _ _). 
 Defined.
 
-#[universes(collapse_sort_variables=no)]
 Definition alt_ur_coh_inv {A B:Type}  (e:A ≃ B) (H:A ≈p B) (einv := Equiv_inverse e)
            (HCoh : forall (a:A) (b:B), (a = ↑ b) ↔ (a ≈p b)):
   UR_Coh A B e H.
@@ -200,44 +156,31 @@ Proof.
                        (e_sect _ a') _). 
   unshelve refine (HCoh _ _). 
 Defined.
-
 (* Definition of univalent relation for basic type constructors *)
-
 (*! Forall !*)
-
 #[export] Hint Extern 0 (?x ≈[ _ ] ?y) => eassumption : typeclass_instances.
 
-#[universes(collapse_sort_variables=no)]
 Definition URForall_Type k A A' {HA : PR k A A'} :
    PR k (A -> Type) (A' -> Type)
   :=
     {| pr := fun P Q => forall x y (H:@pr k _ _ HA x y), pr k (P x) (Q y) |}.
 
-#[universes(collapse_sort_variables=no)]
 Definition URForall k A A' (B : A -> Type) (B' : A' -> Type) {HA : PR k A A'} 
            {HB: forall x y (H: x ≈[ k ] y), PR k (B x) (B' y)} : PR k (forall x, B x) (forall y, B' y)
   :=
   {| pr := fun f g => forall x y (H:x ≈[ k ] y), f x ≈[ k ] g y |}.
-
 #[export] Hint Extern 0 (PR ?k (forall x:?A, _) _) =>
   unshelve erefine (@URForall_Type k A _ _); intros; shelve_non_PR : typeclass_instances.
-
 #[export] Hint Extern 0 (PR ?k _ (forall x:?A, _)) =>
   unshelve erefine (@URForall_Type k A _ _); intros; shelve_non_PR : typeclass_instances.
-
 #[export] Hint Extern 1 (PR ?k (forall x:?A, _) _) =>
   unshelve erefine (@URForall k A _ _ _ _ _); intros; shelve_non_PR : typeclass_instances.
-
 #[export] Hint Extern 1 (PR ?k _ (forall x:?A, _)) =>
   unshelve erefine (@URForall k A _ _ _ _ _); intros; shelve_non_PR : typeclass_instances.
 
-#[universes(collapse_sort_variables=no)]
 Definition UR_Equiv_refl k (A B:Type) (e:A ≃ B) (e_inv := Equiv_inverse e) `{PR k A B} : PR k B B :=
   {| pr := fun b b' => ↑ b ≈[k] b' |}.
-
 (*! UR is symmetric on types !*)
-
-#[universes(collapse_sort_variables=no)]
 Definition UR_Type_Inverse (A B : Type) : A ≈u B -> B ≈u A.
 intro e. unshelve econstructor.
 - eapply PR_inverse. eapply Ur. tc. 
@@ -250,7 +193,6 @@ intro e. unshelve econstructor.
   + eapply r in H. rewrite H. eapply inverse, e_retr.
 Defined.
 
-#[universes(collapse_sort_variables=no)]
 Definition compat_inverse k (A A' B B':Type) (pA: PR k A A') (pB: PR k B B')
            (pA' := PR_inverse k pA)
            (pB' := PR_inverse k pB) (f : A -> B) (g : A' -> B') :
@@ -258,7 +200,6 @@ Definition compat_inverse k (A A' B B':Type) (pA: PR k A A') (pB: PR k B B')
   cbn. tc. 
 Defined.
 
-#[universes(collapse_sort_variables=no)]
 Definition compat_inverse2 k {A A' B B' C C' :Type} {eA: PR k A A'} (eA' := PR_inverse k eA)
            {eB: PR k B B'} (eB' := PR_inverse k eB)
            {eC: PR k C C'} (eC' := PR_inverse k eC)
@@ -266,14 +207,11 @@ Definition compat_inverse2 k {A A' B B' C C' :Type} {eA: PR k A A'} (eA' := PR_i
   f ≈[k] g -> g ≈[k] f.
   cbn. tc. 
 Defined. 
-
 (*! Canonical UR from a type equivalence !*)
 
-#[universes(collapse_sort_variables=no)]
 Definition Canonical_PR k (A B:Type) `{e : A ≃ B} (einv := Equiv_inverse e) : PR k A B := 
     ({| pr := fun a b => a = ↑ b |}).
 
-#[universes(collapse_sort_variables=no)]
 Definition Canonical_UR (A B:Type) `{A ≃ B} : A ≈u B.
 Proof.
   unshelve econstructor.
@@ -283,18 +221,14 @@ Proof.
     refine (transport_eq_gen (fun X => _ ↔ (a = X)) (e_sect' H _)^ _). 
     split; intro; eauto. 
 Defined.      
-
 (* some generic ways of getting UR instances *)
 
-#[universes(collapse_sort_variables=no)]
 Definition UR_Equiv (A B C:Type) `{C ≃ B} (eAB:A ≈p B) : A ≈p C :=
   {| pr := fun a b => a ≈p ↑ b |}.
 
-#[universes(collapse_sort_variables=no)]
 Definition UR_Equiv' (A B C:Type) `{C ≃ A} (eAB :A ≈p B) : C ≈p B :=
   {| pr := fun c b => ↑ c ≈p b |}.
 
-#[universes(collapse_sort_variables=no)]
 Definition UR_Type_Equiv (A B C:Type) `{C ≃ B} `{A ≈u B} : A ≈u C.
 Proof.
   unshelve econstructor.
@@ -305,7 +239,6 @@ Proof.
     refine (transport_eq_gen (fun X => _ ↔ (a ≈u X)) (e_retr' H _)^ _). apply ur_coh; tc.
 Defined.     
 
-#[universes(collapse_sort_variables=no)]
 Definition UR_Type_Equiv' (A B C:Type) `{C ≃ A} `{A ≈u B} : C ≈u B.
 Proof.
     unshelve econstructor.
@@ -319,7 +252,6 @@ Proof.
     + eapply isequiv_ap. apply (snd ucoh); tc.
 Defined. 
 
-#[universes(collapse_sort_variables=no)]
 Definition UR_Equiv_gen (X:Type) (eX : X ≈p X) (A B: X -> Type)
   (HAB: forall x, B x ≃ A x) (x y:X) (e : x ≈p y) (H:A x ≈p A y)
   : B x ≈p B y.
@@ -329,7 +261,6 @@ Proof.
   auto. 
 Defined.
 
-#[universes(collapse_sort_variables=no)]
 Definition UR_Type_Equiv_gen (X:Type) (eX : X ≈u X)
   (A B: X -> Type) (HAB: forall x, B x ≃ A x) (x y:X) (e : x ≈u y) (H:A x ≈u A y)
   (H':A x ≈u A y)
@@ -338,4 +269,3 @@ Proof.
   unshelve refine (UR_Type_Equiv _ _ _).
   unshelve refine (UR_Type_Equiv' _ _ _); tc. 
 Defined.  
-

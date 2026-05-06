@@ -1,20 +1,14 @@
 (************************************************************************)
 (* This file proves the fundamental property for the main constructors of CIC *)
 (************************************************************************)
-
 Set Polymorphic Inductive Cumulativity. 
-
 Set Universe Polymorphism.
-
 Unset Universe Minimization ToSet.
-
 Require Import HoTT CanonicalEq URTactics.
 Require Export UnivalentParametricity.theories.UR.
 Require Import UnivalentParametricity.theories.Transportable.
-
 (*! Establishing FP for Type !*)
-
-#[universes(collapse_sort_variables=no)]
+Unset Collapse Sorts ToType.
 Definition URType_Refl_can A : A ≈u A.
 Proof.
   unshelve eexists.
@@ -22,30 +16,20 @@ Proof.
   - apply Equiv_id.
   - econstructor. intros; split; eauto.
 Defined.
-
-#[universes(collapse_sort_variables=no)]
 Instance Canonical_eq_Type : Canonical_eq Type := Canonical_eq_gen _.
-
 (* We avoid the use of univalence and use `None` for the coherence condition *) 
-
 Definition FP_Type : Type ≈p Type := {| pr := UR_Type |}.
-
 #[export] Hint Extern 0 (PR Set _) => exact FP_Type : typeclass_instances.
 #[export] Hint Extern 0 (PR _ Set) => exact FP_Type : typeclass_instances.
-
 (* Axiom SPropProp : Prop = SProp. *)
-
 (*! FP for Dependent product !*)
-
 (* isequiv_functor_forall can be found in
 [https://github.com/HoTT/HoTT] *)
 
-#[universes(collapse_sort_variables=no)]
 Definition functor_forall {A B} `{P : A -> Type} `{Q : B -> Type}
     (f : B -> A) (g : forall b:B, P (f b) -> Q b)
   : (forall a:A, P a) -> (forall b:B, Q b) := fun H b => g b (H (f b)).
 
-#[universes(collapse_sort_variables=no)]
 Instance isequiv_functor_forall {A B} {P : A -> Type} {Q : B -> Type} (* (eP : Transportable P) *)
          (f : B -> A) `{!IsEquiv f} (g : forall b, P (f b) -> Q b) `{!forall b, IsEquiv (g b)}
   : IsEquiv (functor_forall f g).
@@ -65,7 +49,6 @@ Proof.
     set (e_inv f (f b)) in *. destruct p. cbn. reflexivity.
 Defined.
 
-#[universes(collapse_sort_variables=no)]
 Instance isequiv_functor_forall_ur {A B : Type} `{P : A -> Type} `{Q : B -> Type} (e : B ≈u A) 
   (e' :  forall x y (H:x ≈u y), Q x ≈u P y) 
 : IsEquiv (functor_forall (equiv e)
@@ -77,7 +60,6 @@ Proof.
   - intros b. unfold e_inv'. apply isequiv_inverse.
 Defined.
 
-#[universes(collapse_sort_variables=no)]
 Instance Equiv_forall (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' : A' -> Type) (eB : B ≈u B') 
          : (forall x:A , B x) ≃ (forall x:A', B' x).
 Proof.
@@ -91,7 +73,6 @@ Proof.
                        _). 
 Defined.
 
-#[universes(collapse_sort_variables=no)]
 Definition FP_forall_ur_type (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' : A' -> Type) 
      (eB : B ≈u B') :
   (forall x : A, B x) ≈u (forall x : A', B' x).
@@ -117,27 +98,23 @@ Definition FP_forall_ur_type (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' 
       clearbody a. destruct H0. exact e.
 Defined.
 
-#[universes(collapse_sort_variables=no)]
 Definition FP_forall_pr_type (A A' : Type) (eA : A ≈p A') (B : A -> Type) (B' : A' -> Type) 
      (eB : B ≈p B') :
   (forall x : A, B x) ≈p (forall x : A', B' x).
 Proof. cbn. tc. Defined.
 
-#[universes(collapse_sort_variables=no)]
 Definition FP_forall_plain :
           (fun A B => forall x:A , B x) ≈p (fun A' B' => forall x:A', B' x).
 Proof.
   cbn. tc.
 Defined.
 
-#[universes(collapse_sort_variables=no)]
 Definition FP_forall_ur :
             (fun A B => forall x:A , B x) ≈u (fun A' B' => forall x:A', B' x).
 Proof.
   intros A A' eA B B' eB. eapply FP_forall_ur_type; eauto.
 Defined. 
 
-#[universes(collapse_sort_variables=no)]
 Definition FP_forall k :
           pr k (fun A B => forall x:A , B x) (fun A' B' => forall x:A', B' x).
 Proof.
@@ -145,10 +122,8 @@ Proof.
   - apply FP_forall_plain.
   - eapply FP_forall_ur.
 Defined.  
-
 #[export] Hint Unfold pr : core. 
 Typeclasses Transparent pr.
 #[export] Hint Transparent pr : core. 
-
 Hint Extern 0 (UR_Type (forall x:_ , _) _) => unshelve eapply FP_forall_ur; cbn; intros : typeclass_instances.
 Hint Extern 0 (UR_Type _ (forall x:_ , _)) => unshelve eapply FP_forall_ur; cbn; intros : typeclass_instances.
