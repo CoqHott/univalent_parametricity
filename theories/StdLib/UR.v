@@ -71,7 +71,7 @@ Inductive PR_list {A B} (R : A -> B -> Type) : list A -> list B -> SProp :=
 Instance PR_list_ (A B:Type) `{A ≈p B} : PR plain (list A) (list B) :=
   {| pr := PR_list (pr plain) |}.
 
-#[export] Hint Extern 0 (PR plain (list ?A) (list ?B)) => unshelve notypeclasses refine (@PR_list_ _ _ _): typeclass_instances. 
+#[export] Hint Extern 0 (PR plain (list ?A) (list ?B)) => unshelve notypeclasses refine (@PR_list_ _ _ _); cbn: typeclass_instances. 
 
 #[export] Hint Extern 0 (PR_list ?R [] []) => exact (PR_list_nil R)  : typeclass_instances.
 

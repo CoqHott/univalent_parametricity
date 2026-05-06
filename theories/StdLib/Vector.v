@@ -38,6 +38,21 @@ Inductive t A : nat -> Type :=
   |nil : t A O
   |cons : forall (h:A) (n:nat), t A n -> t A (S n).
 
+#[universes(collapse_sort_variables=no)]
+Definition t_poly : forall (A : Type) (P : forall n : nat, t A n -> Type),
+       P 0 (nil A) ->
+       (forall (h : A) (n : nat) (t : t A n), P n t -> P (S n) (cons A h n t)) ->
+       forall (n : nat) (t : t A n), P n t :=
+fun (A : Type) (P : forall n : nat, t A n -> Type) 
+  (nil : P 0 (nil A))
+  (cons : forall (h : A) (n : nat) (t : t A n),
+	      P n t -> P (S n) (cons A h n t)) =>
+fix F (n : nat) (t : t A n) {struct t} : P n t :=
+  match t as t0 in Vector.t _ n0 return P n0 t0 with
+  | Vector.nil _ => nil
+  | Vector.cons _ h n0 t0 => cons h n0 t0 (F n0 t0)
+  end.
+
 Local Notation "[ ]" := (nil _) (format "[ ]").
 Local Notation "h :: t" := (cons _ h _ t) (at level 60, right associativity).
 
@@ -45,6 +60,7 @@ Section SCHEMES.
 
 (** An induction scheme for non-empty vectors *)
 
+#[universes(collapse_sort_variables=no)]
 Definition rectS {A} (P:forall {n}, t A (S n) -> Type)
  (bas: forall a: A, P (a :: []))
  (rect: forall a {n} (v: t A (S n)), P v -> P (a :: v)) :=
@@ -59,29 +75,36 @@ Definition rectS {A} (P:forall {n}, t A (S n) -> Type)
  |_ => fun devil => False_ind (@IDProp) devil (* subterm !!! *)
  end.
 
+#[universes(collapse_sort_variables=no)]
+Inductive inhab : Type := inh : inhab. 
+
 (** A vector of length [0] is [nil] *)
+#[universes(collapse_sort_variables=no)]
 Definition case0 {A} (P:t A O -> Type) (H:P (nil A)) v:P v :=
 match v with
-  |[] => H
-  |_ => fun devil => False_ind (@IDProp) devil (* subterm !!! *)
+| [] => H
+| cons _ _ n _ => inh
 end.
 
 (** A vector of length [ S _] is [cons] *)
+#[universes(collapse_sort_variables=no)]
 Definition caseS {A} (P : forall {n}, t A (S n) -> Type)
   (H : forall h {n} t, @P n (h :: t)) {n} (v: t A (S n)) : P v :=
 match v with
   |h :: t => H h t
-  |_ => fun devil => False_ind (@IDProp) devil (* subterm !!! *)
+  |_ => inh
 end.
 
+#[universes(collapse_sort_variables=no)]
 Definition caseS' {A} {n : nat} (v : t A (S n)) : forall (P : t A (S n) -> Type)
   (H : forall h t, P (h :: t)), P v :=
   match v with
   | h :: t => fun P H => H h t
-  | _ => fun devil => False_rect (@IDProp) devil
+  | _ => inh
   end.
 
 (** An induction scheme for 2 vectors of same length *)
+#[universes(collapse_sort_variables=no)]
 Definition rect2 {A B} (P:forall {n}, t A n -> t B n -> Type)
   (bas : P [] []) (rect : forall {n v1 v2}, P v1 v2 ->
     forall a b, P (a :: v1) (b :: v2)) :=
