@@ -47,7 +47,7 @@ Class UR_Coh (A B :Type) (e : A ≃ B) (H: PR@{Type _ _ SProp | _ _ _} plain A B
 #[universes(collapse_sort_variables=no)]
 Inductive UR_Type A B :=
   { 
-    Ur :: PR plain A B;
+    Ur : PR plain A B;
     equiv : A ≃ B;
     Ur_Coh :: UR_Coh A B equiv Ur
   }.
@@ -103,11 +103,11 @@ Ltac check_blacklist_PR_Type_univ_univ lhs :=
   | _ => tryif head_is_var lhs then fail else idtac
   end.
 
-#[export] Hint Extern 2 (PR univalent ?lhs _) =>
+#[export] Hint Extern 2 (PR _ ?lhs _) =>
   check_blacklist_PR_Type_univ_univ lhs;
   unshelve notypeclasses refine (PR_Type_univ_univ _); intros; shelve_non_PR: typeclass_instances.
 
-#[export] Hint Extern 100 (PR univalent _ _) => 
+#[export] Hint Extern 100 (PR _ _ _) => 
   unshelve notypeclasses refine (PR_Type_univ_univ _); solve [eassumption]: typeclass_instances.
 
 #[export] Hint Extern 100 (PR plain (?P ?x) _ ) => 

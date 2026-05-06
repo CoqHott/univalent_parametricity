@@ -183,7 +183,7 @@ Qed.
 #[universes(collapse_sort_variables=no)]
 Definition FP_Sigma : @sigT ≈u @sigT.
   cbn; intros. unshelve econstructor.
-  - eapply PRSigma. tc.
+  - eapply PRSigma. intros. eapply Ur. tc.
   - eapply Equiv_Sigma; tc. 
   - econstructor. intros [? ?] [? ?]; cbn in *. 
     split; cbn; intro e. 
@@ -943,8 +943,6 @@ Defined.
 
 Require Import Ltac2Utils.
 
-Set Typeclasses Debug.
-
 Set Warnings "+parametricity-missing-base".
 
 #[local] Unset Universe Polymorphism.
@@ -954,21 +952,6 @@ Set Warnings "+parametricity-missing-base".
 Module Type Args. End Args.
 
 Module Type Interface (Import args : Args).
-
-Parameter imported_Corelib__Init__Datatypes__nat : Set.
-Parameter Corelib__Init__Datatypes__nat_iso : (@UR.pr _ _ _ (UR.PR_Type UR.univalent) nat imported_Corelib__Init__Datatypes__nat).
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances.
-
-Parameter imported_Corelib__Init__Datatypes__O : imported_Corelib__Init__Datatypes__nat.
-Parameter Corelib__Init__Datatypes__O_iso : 0 ≈[ _] imported_Corelib__Init__Datatypes__O.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.O) Corelib__Init__Datatypes__O_iso goal_lhs : typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.O) Corelib__Init__Datatypes__O_iso goal_lhs : typeclass_instances.
-
-Parameter imported_Corelib__Init__Datatypes__S : imported_Corelib__Init__Datatypes__nat -> imported_Corelib__Init__Datatypes__nat.
-Parameter Corelib__Init__Datatypes__S_iso : S ≈[ _] imported_Corelib__Init__Datatypes__S.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances.
 
 Fixpoint build_proof
          (P : nat -> Prop)
@@ -982,24 +965,33 @@ Fixpoint build_proof
 
 Definition nat_ind_tidy := build_proof.
 
-#[universes(polymorphic=yes,collapse_sort_variables=no)]
-Goal PR univalent (forall P : nat -> Prop,
-       P 0 -> (forall n : nat, P n -> P (S n)) -> forall n : nat, P n)
-       (forall P : imported_Corelib__Init__Datatypes__nat -> SProp,
-       P imported_Corelib__Init__Datatypes__O -> (forall n : imported_Corelib__Init__Datatypes__nat, P n -> P (imported_Corelib__Init__Datatypes__S n))
-        -> forall n : imported_Corelib__Init__Datatypes__nat, P n).
-Proof.
-  tc.
-Abort.
 
-#[universes(polymorphic=yes,collapse_sort_variables=no)]
-Definition foo : {B:SProp & PR univalent (forall P : nat -> Prop,
-       P 0 -> (forall n : nat, P n -> P (S n)) -> forall n : nat, P n)
-       B}.
-Proof.
-  eexists. tc.
-Defined. 
+Parameter imported_Corelib__Init__Datatypes__nat : Set.
+Parameter Corelib__Init__Datatypes__nat_iso : (@UR.pr _ _ _ (UR.PR_Type UR.univalent) nat imported_Corelib__Init__Datatypes__nat).
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances.
 
+Parameter imported_Corelib__Init__Datatypes__O : imported_Corelib__Init__Datatypes__nat.
+Parameter Corelib__Init__Datatypes__O_iso : 0 ≈[ _] imported_Corelib__Init__Datatypes__O.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.O) Corelib__Init__Datatypes__O_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.O) Corelib__Init__Datatypes__O_iso goal_lhs : typeclass_instances.
+
+Inductive ev : nat -> Prop :=
+  | ev_0                       : ev 0
+  | ev_SS (n : nat) (H : ev n) : ev (S (S n)).
+
+Set Typeclasses Debug. 
+Parameter imported_LF__IndProp__ev : imported_Corelib__Init__Datatypes__nat -> SProp.
+Parameter LF__IndProp__ev_iso : ev ≈u imported_LF__IndProp__ev.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@ev) LF__IndProp__ev_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (ev) LF__IndProp__ev_iso goal_lhs : typeclass_instances.
+
+Parameter imported_LF__IndProp__evD_0 : import_of (@ev_0).
+Parameter LF__IndProp__evD_0_iso : iso_statement (@LF.IndProp.ev_0) imported_LF__IndProp__evD_0.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@LF.IndProp.ev_0) LF__IndProp__evD_0_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@LF.IndProp.ev_0) LF__IndProp__evD_0_iso goal_lhs : typeclass_instances.
+
+End Interface.
 Parameter imported_LF__IndPrinciples__natD_indD_tidy : (nat_ind_tidy) ≈u _.
 Parameter LF__IndPrinciples__natD_indD_tidy_iso : iso_statement (@LF.IndPrinciples.nat_ind_tidy) imported_LF__IndPrinciples__natD_indD_tidy.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@LF.IndPrinciples.nat_ind_tidy) LF__IndPrinciples__natD_indD_tidy_iso goal_lhs : typeclass_instances.
