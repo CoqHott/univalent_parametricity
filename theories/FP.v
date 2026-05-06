@@ -9,6 +9,7 @@ Require Export UnivalentParametricity.theories.UR.
 Require Import UnivalentParametricity.theories.Transportable.
 (*! Establishing FP for Type !*)
 Unset Collapse Sorts ToType.
+
 Definition URType_Refl_can A : A ≈u A.
 Proof.
   unshelve eexists.
@@ -16,12 +17,15 @@ Proof.
   - apply Equiv_id.
   - econstructor. intros; split; eauto.
 Defined.
+
 Instance Canonical_eq_Type : Canonical_eq Type := Canonical_eq_gen _.
 (* We avoid the use of univalence and use `None` for the coherence condition *) 
+
 Definition FP_Type : Type ≈p Type := {| pr := UR_Type |}.
+
 #[export] Hint Extern 0 (PR Set _) => exact FP_Type : typeclass_instances.
 #[export] Hint Extern 0 (PR _ Set) => exact FP_Type : typeclass_instances.
-(* Axiom SPropProp : Prop = SProp. *)
+
 (*! FP for Dependent product !*)
 (* isequiv_functor_forall can be found in
 [https://github.com/HoTT/HoTT] *)
@@ -118,12 +122,18 @@ Defined.
 Definition FP_forall k :
           pr k (fun A B => forall x:A , B x) (fun A' B' => forall x:A', B' x).
 Proof.
+  cbn. intros.  
   destruct k.
-  - apply FP_forall_plain.
-  - eapply FP_forall_ur.
+  - eapply FP_forall_plain. tc. 
+  - eapply FP_forall_ur. tc. 
 Defined.  
+
 #[export] Hint Unfold pr : core. 
 Typeclasses Transparent pr.
 #[export] Hint Transparent pr : core. 
+
 Hint Extern 0 (UR_Type (forall x:_ , _) _) => unshelve eapply FP_forall_ur; cbn; intros : typeclass_instances.
 Hint Extern 0 (UR_Type _ (forall x:_ , _)) => unshelve eapply FP_forall_ur; cbn; intros : typeclass_instances.
+
+Hint Extern 0 ((forall x : _, _) ≈[ _] _) => unshelve eapply FP_forall; cbn; intros : typeclass_instances.
+Hint Extern 0 (_ ≈[ _] (forall x : _, _)) => unshelve eapply FP_forall; cbn; intros : typeclass_instances.
