@@ -53,30 +53,38 @@ Definition Equiv_Sigma (A A':Type) (e : A ≈u A') (B : A -> Type) (B' : A' -> T
     pose (einv' := fun x y E => UR_Type_Inverse _ _ (e' y x E)).
     unshelve refine (equiv (einv' a (e_fun (equiv einv) a) (ur_refl einv a))).
   - intro E. rewrite sigma_map_compose.
-    unfold univalent_transport. simpl. 
+    unfold univalent_transport. 
     unshelve refine (sigma_map_eq _ _ _ _ _).
     apply e_sect. 
-    intros a l. clear E. apply transport_switch.
-    apply todo.
-    (* cbn. 
-    rewrite <- e_adj. cbn. 
+    intros a l. clear E. set (e_sect (equiv e) a). cbn in e'. 
+    clearbody p. set (equiv (UR_Type_Inverse A A' e)
+              (equiv e a)). set (equiv e a).
+    (* set (ur_refl (UR_Type_Inverse A A' e) a1). clearbody p0. unfold univalent_transport in *. 
+    destruct p.  
+    apply transport_switch. 
     pose (equiv0 := fun a b c => equiv (e' a b c)).
     pose (equiv1 := equiv e).
-    pose ((e_sect (e_fun (equiv e)) a)^ # l).
-    unshelve epose (X0 := (e_fun
+    set (ur_refl e a).
+    set (ur_refl _ _). unfold univalent_transport in *. cbn in *. 
+     rewrite <- e_adj. cbn. 
+     pose (equiv0 := fun a b c => equiv (e' a b c)).
+    set ((e_sect (e_fun (equiv e)) a)^ # l).
+    pose (alt_ur_coh a )
+    pose (X0 := (e_fun
                 (transport_eq
                    (fun X : A' =>
-                    (e_inv (e_fun (equiv e)) (e_fun (equiv e) a) ≈ X)
-                    ≃ (e_inv (e_fun (equiv e)) (e_fun (equiv e) a) ≈ e_fun (equiv e) a))
+                    (e_inv (e_fun (equiv e)) (e_fun (equiv e) a) ≈[ _ ] X)
+                    ≃ (e_inv (e_fun (equiv e)) (e_fun (equiv e) a) ≈[ _ ] e_fun (equiv e) a))
                    (ap (e_fun (equiv e)) (e_sect (e_fun (equiv e)) a))^
-                   (Equiv_id (e_inv (e_fun (equiv e)) (e_fun (equiv e) a) ≈ e_fun (equiv e) a)))
-                _)).
-    { rewrite e_retr, e_sect. eapply ur_refl. }
+                   (Equiv_id (e_inv (e_fun (equiv e)) (e_fun (equiv e) a) ≈[ _ ] e_fun (equiv e) a)))
+                (e_fun
+                   (fst 
+                      (ur_coh (e_inv (e_fun (equiv e)) (e_fun (equiv e) a))
+                      (e_inv (e_fun (equiv e)) (e_fun (equiv e) a)))) eq_refl))).
     pose (e_sect' (equiv0 (e_inv (e_fun equiv1) (e_fun equiv1 a)) (e_fun (equiv e) a)
                           X0) b).
-    etransitivity; try apply p. clear p. unfold b. 
-    cbn. unfold X0, equiv0, equiv1. 
-    (* apply ap. 
+    etransitivity; try apply e0. clear e0. unfold b. 
+    rewrite can_eq_eq. apply ap. 
     symmetry. etransitivity; try apply transport_equiv.
     apply (ap (fun X => e_fun X l)). rewrite inv2.
     set (e'' := fun x XX => equiv0 x (e_fun (equiv e) a) XX).
@@ -94,7 +102,7 @@ Definition Equiv_Sigma (A A':Type) (e : A ≈u A') (B : A -> Type) (B' : A' -> T
          (Equiv_id (e_inv (e_fun (equiv e)) (e_fun (equiv e) a) ≈ e_fun (equiv e) a)))
       (e_fun
          (ur_coh (e_inv (e_fun (equiv e)) (e_fun (equiv e) a))
-            (e_inv (e_fun (equiv e)) (e_fun (equiv e) a))) idpath))=
+            (e_inv (e_fun (equiv e)) (e_fun (equiv e) a))) eq_refl))=
             transport_eq (fun x1 : A => x1 ≈ e_fun (equiv e) x1) XX
                          (ur_refl (e_inv (e_fun (equiv e)) (e_fun (equiv e) a)))).
     destruct XX. reflexivity.
@@ -112,7 +120,7 @@ Definition Equiv_Sigma (A A':Type) (e : A ≈u A') (B : A -> Type) (B' : A' -> T
                          (e_retr (e_fun (equiv e)) a)^
                         (Equiv_id (e_inv (e_fun (equiv e)) a ≈ a)))
          (e_fun (ur_coh (e_inv (e_fun (equiv e)) a) (e_inv (e_fun (equiv e)) a))
-                         idpath)).
+                         eq_refl)).
     pose (e_retr' (equiv0 (e_inv (e_fun equiv1) a) a
                                         X0) l). cbn in *. 
     etransitivity; try apply e0. simpl. unfold X0.
@@ -130,9 +138,8 @@ Definition Equiv_Sigma (A A':Type) (e : A ≈u A') (B : A -> Type) (B' : A' -> T
     rewrite can_eq_eq. 
     apply (ap (fun x => e_fun x _)).
     apply ap. unfold ur_refl.
-    rewrite <- transport_e_fun. cbn. rewrite inv2. reflexivity. *)
-    admit.
-  - admit.*)
+    rewrite <- transport_e_fun. cbn. rewrite inv2. reflexivity.  *)
+  apply todo.
   - apply todo. 
 Defined. 
 
@@ -972,6 +979,7 @@ Parameter Corelib__Init__Datatypes__nat_iso : (@UR.pr _ _ _ (UR.PR_Type UR.univa
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__O : imported_Corelib__Init__Datatypes__nat.
+
 Parameter Corelib__Init__Datatypes__O_iso : 0 ≈[ _] imported_Corelib__Init__Datatypes__O.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.O) Corelib__Init__Datatypes__O_iso goal_lhs : typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.O) Corelib__Init__Datatypes__O_iso goal_lhs : typeclass_instances.

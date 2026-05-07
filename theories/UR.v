@@ -5,10 +5,18 @@
 Require Import HoTT CanonicalEq.
 Require Import UnivalentParametricity.theories.Transportable.
 Require Import URTactics.
+From Ltac2 Require Import Ltac2.
+From Ltac2 Require Import TransparentState.
+From Ltac2 Require Import Bool.
+From Ltac2 Require Import Constr.
+Require Export UnivalentParametricity.theories.Ltac2Utils.
+
+
 Set Universe Polymorphism.
 Set Primitive Projections.
 Set Polymorphic Inductive Cumulativity. 
 Unset Collapse Sorts ToType.
+
 (* basic class for parametric relations *)
 Variant parametricity_kind : Set := 
   | plain 
@@ -34,20 +42,28 @@ Inductive UR_Type A B :=
     equiv : A ≃ B;
     Ur_Coh :: UR_Coh A B equiv Ur
   }.
-Ltac shelve_non_PR :=
-  lazymatch goal with
-  | [ |- PR _ _ _ ] => idtac
-  | [ |- UR_Type _ _ ] => idtac
-  | [ |- pr _ _ _ ] => idtac
-  | [ |- _ ] => shelve
+
+Ltac2 shelve_non_PR () :=
+  match! goal with
+  | [ |- PR _ _ _ ] => ltac1:(idtac)
+  | [ |- UR_Type _ _ ] => ltac1:(idtac)
+  | [ |- pr _ _ _ ] => ltac1:(idtac)
+  | [ |- _ ] => ltac1:(shelve)
   end.
+
+Ltac2 shelve_non_PR_multi () := Control.enter (fun _ => shelve_non_PR ()).
+
+Ltac shelve_non_PR := ltac2:(shelve_non_PR_multi ()).
+
 Instance PR_Type_univ@{sA sB;i j} : PR@{Type Type Type Type | j j j} univalent Type@{sA;i} Type@{sB;i} :=
   Build_PR@{Type Type Type Type | j j j} _ _ _ UR_Type@{Type Type Type sB Type Type sA ; i i i i i i}.
+
 Instance PR_Type@{s sA sB;i j} k : PR@{Type Type Type Type | j j j} k Type@{sA;i} Type@{sB;i} :=
   match k with 
   | plain => PR_Type_plain@{s sA sB; i j}
   | univalent => PR_Type_univ@{sA sB; i j}
   end.  
+
 Arguments Ur {_ _} _.
 Arguments equiv {_ _} _.
 Arguments Ur_Coh {_ _} _.
@@ -63,59 +79,73 @@ Definition PR_Type_gen k (A B:Type) (H:@pr _ _ _ (PR_Type k) A B) : PR k A B :=
   | plain => fun H => H
   | univalent => fun H => PR_Type_univ_univ H
   end H.
-Ltac head_is_var term :=
-  lazymatch term with
-  | ?head _ => head_is_var head
-  | _ => is_var term
-  end.
-Ltac check_blacklist_PR_Type_univ_univ lhs :=
-  lazymatch lhs with
-  | Type => fail
-  | Prop => fail
-  | SProp => fail
-  | forall _, _ => fail
-  | _ => tryif head_is_var lhs then fail else idtac
-  end.
-#[export] Hint Extern 2 (PR _ ?lhs _) =>
-  check_blacklist_PR_Type_univ_univ lhs;
-  unshelve notypeclasses refine (PR_Type_univ_univ _); intros; shelve_non_PR: typeclass_instances.
-#[export] Hint Extern 100 (PR _ _ _) => 
-  unshelve notypeclasses refine (PR_Type_univ_univ _); solve [eassumption]: typeclass_instances.
-#[export] Hint Extern 100 (PR plain (?P ?x) _ ) => 
-  match goal with | H : P ≈[_] _ |- _ => eapply H end
-  : typeclass_instances.
-#[export] Hint Extern 100 (PR plain _ (?P ?x)) => 
-  match goal with | H : _ ≈[_] P |- _ => eapply H end
-  : typeclass_instances.
-#[export] Hint Extern 100 (PR plain _ _) => 
-  unshelve notypeclasses refine (PR_Type_plain_univ _); solve [eassumption]: typeclass_instances.
 
-#[export] Hint Extern 100 (PR _ _ _) => 
-  unshelve notypeclasses refine (PR_Type_gen _ _ _ _); solve [eassumption]: typeclass_instances.
-#[export] Hint Extern 100 (PR univalent (?P ?x) _) => 
-  unshelve notypeclasses refine (PR_Type_univ_univ _);
-  match goal with | H : P ≈[_] _ |- _ => eapply H end
-  : typeclass_instances.
-#[export] Hint Extern 100 (PR univalent _ (?P ?x)) => 
-  unshelve notypeclasses refine (PR_Type_univ_univ _);
-  match goal with | H : _ ≈[_] P |- _ => eapply H end
-  : typeclass_instances.
-#[export] Hint Extern 100 (PR _ (?P ?x) _) => 
-  unshelve notypeclasses refine (PR_Type_gen _ _ _ _);
-  match goal with | H : P ≈[_] _ |- _ => eapply H end
-  : typeclass_instances.
-#[export] Hint Extern 100 (PR _ _ (?P ?x)) => 
-  unshelve notypeclasses refine (PR_Type_gen _ _ _ _);
-  match goal with | H : _ ≈[_] P |- _ => eapply H end
-  : typeclass_instances.
-#[export] Hint Extern 100 (_ ≃ _) => unshelve notypeclasses refine (equiv _): typeclass_instances. 
-#[export] Hint Extern 100 (UR_Coh _ _ _ _) => unshelve notypeclasses refine (Ur_Coh _): typeclass_instances. 
+Ltac2 head_is_var (c:constr) :=
+  let (c_head, _) := Constr.decompose_app_nocast c in
+  is_var c_head.
+
+Ltac2 check_blacklist_PR_Type (lhs:constr) :=
+  lazy_match! lhs with
+  | Type => false
+  | Prop => false
+  | SProp => false
+  | forall _, _ => false
+  | _ => true
+  end.
+
+Ltac2 apply_Type_gen () := 
+  match! goal with
+  | [ |- PR _ ?lhs ?rhs] =>
+    if (check_blacklist_PR_Type lhs && Bool.neg (head_is_var lhs)) ||
+       (check_blacklist_PR_Type rhs && Bool.neg (head_is_var rhs))
+    then
+      first [
+          ltac1:(unshelve notypeclasses refine (PR_Type_univ_univ _)); shelve_non_PR_multi () |
+          ltac1:(unshelve notypeclasses refine (PR_Type_plain_univ _)); shelve_non_PR_multi ()]
+    else 
+      fail "not a variable"
+  end. 
+
+#[export] Hint Extern 2 => apply_Type_gen () : typeclass_instances.
+
+Ltac2 apply_var_tac c := 
+  let (c_head, c_args) := Constr.decompose_app_nocast c in
+  if is_var c_head
+  then
+    if Int.equal (Array.length c_args) 0 
+    then ltac1:(solve [first [eassumption |
+                              unshelve notypeclasses refine (PR_Type_gen _ _ _ _) ; eassumption | 
+                              unshelve notypeclasses refine (PR_Type_plain_univ _); eassumption]])
+    else 
+      let apply_h () := match! goal with 
+        | [ h : ?c ≈[_] _ |- _] => if Constr.equal c_head c then 
+          let h := Control.hyp h in eapply $h else Control.zero Match_failure
+      end in
+      first [apply_h () | 
+             ltac1:(unshelve notypeclasses refine (PR_Type_univ_univ _));apply_h ()|
+             ltac1:(unshelve notypeclasses refine (PR_Type_gen _ _ _ _));apply_h ()]
+  else 
+    Control.zero Match_failure.
+
+Ltac2 apply_var_tac_goal () := 
+  match! goal with
+  | [ |- PR _ ?lhs _] => apply_var_tac lhs
+  | [ |- PR _ _ ?rhs] => apply_var_tac rhs
+  end. 
+
+#[export] Hint Extern 100 => apply_var_tac_goal () : typeclass_instances.
+
+Ltac2 tc () := ltac1:(tc).
+
+#[export] Hint Extern 100 (_ ≃ _) => ltac1:(unshelve notypeclasses refine (equiv _)): typeclass_instances. 
+#[export] Hint Extern 100 (UR_Coh _ _ _ _) => ltac1:(unshelve notypeclasses refine (Ur_Coh _)): typeclass_instances. 
 (* test Prop SProp instances *)
 
-Goal PR plain Prop SProp. tc. Abort. 
-Goal PR univalent Prop SProp. tc. Abort. 
-Goal PR plain SProp SProp. tc. Abort. 
-Goal PR univalent SProp SProp. tc. Abort. 
+Goal PR plain Prop SProp. tc (). Abort. 
+Goal PR univalent Prop SProp. tc (). Abort. 
+Goal PR plain SProp SProp. tc (). Abort. 
+Goal PR univalent SProp SProp. tc (). Abort. 
+
 (* some facilities to create an instance of UR_Type *)
 
 Definition UR_gen A : PR plain A A := {| pr := (path A) |}.
@@ -131,7 +161,7 @@ Proof.
   exact (fun a => fst (ur_coh a a) idpath).
 Defined.  
 
-#[export] Hint Extern 100 (_ ≈[ _ ] _) => unshelve notypeclasses refine  (ur_refl _ _): typeclass_instances.
+#[export] Hint Extern 100 (_ ≈[ _ ] _) => ltac1:(unshelve notypeclasses refine  (ur_refl _ _)): typeclass_instances.
 
 (* The definition of Ur_coh given in the paper is equivalent to *)
 (* the definition given here, but technically, this one is more convenient to use *)
@@ -141,20 +171,16 @@ Definition alt_ur_coh {A B:Type} (H:A ≈u B)
   :
   forall (a:A) (b:B), (a = ↑ b) ↔ (a ≈p b).
 Proof.
-  intros a b. cbn. 
-  refine (transport_eq_gen (fun X => (a = univalent_transport b) ↔ (a ≈p X))
-                       (e_sect _ b) _). 
-  unshelve refine (ur_coh _ _). 
+  intros a b. cbn. set (e_inv _ _). rewrite <- (e_sect _ b).
+  unshelve (refine (ur_coh _ _)). tc (). 
 Defined.
 
 Definition alt_ur_coh_inv {A B:Type}  (e:A ≃ B) (H:A ≈p B) (einv := Equiv_inverse e)
            (HCoh : forall (a:A) (b:B), (a = ↑ b) ↔ (a ≈p b)):
   UR_Coh A B e H.
 Proof.
-  refine (Build_UR_Coh _ _ _ _ _). intros a a'.
-  refine (transport_eq_gen (fun X => (a = X) ↔ (a ≈p univalent_transport a'))
-                       (e_sect _ a') _). 
-  unshelve refine (HCoh _ _). 
+  econstructor; intros. set a' at 2. rewrite <- (e_sect _ a').
+  refine (HCoh _ _). 
 Defined.
 (* Definition of univalent relation for basic type constructors *)
 (*! Forall !*)
@@ -169,22 +195,29 @@ Definition URForall k A A' (B : A -> Type) (B' : A' -> Type) {HA : PR k A A'}
            {HB: forall x y (H: x ≈[ k ] y), PR k (B x) (B' y)} : PR k (forall x, B x) (forall y, B' y)
   :=
   {| pr := fun f g => forall x y (H:x ≈[ k ] y), f x ≈[ k ] g y |}.
-#[export] Hint Extern 0 (PR ?k (forall x:?A, _) _) =>
-  unshelve erefine (@URForall_Type k A _ _); intros; shelve_non_PR : typeclass_instances.
-#[export] Hint Extern 0 (PR ?k _ (forall x:?A, _)) =>
-  unshelve erefine (@URForall_Type k A _ _); intros; shelve_non_PR : typeclass_instances.
-#[export] Hint Extern 1 (PR ?k (forall x:?A, _) _) =>
-  unshelve erefine (@URForall k A _ _ _ _ _); intros; shelve_non_PR : typeclass_instances.
-#[export] Hint Extern 1 (PR ?k _ (forall x:?A, _)) =>
-  unshelve erefine (@URForall k A _ _ _ _ _); intros; shelve_non_PR : typeclass_instances.
+
+Ltac2 apply_forall_tac () := 
+  match! goal with
+  | [ |- PR _ (forall x:_, _) _] => first [
+    ltac1:(unshelve erefine (@URForall_Type _ _ _ _)); intros; shelve_non_PR_multi () |
+    ltac1:(unshelve erefine (@URForall _ _ _ _ _ _ _)); intros; shelve_non_PR_multi ()
+    ]
+  | [ |- PR _ _ (forall x:_, _)] => first [
+    ltac1:(unshelve erefine (@URForall_Type _ _ _ _)); intros; shelve_non_PR_multi () |
+    ltac1:(unshelve erefine (@URForall _ _ _ _ _ _ _)); intros; shelve_non_PR_multi () 
+    ]
+  end. 
+
+#[export] Hint Extern 0 => apply_forall_tac () : typeclass_instances.
 
 Definition UR_Equiv_refl k (A B:Type) (e:A ≃ B) (e_inv := Equiv_inverse e) `{PR k A B} : PR k B B :=
   {| pr := fun b b' => ↑ b ≈[k] b' |}.
-(*! UR is symmetric on types !*)
+
+  (*! UR is symmetric on types !*)
 Definition UR_Type_Inverse (A B : Type) : A ≈u B -> B ≈u A.
 intro e. unshelve econstructor.
-- eapply PR_inverse. eapply Ur. tc. 
-- apply Equiv_inverse; tc.
+- eapply PR_inverse. eapply Ur. tc (). 
+- apply Equiv_inverse; tc ().
 - apply alt_ur_coh_inv. 
   intros b a. cbn.
   destruct (alt_ur_coh e a b) as [l r].  
@@ -197,7 +230,7 @@ Definition compat_inverse k (A A' B B':Type) (pA: PR k A A') (pB: PR k B B')
            (pA' := PR_inverse k pA)
            (pB' := PR_inverse k pB) (f : A -> B) (g : A' -> B') :
   f ≈[k] g -> g ≈[k] f.
-  cbn. tc. 
+  cbn. tc (). 
 Defined.
 
 Definition compat_inverse2 k {A A' B B' C C' :Type} {eA: PR k A A'} (eA' := PR_inverse k eA)
@@ -205,7 +238,7 @@ Definition compat_inverse2 k {A A' B B' C C' :Type} {eA: PR k A A'} (eA' := PR_i
            {eC: PR k C C'} (eC' := PR_inverse k eC)
            {f : A -> B -> C} {g : A' -> B' -> C'} :
   f ≈[k] g -> g ≈[k] f.
-  cbn. tc. 
+  cbn. tc (). 
 Defined. 
 (*! Canonical UR from a type equivalence !*)
 
@@ -216,10 +249,9 @@ Definition Canonical_UR (A B:Type) `{A ≃ B} : A ≈u B.
 Proof.
   unshelve econstructor.
   - eapply Canonical_PR. 
-  - refine {| ur_coh := _ |}.
+  - unshelve (refine {| ur_coh := _ |}).
     intros a a'. cbn. unfold univalent_transport. 
-    refine (transport_eq_gen (fun X => _ ↔ (a = X)) (e_sect' H _)^ _). 
-    split; intro; eauto. 
+    rewrite (e_sect' H _). split; intro; eauto. 
 Defined.      
 (* some generic ways of getting UR instances *)
 
@@ -235,30 +267,29 @@ Proof.
   - eapply UR_Equiv; eauto. eapply H0.   
   - apply (equiv_compose (equiv H0)). apply Equiv_inverse. exact H.
   - econstructor.
-    intros a a'. cbn. unfold univalent_transport. 
-    refine (transport_eq_gen (fun X => _ ↔ (a ≈u X)) (e_retr' H _)^ _). apply ur_coh; tc.
+    intros a a'. cbn. unfold univalent_transport.
+    rewrite (e_retr' H (equiv H0 a')). apply ur_coh; tc ().
 Defined.     
 
 Definition UR_Type_Equiv' (A B C:Type) `{C ≃ A} `{A ≈u B} : C ≈u B.
 Proof.
     unshelve econstructor.
-  - eapply UR_Equiv'; try eapply Ur; tc. 
+  - eapply UR_Equiv'; eauto. eapply Ur. tc (). 
   - apply (equiv_compose H (equiv H0)).
   - econstructor. intros. cbn.
     unfold univalent_transport. 
-    pose proof (ucoh := ur_coh (H a) (H a')).
     split; intros.
-    + exact (fst ucoh (ap H H1)).
-    + eapply isequiv_ap. apply (snd ucoh); tc.
+    + exact (fst (ur_coh (H a) (H a')) (ap H H1)).
+    + eapply isequiv_ap. apply (snd (ur_coh (H a) (H a'))); tc ().
 Defined. 
 
 Definition UR_Equiv_gen (X:Type) (eX : X ≈p X) (A B: X -> Type)
   (HAB: forall x, B x ≃ A x) (x y:X) (e : x ≈p y) (H:A x ≈p A y)
   : B x ≈p B y.
 Proof.
-  unshelve refine (UR_Equiv _ _ _ _).
-  unshelve refine (UR_Equiv' _ _ _ _).
-  auto. 
+  unshelve (refine (UR_Equiv _ _ _ _)). 2:eauto.
+  unshelve (refine (UR_Equiv' _ _ _ _)). 2: eauto. 
+  eauto.
 Defined.
 
 Definition UR_Type_Equiv_gen (X:Type) (eX : X ≈u X)
@@ -266,6 +297,64 @@ Definition UR_Type_Equiv_gen (X:Type) (eX : X ≈u X)
   (H':A x ≈u A y)
   : B x ≈u B y.
 Proof.
-  unshelve refine (UR_Type_Equiv _ _ _).
-  unshelve refine (UR_Type_Equiv' _ _ _); tc. 
+  unshelve (refine (UR_Type_Equiv _ _ _)). 2:eauto.
+  unshelve (refine (UR_Type_Equiv' _ _ _)). 2:eauto. tc (). 
 Defined.  
+
+(* Some Ltac2 faciilites *)
+
+Ltac2 Set post_tc_hint_hook := fun () => intros; shelve_non_PR_multi ().
+
+Ltac2 univparamtc_statement_type (f : constr) : constr :=
+  f.
+
+Ltac2 postreduce (c : constr) :=
+  eval cbn [UR.pr
+    UR.PR_Type
+    UR.PR_Type_gen
+    UR.PR_Type_plain
+    UR.PR_Type_univ
+    UR.PR_Type_univ_univ
+    UR.URForall
+    UR.URForall_Type
+  ] in $c.
+
+Ltac2 iso_statement (f : constr) (g : constr) (fty : constr option) :=
+  let ty := match fty with Some ty => ty | None => univparamtc_statement_type f end in
+  let c := constr:(@pr univalent $ty _ _ $f $g) in
+  c.
+
+Ltac2 iso_statement_with_sorts
+    (f : constr) (g : constr) (_sorts : constr list) (fty : constr option) :=
+  iso_statement f g fty.
+
+
+Ltac2 import_of_with_sorts (f : constr) (sorts : constr list) (fty : constr option) :=
+  let (_h, args) := Constr.decompose_app f in
+  if Bool.neg (Int.equal (Array.length args) 0) then
+    Control.throw
+      (Tactic_failure
+        (Some
+          (Message.of_string
+            "import_of should be called on a reference, not an application")))
+  else
+    let fty := match fty with Some ty => Some ty | None => Some (univparamtc_statement_type f) end in
+    let t := '_ in
+    let f2 := Fresh.in_goal @f2 in
+    let _ := Constr.in_context f2 t (fun () =>
+      Control.refine (fun () => iso_statement_with_sorts f (Control.hyp f2) sorts fty)) in
+    t.
+
+Ltac2 import_of (f : constr) (fty : constr option) := import_of_with_sorts f [] fty.
+
+Abbreviation iso_statement f g :=
+  (match tt return _ with tt =>
+    ltac2:(Control.refine
+      (fun () => iso_statement (Constr.open_pretype f) (Constr.open_pretype g) None))
+  end) (only parsing).
+
+
+Abbreviation import_of f :=
+  (match tt return _ with tt =>
+    ltac2:(Control.refine (fun () => import_of (Constr.open_pretype_no_tc f) None))
+  end) (only parsing).

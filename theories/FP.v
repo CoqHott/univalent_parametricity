@@ -23,9 +23,6 @@ Instance Canonical_eq_Type : Canonical_eq Type := Canonical_eq_gen _.
 
 Definition FP_Type : Type ≈p Type := {| pr := UR_Type |}.
 
-#[export] Hint Extern 0 (PR Set _) => exact FP_Type : typeclass_instances.
-#[export] Hint Extern 0 (PR _ Set) => exact FP_Type : typeclass_instances.
-
 (*! FP for Dependent product !*)
 (* isequiv_functor_forall can be found in
 [https://github.com/HoTT/HoTT] *)
@@ -47,7 +44,7 @@ Proof.
   - intros h. apply funext. intro a. unfold functor_forall.
     destruct (e_retr f a). apply e_sect. 
   - intros h;apply funext. unfold functor_forall. intros b.
-    rewrite e_adj. rewrite transport_ap.
+    rewrite e_adj. rewrite (transport_ap P f (e_sect f b)).
     rewrite <- (@e_retr _ _ (g b) (H b) (h b)).
     apply ap. set (e_sect f b).
     set (e_inv f (f b)) in *. destruct p. cbn. reflexivity.
@@ -128,15 +125,18 @@ Proof.
   - eapply FP_forall_ur. tc. 
 Defined.  
 
-#[export] Hint Unfold pr : core. 
-Typeclasses Transparent pr.
-#[export] Hint Transparent pr : core. 
+Ltac apply_forall := 
+  first [unshelve eapply FP_forall_ur | unshelve eapply FP_forall];
+    cbn; intros; shelve_non_PR.
 
-Hint Extern 0 (UR_Type (forall x:_ , _) _) => unshelve eapply FP_forall_ur; cbn; intros; shelve_non_PR : typeclass_instances.
-Hint Extern 0 (UR_Type _ (forall x:_ , _)) => unshelve eapply FP_forall_ur; cbn; intros; shelve_non_PR : typeclass_instances.
-
-Hint Extern 0 ((forall x : _, _) ≈[ _] _) => unshelve eapply FP_forall; cbn; intros; shelve_non_PR : typeclass_instances.
-Hint Extern 0 (_ ≈[ _] (forall x : _, _)) => unshelve eapply FP_forall; cbn; intros; shelve_non_PR : typeclass_instances.
+Hint Extern 0 => 
+  match goal with | 
+    [ |- UR_Type (forall x:_ , _) _ ] => apply_forall |
+    [ |- UR_Type _ (forall x:_ , _) ] => apply_forall |
+    [ |- (forall x : _, _) ≈[ _] _  ] => apply_forall |
+    [ |- _ ≈[ _] (forall x : _, _)  ] => apply_forall 
+  end
+    : typeclass_instances.
 
 Goal forall k A A' (Aϵ: A ≈[k] A') t t' (tϵ : t ≈[k] t'),
           (fun x:A => t) ≈[k] (fun x:A' => t').

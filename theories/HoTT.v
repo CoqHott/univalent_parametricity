@@ -426,15 +426,6 @@ Class IsEquiv {A : Type} {B : Type} (f : A -> B) : Type := BuildIsEquiv {
   e_adj : forall x : A, e_retr (f x) = ap f (e_sect x);
 }.
 
-(*
-Record IsEquiv@{s s' ; + | s -> Fib +} {A : Type@{s;_}} {B : Type@{s';_}} (f : A -> B) : Fib := BuildIsEquiv {
-  e_inv : Box (B -> A) ;
-  e_sect : forall x, e_inv (f x) = x;
-  e_retr : forall y, f (e_inv y) = y;
-  e_adj : forall x : A, e_retr (f x) = ap f (e_sect x);
-}.
-*)
-
 (** A class that includes all the data of an adjoint equivalence. *)
 #[universes(collapse_sort_variables=no)]
 Class Equiv A B : Type := BuildEquiv {
