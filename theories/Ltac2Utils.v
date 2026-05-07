@@ -1338,6 +1338,7 @@ Module Export Notations.
 
   Ltac2 Notation "eexact_no_tc" c(preterm) := exact2 true false c.
   Ltac2 Notation "erefine" c(preterm) := unshelve (eexact_no_tc $preterm:c).
+  Ltac2 Notation "erefineb" c(preterm) := unshelve (eexact_no_tc $preterm:c); cbv beta.
 End Notations.
 Import Ltac2.Printf.
 Import Ltac2.Bool.BoolNotations.
