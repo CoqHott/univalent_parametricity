@@ -306,7 +306,7 @@ Defined.
 Ltac2 Set post_tc_hint_hook := fun () => intros; shelve_non_PR_multi ().
 
 Ltac2 univparamtc_statement_type (f : constr) : constr :=
-  f.
+  Constr.type f.
 
 Ltac2 postreduce (c : constr) :=
   eval cbn [UR.pr
