@@ -137,3 +137,18 @@ Hint Extern 0 (UR_Type _ (forall x:_ , _)) => unshelve eapply FP_forall_ur; cbn;
 
 Hint Extern 0 ((forall x : _, _) ≈[ _] _) => unshelve eapply FP_forall; cbn; intros; shelve_non_PR : typeclass_instances.
 Hint Extern 0 (_ ≈[ _] (forall x : _, _)) => unshelve eapply FP_forall; cbn; intros; shelve_non_PR : typeclass_instances.
+
+Goal forall k A A' (Aϵ: A ≈[k] A') t t' (tϵ : t ≈[k] t'),
+          (fun x:A => t) ≈[k] (fun x:A' => t').
+Proof.
+  Fail tc.
+Abort.
+
+Hint Extern 0 ((fun x : _ => _) ≈[ _] _) => cbn : typeclass_instances.
+Hint Extern 0 (_ ≈[ _] (fun x : _ => _)) => cbn : typeclass_instances.
+
+Goal forall k A A' (Aϵ: A ≈[k] A') t t' (tϵ : t ≈[k] t'),
+          (fun x:A => t) ≈[k] (fun x:A' => t').
+Proof.
+  tc.
+Abort.
