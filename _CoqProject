@@ -3,6 +3,7 @@ theories/HoTT.v
 theories/CanonicalEq.v
 theories/Transportable.v
 theories/URTactics.v
+theories/Ltac2Utils.v
 theories/UR.v
 theories/FP.v
 theories/DecidableEq.v
