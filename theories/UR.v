@@ -30,8 +30,8 @@ Arguments pr k {_ _ _} a b.
 Notation "x ≈[ k ] y" := (pr k x y) (at level 20).
 Notation "x ≈p y" := (x ≈[plain] y) (at level 20).
 Notation "x ≈u y" := (x ≈[univalent] y) (at level 20).
-Definition PR_Type_plain@{s sA sB;i j} : PR@{Type Type Type Type | j j j} plain Type@{sA|i} Type@{sB|i} :=
-  Build_PR@{Type Type Type Type | j j j} _ _ _ (PR@{Type sA sB s; i i i} plain).
+Definition PR_Type_plain@{s sA sB;uA uB uR j} : PR@{Type Type Type Type | j j j} plain Type@{sA|uA} Type@{sB|uB} :=
+  Build_PR@{Type Type Type Type | j j j} _ _ _ (PR@{Type sA sB s; uA uB uR} plain).
 
 Class UR_Coh (A B :Type) (e : A ≃ B) (H: PR@{Type _ _ SProp | _ _ _} plain A B) : Type := {
   ur_coh : forall (a a':A), (a = a') ↔ (a ≈p ↑ a')}.
@@ -55,14 +55,14 @@ Ltac2 shelve_non_PR_multi () := Control.enter (fun _ => shelve_non_PR ()).
 
 Ltac shelve_non_PR := ltac2:(shelve_non_PR_multi ()).
 
-Definition PR_Type_univ@{sA sB;i j} : PR@{Type Type Type Type | j j j} univalent Type@{sA;i} Type@{sB;i} :=
-  Build_PR@{Type Type Type Type | j j j} _ _ _ UR_Type@{Type Type Type sB Type Type sA ; i i i i i i}.
+Definition PR_Type_univ@{sA sB;uA uB uR j} : PR@{Type Type Type Type | j j j} univalent Type@{sA;uA} Type@{sB;uB} :=
+  Build_PR@{Type Type Type Type | j j j} _ _ _ UR_Type@{Type Type Type sB Type Type sA ; uA uB uR uR uR uR}.
 
-Definition PR_Type@{s sA sB;i j} k : PR@{Type Type Type Type | j j j} k Type@{sA;i} Type@{sB;i} :=
+Definition PR_Type@{s sA sB;uA uB uR j} k : PR@{Type Type Type Type | j j j} k Type@{sA;uA} Type@{sB;uB} :=
   match k with
-  | plain => PR_Type_plain@{s sA sB; i j}
-  | univalent => PR_Type_univ@{sA sB; i j}
-  end.  
+  | plain => PR_Type_plain@{s sA sB; uA uB uR j}
+  | univalent => PR_Type_univ@{sA sB; uA uB uR j}
+  end.
 
 Arguments Ur {_ _} _.
 Arguments equiv {_ _} _.
@@ -71,8 +71,8 @@ Arguments ur_coh {_ _ _ _ _} _ _.
 
 Ltac2 apply_PR_Type_gen () :=
   lazy_match! goal with
-  | [ |- PR _ Prop  _ ] => exact (@PR_Type@{_ Prop SProp;_ _} _)
-  | [ |- PR _ SProp _ ] => exact (@PR_Type@{_ SProp SProp;_ _} _)
+  | [ |- PR _ Prop  _ ] => exact (@PR_Type@{_ Prop SProp;_ _ _ _} _)
+  | [ |- PR _ SProp _ ] => exact (@PR_Type@{_ SProp SProp;_ _ _ _} _)
   | [ |- PR _ _     _ ] => exact (@PR_Type _)
   end.
 
