@@ -45,10 +45,10 @@ Inductive UR_Type A B :=
 
 Ltac2 shelve_non_PR () :=
   match! goal with
-  | [ |- PR _ _ _ ] => ltac1:(idtac)
-  | [ |- UR_Type _ _ ] => ltac1:(idtac)
-  | [ |- pr _ _ _ ] => ltac1:(idtac)
-  | [ |- _ ] => ltac1:(shelve)
+  | [ |- PR _ _ _ ] => ()
+  | [ |- UR_Type _ _ ] => ()
+  | [ |- pr _ _ _ ] => ()
+  | [ |- _ ] => Control.shelve ()
   end.
 
 Ltac2 shelve_non_PR_multi () := Control.enter (fun _ => shelve_non_PR ()).
@@ -100,8 +100,8 @@ Ltac2 apply_Type_gen () :=
        (check_blacklist_PR_Type rhs && Bool.neg (head_is_var rhs))
     then
       first [
-          ltac1:(unshelve notypeclasses refine (PR_Type_univ_univ _)); shelve_non_PR_multi () |
-          ltac1:(unshelve notypeclasses refine (PR_Type_plain_univ _)); shelve_non_PR_multi ()]
+          erefineb (PR_Type_univ_univ _); shelve_non_PR_multi () |
+          erefineb (PR_Type_plain_univ _); shelve_non_PR_multi ()]
     else 
       fail "not a variable"
   end. 
@@ -113,17 +113,17 @@ Ltac2 apply_var_tac c :=
   if is_var c_head
   then
     if Int.equal (Array.length c_args) 0 
-    then ltac1:(solve [first [eassumption |
-                              unshelve notypeclasses refine (PR_Type_gen _ _ _ _) ; eassumption | 
-                              unshelve notypeclasses refine (PR_Type_plain_univ _); eassumption]])
+    then solve [first [eassumption |
+                       erefineb (PR_Type_gen _ _ _ _) ; eassumption |
+                       erefineb (PR_Type_plain_univ _); eassumption]]
     else 
       let apply_h () := match! goal with 
         | [ h : ?c ≈[_] _ |- _] => if Constr.equal c_head c then 
           let h := Control.hyp h in eapply $h else Control.zero Match_failure
       end in
       first [apply_h () | 
-             ltac1:(unshelve notypeclasses refine (PR_Type_univ_univ _));apply_h ()|
-             ltac1:(unshelve notypeclasses refine (PR_Type_gen _ _ _ _));apply_h ()]
+             erefineb (PR_Type_univ_univ _);apply_h ()|
+             erefineb (PR_Type_gen _ _ _ _);apply_h ()]
   else 
     Control.zero Match_failure.
 
@@ -135,10 +135,10 @@ Ltac2 apply_var_tac_goal () :=
 
 #[export] Hint Extern 100 => apply_var_tac_goal () : typeclass_instances.
 
-Ltac2 tc () := ltac1:(tc).
+Ltac2 tc () := typeclasses_eauto with typeclass_instances.
 
-#[export] Hint Extern 100 (_ ≃ _) => ltac1:(unshelve notypeclasses refine (equiv _)): typeclass_instances. 
-#[export] Hint Extern 100 (UR_Coh _ _ _ _) => ltac1:(unshelve notypeclasses refine (Ur_Coh _)): typeclass_instances. 
+#[export] Hint Extern 100 (_ ≃ _) => erefineb (equiv _): typeclass_instances.
+#[export] Hint Extern 100 (UR_Coh _ _ _ _) => erefineb (Ur_Coh _): typeclass_instances.
 (* test Prop SProp instances *)
 
 Goal PR plain Prop SProp. tc (). Abort. 
@@ -161,7 +161,7 @@ Proof.
   exact (fun a => fst (ur_coh a a) idpath).
 Defined.  
 
-#[export] Hint Extern 100 (_ ≈[ _ ] _) => ltac1:(unshelve notypeclasses refine  (ur_refl _ _)): typeclass_instances.
+#[export] Hint Extern 100 (_ ≈[ _ ] _) => erefineb (ur_refl _ _): typeclass_instances.
 
 (* The definition of Ur_coh given in the paper is equivalent to *)
 (* the definition given here, but technically, this one is more convenient to use *)
@@ -199,12 +199,12 @@ Definition URForall k A A' (B : A -> Type) (B' : A' -> Type) {HA : PR k A A'}
 Ltac2 apply_forall_tac () := 
   match! goal with
   | [ |- PR _ (forall x:_, _) _] => first [
-    ltac1:(unshelve erefine (@URForall_Type _ _ _ _)); intros; shelve_non_PR_multi () |
-    ltac1:(unshelve erefine (@URForall _ _ _ _ _ _ _)); intros; shelve_non_PR_multi ()
+    erefineb (@URForall_Type _ _ _ _); intros; shelve_non_PR_multi () |
+    erefineb (@URForall _ _ _ _ _ _ _); intros; shelve_non_PR_multi ()
     ]
   | [ |- PR _ _ (forall x:_, _)] => first [
-    ltac1:(unshelve erefine (@URForall_Type _ _ _ _)); intros; shelve_non_PR_multi () |
-    ltac1:(unshelve erefine (@URForall _ _ _ _ _ _ _)); intros; shelve_non_PR_multi () 
+    erefineb (@URForall_Type _ _ _ _); intros; shelve_non_PR_multi () |
+    erefineb (@URForall _ _ _ _ _ _ _); intros; shelve_non_PR_multi ()
     ]
   end. 
 

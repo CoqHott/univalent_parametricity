@@ -1324,6 +1324,21 @@ Module Export Notations.
   (* TODO Remove once we update Coq, this has been upstreamed *)
   Ltac2 Notation "rename" renames(list1(seq(ident, "into", ident), ",")) :=
     Std.rename renames.
+
+  (* more general form of Ltac2.Notations.exact1 *)
+  Ltac2 exact2 ev tc c :=
+    Control.enter (fun () =>
+      let c :=
+        Constr.Pretype.pretype
+          (if ev then if tc then Constr.Pretype.Flags.open_constr_flags_with_tc else Constr.Pretype.Flags.open_constr_flags_no_tc else Constr.Pretype.Flags.constr_flags)
+          (Constr.Pretype.expected_oftype (Control.goal()))
+          c
+      in
+      Std.exact_no_check c).
+
+  Ltac2 Notation "eexact_no_tc" c(preterm) := exact2 true false c.
+  Ltac2 Notation "erefine" c(preterm) := unshelve (eexact_no_tc $preterm:c).
+  Ltac2 Notation "erefineb" c(preterm) := unshelve (eexact_no_tc $preterm:c); cbv beta.
 End Notations.
 Import Ltac2.Printf.
 Import Ltac2.Bool.BoolNotations.
@@ -2506,7 +2521,7 @@ Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (go
     Control.zero Match_failure.
 
 Ltac tc_hint_for key lem goal_lhs :=
-  let tac := ltac2:(key lem goal_lhs |- 
+  let tac := ltac2:(key lem goal_lhs |-
   tc_hint_for true false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
   tac key lem goal_lhs.
 
