@@ -195,24 +195,29 @@ Defined.
 (*! Forall !*)
 #[export] Hint Extern 0 (?x ≈[ _ ] ?y) => eassumption : typeclass_instances.
 
-Definition URForall_Type k A A' {HA : PR k A A'} :
-   PR k (A -> Type) (A' -> Type)
+Definition URArrow k A A' B B' {HA : PR k A A'} 
+           {HB: forall x y (H: x ≈[ k ] y), PR k B B'} : PR k (A -> B) (A' -> B')
   :=
-    {| pr := fun P Q => forall x y (H:@pr k _ _ HA x y), pr k (P x) (Q y) |}.
+  {| pr := fun f g => forall x y (H:x ≈[ k ] y), f x ≈[ k ] g y |}.
 
 Definition URForall k A A' (B : A -> Type) (B' : A' -> Type) {HA : PR k A A'} 
            {HB: forall x y (H: x ≈[ k ] y), PR k (B x) (B' y)} : PR k (forall x, B x) (forall y, B' y)
   :=
   {| pr := fun f g => forall x y (H:x ≈[ k ] y), f x ≈[ k ] g y |}.
 
+
 Ltac2 apply_forall_tac () := 
   match! goal with
+  | [ |- PR _ (_ -> _) _] => first [
+    erefineb (@URArrow _ _ _ _ _ _ _); intros; shelve_non_PR_multi ()
+    ]
+  | [ |- PR _ _ (_ -> _)] => first [
+    erefineb (@URArrow _ _ _ _ _ _ _); intros; shelve_non_PR_multi ()
+    ]
   | [ |- PR _ (forall x:_, _) _] => first [
-    erefineb (@URForall_Type _ _ _ _); intros; shelve_non_PR_multi () |
     erefineb (@URForall _ _ _ _ _ _ _); intros; shelve_non_PR_multi ()
     ]
   | [ |- PR _ _ (forall x:_, _)] => first [
-    erefineb (@URForall_Type _ _ _ _); intros; shelve_non_PR_multi () |
     erefineb (@URForall _ _ _ _ _ _ _); intros; shelve_non_PR_multi ()
     ]
   end. 
@@ -325,7 +330,7 @@ Ltac2 postreduce (c : constr) :=
     UR.PR_Type_univ
     UR.PR_Type_univ_univ
     UR.URForall
-    UR.URForall_Type
+    UR.URArrow
   ] in $c.
 
 Ltac2 iso_statement (f : constr) (g : constr) (fty : constr option) :=

@@ -1,4 +1,5 @@
 -arg "-w '-notation-overridden'" -R . UnivalentParametricity
+theories/Ltac2Utils.v
 theories/HoTT.v
 theories/CanonicalEq.v
 theories/Transportable.v
