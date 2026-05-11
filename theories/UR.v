@@ -140,6 +140,8 @@ Ltac2 apply_var_tac_goal () :=
   match! goal with
   | [ |- PR _ ?lhs _] => apply_var_tac lhs
   | [ |- PR _ _ ?rhs] => apply_var_tac rhs
+  | [ |- ?lhs ≈[_] _] => apply_var_tac lhs
+  | [ |- _ ≈[_] ?rhs] => apply_var_tac rhs
   end. 
 
 #[export] Hint Extern 100 => apply_var_tac_goal () : typeclass_instances.
