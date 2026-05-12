@@ -180,6 +180,7 @@ Proof. cbn. reflexivity. Qed.
 Definition transport_eq {A : Type} (P : A -> Type) {x y : A} (p : x = y) (u : P x) : P y :=
   match p with idpath => u end.
 
+Notation "p ## x" := (transport_eq_gen _ p x) (right associativity, at level 65, only parsing).
 Notation "p # x" := (transport_eq _ p x) (right associativity, at level 65, only parsing).
 
 #[universes(collapse_sort_variables=no)]
@@ -292,19 +293,20 @@ Definition transport_double' A B (P : A -> B -> Type) x y (e : x = y) g (f : for
   destruct e. reflexivity.
 Defined.
 
+#[universes(collapse_sort_variables=no)]
 Definition path_sigma_uncurried {A : Type} (P : A -> Type) (u v : sigT P)
-           (pq : {p : u.1 = v.1 & u.2 = p^ # v.2})
+           (pq : {p : u.1 = v.1 & u.2 = p^ ## v.2})
 : u = v.
 Proof.
   destruct pq as [p q]. destruct u, v. simpl in *. destruct p.
-  simpl in q. rewrite q. reflexivity.
+  simpl in q. rewrite q. rewrite transport_eq_gen_refl. reflexivity.
 Defined.
 
 Definition path_sigma_SProp {A : Type} (P : A -> SProp) (u v : sigT P)
            (pq : u.1 = v.1)
 : u = v.
 Proof.
-  destruct u, v. cbn in *. destruct pq. reflexivity.
+  eapply path_sigma_uncurried. now unshelve econstructor. 
 Defined.
 
 #[universes(collapse_sort_variables=no)]
@@ -314,8 +316,8 @@ Notation "p ..1" := (pr1_path p) (at level 50).
 
 #[universes(collapse_sort_variables=no)]
 Definition pr2_path {A} `{P : A -> Type} {u v : sigT P} (p : u = v)
-  : u.2 = p..1^ # v.2.
-  destruct p. reflexivity. 
+  : u.2 = p..1^ ## v.2.
+  destruct p. now rewrite transport_eq_gen_refl.
 Defined.
 
 Notation "p ..2" := (pr2_path p) (at level 50). 

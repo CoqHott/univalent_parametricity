@@ -50,7 +50,7 @@ Axiom todo : forall A, A.
 Definition Equiv_Sigma (A A':Type) (e : A ≈u A') (B : A -> Type) (B' : A' -> Type) 
      (e' : B ≈u B') : (sigT B) ≃ (sigT B').
   unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)).
-  - unshelve refine (sigma_map univalent_transport (fun a => univalent_transport)). tc. eapply e'. tc. 
+  - unshelve refine (sigma_map univalent_transport (fun a => univalent_transport)).
     (* eapply (equiv e). eapply (e' a _ (ur_refl_ e a)). *)
   - unshelve refine (sigma_map univalent_transport (fun a => univalent_transport)).
     apply Equiv_inverse; typeclasses eauto.
@@ -216,27 +216,24 @@ Definition FP_Sigma : @sigT ≈u @sigT.
       unshelve eapply (snd (ur_coh _ _)) in e2; tc.
 Defined.
 
-#[export] Hint Extern 0 (sigT _ ≈u sigT _) => 
-  unshelve erefine (FP_Sigma _ _ _ _ _ _); intros : typeclass_instances. 
+#[export] Hint Extern 0 (sigT _ ≈u _) => 
+  unshelve erefine (FP_Sigma _ _ _ _ _ _); intros ; shelve_non_PR : typeclass_instances. 
+
+#[export] Hint Extern 0 (_ ≈u sigT _) => 
+  unshelve erefine (FP_Sigma _ _ _ _ _ _); intros ; shelve_non_PR : typeclass_instances. 
 
 Transparent functor_forall sigma_map. 
 #[export] Hint Transparent functor_forall sigma_map : core.
 #[export] Hint Unfold functor_forall sigma_map : core.
 
 #[universes(collapse_sort_variables=no)]
-Definition FP_existT : @existT ≈p @existT.
+Definition FP_existT k : @existT ≈[k] @existT.
   intros A B H P Q H' x y e X Y E. 
   exact (existT _ e E).
 Defined. 
 
-#[universes(collapse_sort_variables=no)]
-Definition FP_existT_univ : @existT ≈u @existT.
-  intros A B H P Q H' x y e X Y E. 
-  exact (existT _ e E).
-Defined. 
-
-#[export] Hint Extern 0 ((?x; ?y) ≈[_] (?x'; ?y')) => unshelve refine (FP_existT _ _ _ _ _ _ _ _ _ _ _ _ ): typeclass_instances.
-#[export] Hint Extern 0 ({e0 : ?x ≈[_] ?y & ?X ≈[_] ?Y}) => unshelve refine (FP_existT _ _ _ _ _ _ _ _ _ _ _ _ ): typeclass_instances.
+#[export] Hint Extern 0 ((?x; ?y) ≈[_] (?x'; ?y')) => unshelve refine (FP_existT _ _ _ _ _ _ _ _ _ _ _ _ _ ); intros; shelve_non_PR : typeclass_instances.
+#[export] Hint Extern 0 ({e0 : ?x ≈[_] ?y & ?X ≈[_] ?Y}) => unshelve eexists; intros; shelve_non_PR : typeclass_instances.
 
 #[universes(collapse_sort_variables=no)]
 Definition FP_sigT_rect : @sigT_rect ≈p @sigT_rect.
@@ -794,12 +791,12 @@ Proof.
   cbn; intros. econstructor; tc.
 Defined.
 
-Hint Extern 0 ([] ≈u []) => exact FP_nil : typeclass_instances.
+Hint Extern 0 ([] ≈u []) => eapply FP_nil : typeclass_instances.
 Hint Extern 0 ([] ≈p []) => eapply PR_list_nil : typeclass_instances.
 
 Hint Extern 0 (cons _ _ ≈u cons _ _) => apply FP_cons : typeclass_instances.
 Hint Extern 0 (cons _ _ ≈p cons _ _) => apply PR_list_cons : typeclass_instances.
-                                  
+
 Definition FP_List_rect : @list_rect ≈u @list_rect.
 Proof.
   cbn. intros A B e X X' eX P P' P_nil Q Q' Q_cons l l' el. 
@@ -813,7 +810,8 @@ Proof.
 Defined.
 
 #[export] Hint Extern 0 (list_rect _ ?X ?P ?Q ?l ≈u list_rect _ ?X' ?P' ?Q' ?l') =>
-unshelve notypeclasses refine (FP_List_rect _ _ _ X X' _ P P' _ Q Q' _ l l' _); intros
+unshelve notypeclasses refine (FP_List_rect _ _ _ X X' _ P P' _ Q Q' _ l l' _); 
+shelve_non_PR; intros
 :  typeclass_instances.
 
 
@@ -824,8 +822,9 @@ Defined.
 
 #[universes(collapse_sort_variables=no)]
 Goal list Type ≈u list Type.
-eapply FP_list; cbn.
-(* would require univalence *)  
+eapply FP_list; cbn. 
+(* would require univalence *)
+Fail tc.
 Abort.
 
 #[universes(collapse_sort_variables=no)]
@@ -839,6 +838,7 @@ Goal list (nat -> Type) ≈u list (nat -> Type).
 unshelve eapply FP_list; cbn.
 unshelve eapply FP_forall_ur; cbn; intros; try tc.
 (* woudl require univalence *)  
+Fail tc. 
 Abort.
 
 Definition Equiv_Vector_not_eff A B (e:A ≃ B) n n' (en :n = n') : Vector.t A n ≃ Vector.t B n'.
@@ -945,7 +945,7 @@ Defined.
 
 Typeclasses Opaque vector_to_list list_to_vector.
 
-#[export] Hint Extern 0 => progress (unfold length) :  typeclass_instances.
+#[export] Hint Extern 0 (length _ ≈[ _] _)=> progress (unfold length) :  typeclass_instances.
 
 
 
@@ -973,9 +973,27 @@ Defined.
 
 Require Import Ltac2Utils.
 
-#[local] Unset Universe Polymorphism.
 #[local] Set Implicit Arguments.
 #[local] Hint Constants Opaque : typeclass_instances.
+
+From Stdlib Require Import Derive BinNums BinInt.
+
+Fixpoint iterate1@{s|u|} {A : Type@{s|u}} (f : A -> A) (n : nat) (x : A) : A :=
+  match n with
+  | O => x
+  | S n => @iterate1 A f n (f x)
+  end.
+Definition iterate1Z@{s|u|} {A : Type@{s|u}} (f : A -> A) (n : Z) (x : A) : A := @iterate1 A f (Z.to_nat n) x.
+
+Lemma silly2_eauto : forall (P : nat -> nat -> Prop) (Q : nat -> Prop),
+  sigT@{_ Prop _; _ _} (fun y : _ => P 42 y) ->
+  (forall x y : nat, P x y -> Q x) ->
+  Q 42.
+Proof.
+  intros P Q HP HQ. destruct HP as [y HP']. eauto.
+Qed.
+
+#[local] Unset Universe Polymorphism.
 
 Module Type Args. End Args.
 
@@ -993,6 +1011,56 @@ Fixpoint build_proof
 
 Definition nat_ind_tidy := build_proof.
 
+
+Parameter imported_Corelib__Init__Datatypes__nat : Type.
+Parameter Corelib__Init__Datatypes__nat_iso : (@UR.pr _ _ _ (UR.PR_Type UR.univalent) nat imported_Corelib__Init__Datatypes__nat).
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances.
+
+Parameter imported_Corelib__Init__Datatypes__O : imported_Corelib__Init__Datatypes__nat.
+Parameter Corelib__Init__Datatypes__O_iso : 0 ≈[ _] imported_Corelib__Init__Datatypes__O.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.O) Corelib__Init__Datatypes__O_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.O) Corelib__Init__Datatypes__O_iso goal_lhs : typeclass_instances.
+
+Parameter imported_Corelib__Init__Datatypes__S : imported_Corelib__Init__Datatypes__nat -> imported_Corelib__Init__Datatypes__nat.
+Parameter Corelib__Init__Datatypes__S_iso : S ≈[ _] imported_Corelib__Init__Datatypes__S.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__ex : forall y : Type, (y -> SProp) -> SProp.
+Parameter Corelib__Init__Logic__ex_iso : (@UR.pr _ _ _
+     (@UR.URForall UR.univalent Type Type (fun x : Type => forall _ : forall _ : x, Prop, Prop) (fun H : Type => forall _ : forall _ : H, SProp, SProp) (UR.PR_Type UR.univalent)
+        (fun (x y : Type) (H : @UR.pr _ _ _ (UR.PR_Type UR.univalent) x y) =>
+         @UR.URArrow UR.univalent (forall _ : x, Prop) (forall _ : y, SProp) Prop SProp
+           (@UR.URArrow UR.univalent x y Prop SProp (UR.PR_Type_gen UR.univalent x y H) (fun (x0 : x) (y0 : y) (_ : @UR.pr _ _ _ (UR.PR_Type_gen UR.univalent x y H) x0 y0) => UR.PR_Type UR.univalent))
+           (fun (x0 : forall _ : x, Prop) (y0 : forall _ : y, SProp)
+              (_ : @UR.pr _ _ _
+                     (@UR.URArrow UR.univalent x y Prop SProp (UR.PR_Type_gen UR.univalent x y H)
+                        (fun (x1 : x) (y1 : y) (_ : @UR.pr _ _ _ (UR.PR_Type_gen UR.univalent x y H) x1 y1) => UR.PR_Type UR.univalent))
+                     x0 y0) =>
+            UR.PR_Type UR.univalent)))
+     ex imported_Corelib__Init__Logic__ex).
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances.
+
+Parameter imported_Corelib__Numbers__BinNums__Z : Type.
+Parameter Corelib__Numbers__BinNums__Z_iso : (@UR.pr _ _ _ (UR.PR_Type UR.univalent) BinNums.Z imported_Corelib__Numbers__BinNums__Z).
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Numbers.BinNums.Z) Corelib__Numbers__BinNums__Z_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Numbers.BinNums.Z) Corelib__Numbers__BinNums__Z_iso goal_lhs : typeclass_instances.
+
+Parameter imported_IsomorphismChecker__EqualityLemmas__iterate1Z : forall y : Type, (y -> y) -> imported_Corelib__Numbers__BinNums__Z -> y -> y.
+Parameter IsomorphismChecker__EqualityLemmas__iterate1Z_iso : @iterate1Z ≈[ _] imported_IsomorphismChecker__EqualityLemmas__iterate1Z.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@iterate1Z) IsomorphismChecker__EqualityLemmas__iterate1Z_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@iterate1Z) IsomorphismChecker__EqualityLemmas__iterate1Z_iso goal_lhs : typeclass_instances.
+
+Parameter imported_LF__Auto__silly2D_eauto : import_of (@silly2_eauto).
+Parameter LF__Auto__silly2D_eauto_iso : iso_statement (@silly2_eauto) imported_LF__Auto__silly2D_eauto.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@silly2_eauto) LF__Auto__silly2D_eauto_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@silly2_eauto) LF__Auto__silly2D_eauto_iso goal_lhs : typeclass_instances.
+End Interface.
+
+
+Module Type Interface' (Import args : Args).
 
 Parameter imported_Corelib__Init__Datatypes__nat : Set.
 Parameter Corelib__Init__Datatypes__nat_iso : (@UR.pr _ _ _ (UR.PR_Type UR.univalent) nat imported_Corelib__Init__Datatypes__nat).
@@ -1026,7 +1094,7 @@ Parameter LF__IndProp__evD_0_iso : iso_statement (ev_0) imported_LF__IndProp__ev
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (ev_0) LF__IndProp__evD_0_iso goal_lhs : typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (ev_0) LF__IndProp__evD_0_iso goal_lhs : typeclass_instances.
 
-End Interface.
+End Interface'.
 
 Lemma equal_f {X Y} {f g : X -> Y} a : eq f g -> eq (f a) (g a).
 destruct 1. reflexivity.
@@ -1039,8 +1107,8 @@ Parameter imported_equal_f : import_of (@equal_f).
 Definition FP_sized_list_ {A B : Type} `{A ≈u B} (n n':nat) (en : natϵ n n') : 
    sigT@{_ Prop _; _ _} (fun l : list A => eq (length l) n) ≈u 
    { l : list B & length l = n'}.
-Proof.  
-  tc. 
+Proof.
+  tc.
 Defined.
 
 (* 

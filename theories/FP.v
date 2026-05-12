@@ -127,7 +127,7 @@ Defined.
 
 Ltac apply_forall := 
   first [unshelve eapply FP_forall_ur | unshelve eapply FP_forall];
-    cbn; intros; shelve_non_PR.
+    intros; shelve_non_PR.
 
 Hint Extern 0 => 
   match goal with | 
@@ -144,11 +144,19 @@ Proof.
   Fail tc.
 Abort.
 
-Hint Extern 0 ((fun x : _ => _) ≈[ _] _) => cbn : typeclass_instances.
-Hint Extern 0 (_ ≈[ _] (fun x : _ => _)) => cbn : typeclass_instances.
+Definition pr_fun k A A' (Aϵ: A ≈[k] A') t t' (tϵ : t ≈[k] t') :
+          (fun x:A => t) ≈[k] (fun x:A' => t').
+Proof.
+  Fail tc. cbn. tc.
+Defined.
+
+Hint Extern 0 ((fun x : _ => _) ≈[ _] _) => intros ? ? ? : typeclass_instances.
+Hint Extern 0 (_ ≈[ _] (fun x : _ => _)) => intros ? ? ? : typeclass_instances.
 
 Goal forall k A A' (Aϵ: A ≈[k] A') t t' (tϵ : t ≈[k] t'),
           (fun x:A => t) ≈[k] (fun x:A' => t').
 Proof.
   tc.
 Abort.
+
+

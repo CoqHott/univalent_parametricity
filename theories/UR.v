@@ -69,14 +69,20 @@ Arguments equiv {_ _} _.
 Arguments Ur_Coh {_ _} _.
 Arguments ur_coh {_ _ _ _ _} _ _.
 
+#[export] Hint Extern 100 (_ ≃ _) => erefineb (equiv _): typeclass_instances.
+#[export] Hint Extern 100 (UR_Coh _ _ _ _) => erefineb (Ur_Coh _): typeclass_instances.
+
 Ltac2 apply_PR_Type_gen () :=
   lazy_match! goal with
   | [ |- PR _ Prop  _ ] => exact (@PR_Type@{_ Prop SProp;_ _ _ _} _)
   | [ |- PR _ SProp _ ] => exact (@PR_Type@{_ SProp SProp;_ _ _ _} _)
-  | [ |- PR _ _     _ ] => exact (@PR_Type _)
+  | [ |- PR _ _ _ ] => exact (@PR_Type _)
+  | [ |- Prop ≈[ _ ] _ ] => exact (@PR_Type@{_ Prop SProp;_ _ _ _} _)
+  | [ |- SProp ≈[ _ ] _ ] => exact (@PR_Type@{_ SProp SProp;_ _ _ _} _)
+  | [ |- _ ≈[ _ ] _ ] => exact (@PR_Type _)
   end.
 
-#[export] Hint Extern 0 (PR _ _ _) => apply_PR_Type_gen () : typeclass_instances.
+#[export] Hint Extern 0 => apply_PR_Type_gen () : typeclass_instances.
 
 Definition PR_Type_plain_univ {A B : Type} (H: A ≈u B) : PR plain A B := Ur H.
 
@@ -122,9 +128,9 @@ Ltac2 apply_var_tac c :=
   if is_var c_head
   then
     if Int.equal (Array.length c_args) 0 
-    then solve [first [eassumption |
-                       erefineb (PR_Type_gen _ _ _ _) ; eassumption |
-                       erefineb (PR_Type_plain_univ _); eassumption]]
+    then first [eassumption |
+                erefineb (PR_Type_gen _ _ _ _) ; eassumption |
+                erefineb (PR_Type_plain_univ _); eassumption]
     else 
       let apply_h () := match! goal with 
         | [ h : ?c ≈[_] _ |- _] => if Constr.equal c_head c then 
@@ -142,14 +148,44 @@ Ltac2 apply_var_tac_goal () :=
   | [ |- PR _ _ ?rhs] => apply_var_tac rhs
   | [ |- ?lhs ≈[_] _] => apply_var_tac lhs
   | [ |- _ ≈[_] ?rhs] => apply_var_tac rhs
+  | [ |- UR_Type ?lhs _] => apply_var_tac lhs
+  | [ |- UR_Type _ ?rhs] => apply_var_tac rhs
   end. 
 
-#[export] Hint Extern 100 => apply_var_tac_goal () : typeclass_instances.
+#[export] Hint Extern 0 => apply_var_tac_goal (); intros : typeclass_instances.
+
+Definition ur_refl {A B: Type} (e : A ≈u B) :
+  forall a : A, a ≈u ↑ a.
+Proof.
+  destruct (Ur_Coh e) as [ur_coh]. 
+  exact (fun a => fst (ur_coh a a) idpath).
+Defined.  
+
+Definition ur_refl' {A B: Type} (e : A ≈u B) :
+  forall b : B, e_inv (equiv e) b ≈u b.
+Proof.
+  intro b; pose (p := ur_refl e). specialize (p (e_inv (equiv e) b)). 
+  now rewrite (e_retr (equiv e) b) in p.
+Defined.  
+
+Ltac2 apply_closed_tac c := 
+  if Unsafe.is_closed c
+  then
+    first [erefineb (ur_refl _ $c) |
+           erefineb (ur_refl' _ $c)]
+  else 
+    Control.zero Match_failure.
+
+Ltac2 apply_closed_tac_goal () := 
+  match! goal with
+  | [ |- ?lhs ≈u _] => apply_closed_tac lhs
+  | [ |- _ ≈u ?rhs] => apply_closed_tac rhs
+  end. 
+
+#[export] Hint Extern 0 => apply_closed_tac_goal () : typeclass_instances.
 
 Ltac2 tc () := typeclasses_eauto with typeclass_instances.
 
-#[export] Hint Extern 100 (_ ≃ _) => erefineb (equiv _): typeclass_instances.
-#[export] Hint Extern 100 (UR_Coh _ _ _ _) => erefineb (Ur_Coh _): typeclass_instances.
 (* test Prop SProp instances *)
 
 Goal PR plain Prop SProp. tc (). Abort. 
@@ -164,15 +200,6 @@ Definition UR_gen A : PR plain A A := {| pr := (path A) |}.
 Definition PR_inverse k {A B : Type} (ur: PR k A B) : PR k B A := 
   {| pr := fun b a => pr k a b |}.
 (* This is the Black Box Property *)
-
-Definition ur_refl {A B: Type} (e : A ≈u B) :
-  forall a : A, a ≈u ↑ a.
-Proof.
-  destruct (Ur_Coh e) as [ur_coh]. 
-  exact (fun a => fst (ur_coh a a) idpath).
-Defined.  
-
-#[export] Hint Extern 100 (_ ≈[ _ ] _) => erefineb (ur_refl _ _): typeclass_instances.
 
 (* The definition of Ur_coh given in the paper is equivalent to *)
 (* the definition given here, but technically, this one is more convenient to use *)
@@ -193,9 +220,9 @@ Proof.
   econstructor; intros. set a' at 2. rewrite <- (e_sect _ a').
   refine (HCoh _ _). 
 Defined.
+
 (* Definition of univalent relation for basic type constructors *)
 (*! Forall !*)
-#[export] Hint Extern 0 (?x ≈[ _ ] ?y) => eassumption : typeclass_instances.
 
 Definition URArrow k A A' B B' {HA : PR k A A'} 
            {HB: forall x y (H: x ≈[ k ] y), PR k B B'} : PR k (A -> B) (A' -> B')
@@ -225,9 +252,6 @@ Ltac2 apply_forall_tac () :=
   end. 
 
 #[export] Hint Extern 0 => apply_forall_tac () : typeclass_instances.
-
-Definition UR_Equiv_refl k (A B:Type) (e:A ≃ B) (e_inv := Equiv_inverse e) `{PR k A B} : PR k B B :=
-  {| pr := fun b b' => ↑ b ≈[k] b' |}.
 
   (*! UR is symmetric on types !*)
 Definition UR_Type_Inverse (A B : Type) : A ≈u B -> B ≈u A.
