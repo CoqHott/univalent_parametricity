@@ -515,8 +515,16 @@ Module Constr.
 
   Import Ltac2.Bool.BoolNotations.
 
-  Ltac2 has_var (t : constr) :=
-    fold_thunked (fun c c_has_var => Constr.is_var c || (c_has_var ())) false t.
+  Ltac2 has_of_is (is_X : constr -> bool) (t : constr) :=
+    fold_thunked (fun c c_has_X => is_X c || (c_has_X ())) false t.
+
+  Ltac2 has_var (t : constr) := has_of_is Constr.is_var t.
+  Ltac2 is_var_or_evar_or_meta (t : constr) :=
+    match Unsafe.kind t with
+    | Unsafe.Evar _ _ | Unsafe.Meta _ | Unsafe.Var _ => true
+    | _ => false
+    end.
+  Ltac2 has_var_or_evar_or_meta (t : constr) := has_of_is is_var_or_evar_or_meta t.
 
   Ltac2 rec is_only_constructors (t : constr) :=
     match Constr.Unsafe.kind_nocast t with
