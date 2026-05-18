@@ -169,7 +169,7 @@ Proof.
 Defined.  
 
 Ltac2 apply_closed_tac c :=
-  if Constr.has_evar c
+  if Constr.has_var_or_evar_or_meta c || neg (Unsafe.is_closed c)
   then
     Control.zero Match_failure
   else
