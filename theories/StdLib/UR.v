@@ -45,6 +45,11 @@ Instance PREq k (A_1 A_2 : Type) (A_R : A_1 ≈[k] A_2) (x_1 : A_1) (x_2 : A_2) 
    (y_1 : A_1) (y_2 : A_2) (y_R : y_1 ≈[k] y_2) : PR k (eq x_1 y_1) (x_2 = y_2)  :=
   {| pr := fun e e' => PR_eq _ _ _ _ _ x_R _ _ y_R e e' |}.
 
+#[universes(collapse_sort_variables=no)]
+Instance PREq_Prop k (A_1 : Prop) (A_2 : Type) (A_R : A_1 ≈[k] A_2) (x_1 : A_1) (x_2 : A_2) (x_R : x_1 ≈[k] x_2)
+   (y_1 : A_1) (y_2 : A_2) (y_R : y_1 ≈[k] y_2) : PR k (eq x_1 y_1) (x_2 = y_2)  :=
+  {| pr := fun e e' => PR_eq _ _ _ _ _ x_R _ _ y_R e e' |}.
+  
 (* lists *)
 
 Inductive list (A : Type) : Type :=
