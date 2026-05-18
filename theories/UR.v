@@ -168,13 +168,13 @@ Proof.
   now rewrite (e_retr (equiv e) b) in p.
 Defined.  
 
-Ltac2 apply_closed_tac c := 
-  if Unsafe.is_closed c
+Ltac2 apply_closed_tac c :=
+  if Constr.has_evar c
   then
+    Control.zero Match_failure
+  else
     first [erefineb (ur_refl _ $c) |
-           erefineb (ur_refl' _ $c)]
-  else 
-    Control.zero Match_failure.
+           erefineb (ur_refl' _ $c)].
 
 Ltac2 apply_closed_tac_goal () := 
   match! goal with
