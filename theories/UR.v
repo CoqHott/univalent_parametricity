@@ -134,7 +134,7 @@ Ltac2 apply_var_tac c :=
     else 
       let apply_h () := match! goal with 
         | [ h : ?c ≈[_] _ |- _] => if Constr.equal c_head c then 
-          let h := Control.hyp h in eapply $h else Control.zero Match_failure
+          let h := Control.hyp h in unshelve (eapply $h); shelve_non_PR_multi () else Control.zero Match_failure
       end in
       first [apply_h () | 
              erefineb (PR_Type_univ_univ _);apply_h ()|
