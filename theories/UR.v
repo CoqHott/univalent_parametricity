@@ -123,6 +123,40 @@ Ltac2 apply_Type_gen () :=
 
 #[export] Hint Extern 2 => apply_Type_gen () : typeclass_instances.
 
+(* Definition of univalent relation for basic type constructors *)
+(*! Forall !*)
+
+Definition URArrow k A A' B B' {HA : PR k A A'} 
+           {HB: forall x y (H: x ≈[ k ] y), PR k B B'} : PR k (A -> B) (A' -> B')
+  :=
+  {| pr := fun f g => forall x y (H:x ≈[ k ] y), f x ≈[ k ] g y |}.
+
+Definition URForall k A A' (B : A -> Type) (B' : A' -> Type) {HA : PR k A A'} 
+           {HB: forall x y (H: x ≈[ k ] y), PR k (B x) (B' y)} : PR k (forall x, B x) (forall y, B' y)
+  :=
+  {| pr := fun f g => forall x y (H:x ≈[ k ] y), f x ≈[ k ] g y |}.
+
+Ltac2 get_constant (c:constr) :=
+  match Unsafe.kind c with
+  | Unsafe.Constant k _ => k
+  | _ => Control.throw (Tactic_failure (Some (Message.of_string "not a constant")))
+  end.
+
+Ltac2 is_forall_inst (c:constr) :=
+  match Unsafe.kind c with
+  | Unsafe.Constant k _ => 
+    if Constant.equal k (get_constant (constr:(URArrow))) then true else
+      if Constant.equal k (get_constant (constr:(URForall))) then true else false
+  | _ => false
+  end.
+
+Ltac2 default_on_hyp (hyp:ident) :=
+ { Std.on_hyps := Some [(hyp,Std.AllOccurrences,Std.InHyp)]; Std.on_concl := Std.AllOccurrences }.
+
+Ltac2 failure_white_message (c:constr) := 
+  Message.concat (Message.of_string "the following instance should be white boxed: ") 
+                 (Message.of_constr c).
+
 Ltac2 apply_var_tac c := 
   let (c_head, c_args) := Constr.decompose_app_nocast c in
   if is_var c_head
@@ -132,13 +166,33 @@ Ltac2 apply_var_tac c :=
                 erefineb (PR_Type_gen _ _ _ _) ; eassumption |
                 erefineb (PR_Type_plain_univ _); eassumption]
     else 
+      let cbn_h () := match! goal with 
+        | [ h : ?c ≈[_] _ |- _] => if Constr.equal c_head c 
+          then Std.cbn RedFlags.all (default_on_hyp h)
+          else Control.zero Match_failure
+      end in
       let apply_h () := match! goal with 
-        | [ h : ?c ≈[_] _ |- _] => if Constr.equal c_head c then 
-          let h := Control.hyp h in unshelve (eapply $h); shelve_non_PR_multi () else Control.zero Match_failure
+        | [ h : @pr _ _ _ ?pr_inst ?c _ |- _] => if Constr.equal c_head c 
+            then 
+              let (pr_head, _) := Constr.decompose_app_nocast pr_inst in
+              if is_forall_inst pr_head
+              then 
+                let h := Control.hyp h in 
+                unshelve (eapply $h); shelve_non_PR_multi () 
+              else (cbn_h (); match! goal with 
+              | [ _ : @pr _ _ _ (@Ur _ _ ?pr_inst) ?c _ |- _] => 
+                if Constr.equal c_head c 
+                then
+                  let (pr_head, _) := Constr.decompose_app_nocast pr_inst in
+                  Control.throw (Tactic_failure (Some (failure_white_message pr_head)))          
+                else 
+                  Control.zero Match_failure
+              end)
+            else Control.zero Match_failure
       end in
       first [apply_h () | 
-             erefineb (PR_Type_univ_univ _);apply_h ()|
-             erefineb (PR_Type_gen _ _ _ _);apply_h ()]
+             erefineb (PR_Type_univ_univ _); apply_h ()|
+             erefineb (PR_Type_gen _ _ _ _); apply_h ()]
   else 
     Control.zero Match_failure.
 
@@ -220,20 +274,6 @@ Proof.
   econstructor; intros. set a' at 2. rewrite <- (e_sect _ a').
   refine (HCoh _ _). 
 Defined.
-
-(* Definition of univalent relation for basic type constructors *)
-(*! Forall !*)
-
-Definition URArrow k A A' B B' {HA : PR k A A'} 
-           {HB: forall x y (H: x ≈[ k ] y), PR k B B'} : PR k (A -> B) (A' -> B')
-  :=
-  {| pr := fun f g => forall x y (H:x ≈[ k ] y), f x ≈[ k ] g y |}.
-
-Definition URForall k A A' (B : A -> Type) (B' : A' -> Type) {HA : PR k A A'} 
-           {HB: forall x y (H: x ≈[ k ] y), PR k (B x) (B' y)} : PR k (forall x, B x) (forall y, B' y)
-  :=
-  {| pr := fun f g => forall x y (H:x ≈[ k ] y), f x ≈[ k ] g y |}.
-
 
 Ltac2 apply_forall_tac () := 
   match! goal with
