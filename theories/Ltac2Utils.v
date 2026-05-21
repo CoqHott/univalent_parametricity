@@ -1196,6 +1196,13 @@ Module Export ExtraConstr.
       | Some msg => msg
       | None => Message.of_constr c
       end.
+    Ltac2 to_qualified_string_opt (c : constr) : string option :=
+      Option.map Reference.to_qualified_string (Reference.of_constr_opt c).
+    Ltac2 to_qualified_string (c : constr) : string :=
+      match to_qualified_string_opt c with
+      | Some s => s
+      | None => Constr.to_string c
+      end.
   End Constr.
 End ExtraConstr.
 Module Std.
