@@ -95,6 +95,29 @@ Definition PR_Type_gen k (A B:Type) (H:@pr _ _ _ (PR_Type k) A B) : PR k A B :=
   | univalent => fun H => PR_Type_univ_univ H
   end H.
 
+#[universes(polymorphic,collapse_sort_variables=no)]
+Definition UR_Type_from_Prop (P:Prop) (Q:SProp)
+  (H : UR_Type@{Type Type Type SProp Type Type Prop; _ _ _ _ _ _} P Q) :
+  UR_Type@{Type Type Type SProp Type Type Type; _ _ _ _ _ _} P Q.
+unshelve econstructor.
+- assert (H' := @Ur _ _ H). econstructor. intros p q. eapply (p ≈p q).
+- unshelve econstructor.
+  + eapply (equiv H).
+  + unshelve econstructor.
+    * eapply (e_inv (equiv H)).
+    * intro x. assert (H' := e_sect (equiv H) x). cbn. rewrite H'. reflexivity.
+    * intro x. assert (H' := e_retr (equiv H) x). cbn. rewrite H'. reflexivity.
+    * reflexivity. 
+- econstructor; eauto. assert (H' := @Ur_Coh _ _ H).
+  intros; split. 
+  + intros e. eapply (fst (@ur_coh _ _ _ _ H' a a')). now destruct e.
+  + intros e. now destruct (snd (@ur_coh _ _ _ _ H' a a') e).
+Defined.   
+
+Hint Extern 1 (UR_Type ?P ?Q) => eapply UR_Type_from_Prop : typeclass_instances.
+
+Hint Extern 1 (?P ≈[ _] ?Q) => eapply UR_Type_from_Prop : typeclass_instances.
+
 Ltac2 head_is_var (c:constr) :=
   let (c_head, _) := Constr.decompose_app_nocast c in
   is_var c_head.
@@ -150,9 +173,6 @@ Ltac2 is_forall_inst (c:constr) :=
   | _ => false
   end.
 
-Ltac2 default_on_hyp (hyp:ident) :=
- { Std.on_hyps := Some [(hyp,Std.AllOccurrences,Std.InHyp)]; Std.on_concl := Std.AllOccurrences }.
-
 Ltac2 mutable failure_white_message (c:constr) :=
   Message.concat (Message.of_string "the following instance should be white boxed: ")
                  (Message.of_constr c).
@@ -168,7 +188,7 @@ Ltac2 apply_var_tac c :=
     else 
       let cbn_h () := match! goal with 
         | [ h : ?c ≈[_] _ |- _] => if Constr.equal c_head c 
-          then Std.cbn RedFlags.all (default_on_hyp h)
+          then cbn in $h
           else Control.zero Match_failure
       end in
       let apply_h () := match! goal with 

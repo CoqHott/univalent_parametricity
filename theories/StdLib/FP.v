@@ -9,6 +9,7 @@ Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
 
 Require Import UnivalentParametricity.theories.Basics UnivalentParametricity.theories.StdLib.UR Record.
+From Stdlib Require Import String.
 
 (*! FP for Sigma !*)
 
@@ -274,8 +275,8 @@ Proof.
   unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)).
   - intros X. exact (e (fst X), e' (snd X)).
   - intros X. exact (e_inv e (fst X), e_inv e' (snd X)).
-  - simpl. intros X. eapply concat; [| apply (path_prod_eta X)^]. eapply ap2; eapply e_sect.
-  - simpl. intros X. eapply concat; [| apply (path_prod_eta X)^]. eapply ap2; eapply e_retr.
+  - simpl. intros X. eapply HoTT.concat; [| apply (path_prod_eta X)^]. eapply ap2; eapply e_sect.
+  - simpl. intros X. eapply HoTT.concat; [| apply (path_prod_eta X)^]. eapply ap2; eapply e_retr.
 Defined.
 
 #[universes(collapse_sort_variables=no)]
@@ -1503,8 +1504,6 @@ Parameter Corelib__Init__Logic__not_iso : iso_statement (@Corelib.Init.Logic.not
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.not) Corelib__Init__Logic__not_iso goal_lhs : typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.not) Corelib__Init__Logic__not_iso goal_lhs : typeclass_instances.
 
-From Stdlib Require Import String.
-
 Parameter imported_Stdlib__Strings__String__string : Type.
 Parameter Stdlib__Strings__String__string_iso : (@UR.pr _ _ _ (UR.PR_Type UR.univalent) String.string imported_Stdlib__Strings__String__string).
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Stdlib.Strings.String.string) Stdlib__Strings__String__string_iso goal_lhs : typeclass_instances.
@@ -1583,7 +1582,7 @@ Proof.
   (* FILL IN HERE *) Admitted.
 
 #[universes(polymorphic,collapse_sort_variables=no)]
-Goal {B : _ & PR univalent (forall [A : Type] (m : total_map A) [x1 x2 : string] (v : A),
+Goal {B : _ & PR univalent (forall (A : Type) (m : total_map A) (x1 x2 : string) (v : A),
 x1 <> x2 -> eq ((x1 !-> v; m) x2) (m x2)) B}.
 eexists. Fail tc. 
 Abort.
@@ -1645,8 +1644,6 @@ Parameter imported_Corelib__Init__Logic__not : import_of (@Corelib.Init.Logic.no
 Parameter Corelib__Init__Logic__not_iso : iso_statement (@Corelib.Init.Logic.not) imported_Corelib__Init__Logic__not.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.not) Corelib__Init__Logic__not_iso goal_lhs : typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.not) Corelib__Init__Logic__not_iso goal_lhs : typeclass_instances.
-
-From Stdlib Require Import String.
 
 Parameter imported_Stdlib__Strings__String__string : Type.
 Parameter Stdlib__Strings__String__string_iso : (@UR.pr _ _ _ (UR.PR_Type UR.univalent) String.string imported_Stdlib__Strings__String__string).
@@ -1754,6 +1751,23 @@ Parameter SECF__Maps__includedinD_update_iso : iso_statement (@includedin_update
 
 End Interface7.
 
+Inductive STrue : SProp := SI.
+
+Definition STrue_UR : True ≈u STrue.
+cbn. unshelve econstructor. 
+- econstructor. intros. exact STrue.
+- eapply Equiv_iff_Prop. split; intros; econstructor.
+- econstructor; intros; split; intros; cbn in *; try econstructor. destruct a, a'; reflexivity.
+Defined. 
+
+Hint Extern 1 (UR_Type True _) => eapply STrue_UR : typeclass_instances.
+
+#[universes(polymorphic,collapse_sort_variables=no)]
+Goal 
+{B : _& @UR.pr _ _ _ (UR.PR_Type UR.univalent) True B}.
+eexists; tc.
+Show Proof. 
+Abort. 
 
 #[universes(polymorphic,collapse_sort_variables=no)]
 Definition FP_sized_list_ {A B : Type} `{A ≈u B} (n n':nat) (en : natϵ n n') : 
