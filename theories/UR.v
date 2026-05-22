@@ -153,8 +153,8 @@ Ltac2 is_forall_inst (c:constr) :=
 Ltac2 default_on_hyp (hyp:ident) :=
  { Std.on_hyps := Some [(hyp,Std.AllOccurrences,Std.InHyp)]; Std.on_concl := Std.AllOccurrences }.
 
-Ltac2 failure_white_message (c:constr) := 
-  Message.concat (Message.of_string "the following instance should be white boxed: ") 
+Ltac2 mutable failure_white_message (c:constr) :=
+  Message.concat (Message.of_string "the following instance should be white boxed: ")
                  (Message.of_constr c).
 
 Ltac2 apply_var_tac c := 
