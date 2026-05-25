@@ -217,6 +217,11 @@ Module Constr.
     | Unsafe.Cast v _ _ => strip_cast v
     | _ => c
     end.
+  Ltac2 is_meta (c : constr) :=
+    match Unsafe.kind c with
+    | Unsafe.Meta _ => true
+    | _ => false
+    end.
   (* TODO: upstream is_sort*)
   Ltac2 is_sort(c: constr) :=
     match Unsafe.kind c with
@@ -312,6 +317,81 @@ Module Constr.
     | Unsafe.LetIn _ _ _ => true
     | _ => false
     end.
+
+  (** [equal_nounivs c1 c2] compares two constrs structurally,
+      ignoring universe instances on constants/inductives/constructors/arrays,
+      and treating all sorts as equal.  Mirrors Rocq's kernel
+      [eq_constr_nounivs]. *)
+  Import Ltac2.Bool.BoolNotations.
+  Ltac2 rec equal_nounivs (c1 : constr) (c2 : constr) : bool :=
+    Constr.equal c1 c2 ||
+    (match Unsafe.kind c1, Unsafe.kind c2 with
+    | Unsafe.Rel n1, Unsafe.Rel n2 => Int.equal n1 n2
+    | Unsafe.Var id1, Unsafe.Var id2 => Ident.equal id1 id2
+    | Unsafe.Meta m1, Unsafe.Meta m2 => Meta.equal m1 m2
+    | Unsafe.Evar e1 l1, Unsafe.Evar e2 l2 =>
+        Evar.equal e1 e2 && Array.equal equal_nounivs l1 l2
+    | Unsafe.Sort _ , Unsafe.Sort _ => true
+    | Unsafe.Cast c1' _ t1, Unsafe.Cast c2' _ t2 =>
+        equal_nounivs c1' c2' && equal_nounivs t1 t2
+    | Unsafe.Prod b1 t1, Unsafe.Prod b2 t2 =>
+        equal_nounivs (Binder.type b1) (Binder.type b2)
+        && equal_nounivs t1 t2
+    | Unsafe.Lambda b1 t1, Unsafe.Lambda b2 t2 =>
+        equal_nounivs (Binder.type b1) (Binder.type b2)
+        && equal_nounivs t1 t2
+    | Unsafe.LetIn b1 v1 t1, Unsafe.LetIn b2 v2 t2 =>
+        equal_nounivs (Binder.type b1) (Binder.type b2)
+        && equal_nounivs v1 v2
+        && equal_nounivs t1 t2
+    | Unsafe.App f1 args1, Unsafe.App f2 args2 =>
+        equal_nounivs f1 f2
+        && Array.equal equal_nounivs args1 args2
+    | Unsafe.Constant c1' _, Unsafe.Constant c2' _ =>
+        Constant.equal c1' c2'
+    | Unsafe.Ind ind1 _, Unsafe.Ind ind2 _ =>
+        Ind.equal ind1 ind2
+    | Unsafe.Constructor ctor1 _, Unsafe.Constructor ctor2 _ =>
+        Constructor.equal ctor1 ctor2
+    | Unsafe.Case ci1 (x1, _) iv1 y1 bl1,
+      Unsafe.Case ci2 (x2, _) iv2 y2 bl2 =>
+        Unsafe.Case.equal ci1 ci2
+        && equal_nounivs x1 x2
+        && (match iv1, iv2 with
+            | Unsafe.NoInvert, Unsafe.NoInvert => true
+            | Unsafe.CaseInvert a1, Unsafe.CaseInvert a2 =>
+                Array.equal equal_nounivs a1 a2
+            | _, _ => false
+            end)
+        && equal_nounivs y1 y2
+        && Array.equal equal_nounivs bl1 bl2
+    | Unsafe.Fix structs1 idx1 tl1 bl1,
+      Unsafe.Fix structs2 idx2 tl2 bl2 =>
+        Int.equal idx1 idx2
+        && Array.equal Int.equal structs1 structs2
+        && Array.equal (fun b1 b2 =>
+             equal_nounivs (Binder.type b1) (Binder.type b2))
+           tl1 tl2
+        && Array.equal equal_nounivs bl1 bl2
+    | Unsafe.CoFix idx1 tl1 bl1,
+      Unsafe.CoFix idx2 tl2 bl2 =>
+        Int.equal idx1 idx2
+        && Array.equal (fun b1 b2 =>
+             equal_nounivs (Binder.type b1) (Binder.type b2))
+           tl1 tl2
+        && Array.equal equal_nounivs bl1 bl2
+    | Unsafe.Proj p1 _ c1', Unsafe.Proj p2 _ c2' =>
+        Proj.equal p1 p2 && equal_nounivs c1' c2'
+    | Unsafe.Uint63 n1, Unsafe.Uint63 n2 => Uint63.equal n1 n2
+    | Unsafe.Float f1, Unsafe.Float f2 => Float.equal f1 f2
+    | Unsafe.String _ , Unsafe.String _ => Constr.equal c1 c2
+    | Unsafe.Array _ vals1 def1 ty1,
+      Unsafe.Array _ vals2 def2 ty2 =>
+        Array.equal equal_nounivs vals1 vals2
+        && equal_nounivs def1 def2
+        && equal_nounivs ty1 ty2
+    | _, _ => false
+    end).
 
   Ltac2 Type exn ::= [ DestKO (string, constr) ].
   Ltac2 decompose_app_list (c : constr) :=
@@ -1548,10 +1628,21 @@ Ltac2 sort_to_ind_dep_scheme_kind (sort : constr) : Scheme.kind :=
   else if Constr.is_sprop sort then Scheme.sind_dep
   else Scheme.rect_dep.
 
+(** Map a sort constr to the dependent case analysis scheme kind.
+    The Ltac2 Scheme API provides case kinds for Type, Prop, and SProp.
+    Set maps to case_dep (Type) since there is no Set-specific case kind. *)
+Ltac2 sort_to_case_dep_scheme_kind (sort : constr) : Scheme.kind :=
+  if Constr.is_prop sort then Scheme.casep_dep
+  else if Constr.is_sprop sort then Scheme.scase_dep
+  else Scheme.case_dep.
+
 (** All dependent induction scheme kinds. *)
 Ltac2 all_ind_dep_scheme_kinds () : Scheme.kind list :=
   [Scheme.rect_dep; Scheme.rec_dep; Scheme.ind_dep; Scheme.sind_dep].
 
+(** All case analysis scheme kinds (both dep and nodep). *)
+Ltac2 all_case_scheme_kinds () : Scheme.kind list :=
+  [Scheme.case_dep; Scheme.case_nodep; Scheme.casep_dep; Scheme.casep_nodep; Scheme.scase_dep; Scheme.scase_nodep].
 
 
 Ltac2 fold_match_maybe_force_nondep_around (nondep : bool) f :=
@@ -1861,13 +1952,10 @@ Ltac2 rec map_err f f_err :=
 Ltac2 rec refresh_universes (c : constr) :=
   match Constr.Unsafe.kind c with
   | Constr.Unsafe.Sort _ =>
-      lazy_match! c with
-      | Set => c
-      | Prop => c
-      | SProp => c
-      | _ => 'Type
-      (* | _ => Control.throw (Tactic_failure (Some (fprintf "Anomaly: refresh_universes: expected a sort, got %t" c))) *)
-      end
+      if Constr.equal c 'Set then c
+      else if Constr.equal c 'Prop then c
+      else if Constr.equal c 'SProp then c
+      else 'Type
   | _ => Constr.Unsafe.map refresh_universes c
   end.
 
@@ -2522,7 +2610,7 @@ Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (go
   let (goal_lhs, _) := Constr.decompose_app goal_lhs in
   intros;
   let tac () := unshelve (eapply $lem); post_tc_hint_hook () in
-  if Constr.equal goal_lhs key then
+  if Constr.equal_nounivs goal_lhs key then
     if fatal then
       Control.throw_on_error tac
     else if warn then
