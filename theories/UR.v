@@ -216,6 +216,13 @@ Ltac2 apply_var_tac c :=
   else 
     Control.zero Match_failure.
 
+Ltac2 print_ur () := 
+  match! goal with 
+  | [ |- @pr _ _ _ (@Ur _ _ ?pr_inst) _ _] => 
+      let (pr_head, _) := Constr.decompose_app_nocast pr_inst in
+      Control.throw (Tactic_failure (Some (failure_white_message pr_head)))          
+  end.
+
 Ltac2 apply_var_tac_goal () := 
   match! goal with
   | [ |- PR _ ?lhs _] => apply_var_tac lhs

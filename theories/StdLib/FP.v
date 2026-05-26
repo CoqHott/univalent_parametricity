@@ -50,7 +50,6 @@ Axiom todo : forall A, A.
 Hint Unfold univalent_transport : typeclass_instances.
 
 #[export] Hint Extern 10 => progress (unfold univalent_transport) : typeclass_instances.
-#[export] Hint Extern 10 => progress (unfold e_fun) : typeclass_instances.
 
 #[universes(collapse_sort_variables=no)]
 Definition Equiv_Sigma (A A':Type) (e : A ≈u A') (B : A -> Type) (B' : A' -> Type) 
@@ -1776,6 +1775,284 @@ Definition FP_sized_list_ {A B : Type} `{A ≈u B} (n n':nat) (en : natϵ n n') 
 Proof.
   tc.
 Defined.
+
+(** Reproducer: partial-application unification failure with eqbP
+
+    The real failure is in a univparamtc Interface.v file for
+    [mathcomp.boot.eqtype.eqbP].  The core issue: [eqbP] has type
+    [eq_axiom eqb] which does NOT get unfolded by the import_of
+    machinery (because eq_axiom's body has no match/case, so
+    paramelpi_normalize_type_of leaves it alone).  TC resolution
+    therefore tries to build a relation for [eq_axiom eqb] as a
+    whole via [eq_axiom_iso].  After [eapply eq_axiom_iso] succeeds,
+    the resulting subgoals include [eqb ≈[_] ?e'] (one-argument
+    partial application of eqb), and URArrow decomposes this into
+    [eqb x ≈[_] ?e' y].  The [eqb_iso] hint matches on the head
+    [eqb] but [eapply eqb_iso] fails because it provides the
+    fully-applied form [eqb ?x0 ?x ≈[_] imported_eqb ?y0 ?y]
+    (two arguments) while the goal has [eqb x ≈[_] ?Goal] (one
+    argument, partially applied).
+
+    This file demonstrates the unification failure using only
+    UnivalentParametricity and Stdlib/Corelib, with the relevant
+    definitions inlined from iso-checker.
+
+    Two key differences from UP's built-in [tc_hint_for]:
+    1. We use [constr_equal_nounivs] instead of [Constr.equal] for
+       the key comparison.  UP's strict comparison causes hints to
+       fail to fire, leading to a different (successful) resolution
+       path.
+    2. The [import_of] here does NOT unfold the type of its argument
+       (matching the real [paramelpi_normalize_type_of] behaviour).
+       UP's [import_of] calls [unfold_head] which would unfold
+       [eq_axiom eqb] and avoid the partial-application path.
+
+    Build command (from iso-checker root):
+      opam exec --switch=rocq-dev -- rocq compile \
+        -R . IsomorphismChecker Tests/Repro_Cat7_PartialAppUnification.v
+*)
+
+Module Import InlineInfra.
+  From Ltac2 Require Import Ltac2 Printf.
+
+  (** [constr_equal_nounivs]: compares terms ignoring universe instances.
+      This is the key behavioural difference from UP's [tc_hint_for]
+      which uses the strict [Constr.equal]. *)
+  Import Ltac2.Bool.BoolNotations.
+  Import Ltac2.Constr.
+  Ltac2 rec constr_equal_nounivs (c1 : constr) (c2 : constr) : bool :=
+    Constr.equal c1 c2 ||
+    (match Unsafe.kind c1, Unsafe.kind c2 with
+    | Unsafe.Constant c1' _, Unsafe.Constant c2' _ => Constant.equal c1' c2'
+    | Unsafe.Ind ind1 _, Unsafe.Ind ind2 _ => Ind.equal ind1 ind2
+    | Unsafe.App f1 args1, Unsafe.App f2 args2 =>
+        constr_equal_nounivs f1 f2 && Array.equal constr_equal_nounivs args1 args2
+    | Unsafe.Sort _, Unsafe.Sort _ => true
+    | _, _ => false
+    end).
+
+  Ltac post_tc_hint_hook_iso := idtac.
+  Ltac2 mutable post_tc_hint_hook_iso () := ltac1:(post_tc_hint_hook_iso).
+
+  (** [tc_hint_for_iso]: from IsomorphismStatementAutomationDefinitions.v.
+      Uses [constr_equal_nounivs] and [cbv beta] before [eapply]. *)
+  Ltac2 tc_hint_for_iso (fatal : bool) (_warn : bool) (key : constr) (lem : constr) (goal_lhs : constr) :=
+    let (goal_lhs, _) := Constr.decompose_app goal_lhs in
+    intros;
+    let tac () := unshelve (eapply $lem); post_tc_hint_hook_iso () in
+    if constr_equal_nounivs goal_lhs key then
+      cbv beta;
+      match Control.case_bt tac with
+      | Val_bt (v, _k) => v
+      | Err_bt err info =>
+          if fatal then Control.throw_bt err info
+          else Control.zero_bt err info
+      end
+    else
+      Control.zero Match_failure.
+
+  (** [import_of]: simplified from URStatementAutomationParamTC.v.
+      Critically, does NOT unfold the type of its argument, matching
+      the real [paramelpi_normalize_type_of] behaviour (which skips
+      definitions whose body contains no match/case). *)
+  Ltac2 import_of (f : constr) :=
+    let fty := Constr.type f in
+    let t := '_ in
+    let f2 := Fresh.in_goal @f2 in
+    let _ := Constr.in_context f2 t (fun () =>
+      Control.refine (fun () =>
+        let g := Control.hyp f2 in
+        constr:(@UR.pr univalent $fty _ _ $f $g))) in
+    t.
+
+  #[export]
+  Ltac2 Set post_tc_hint_hook_iso := fun () => intros; UR.shelve_non_PR_multi ().
+End InlineInfra.
+
+(** Ltac1 wrappers for [tc_hint_for_iso] (verbatim from
+    IsomorphismStatementAutomationDefinitions.v). *)
+Ltac tc_hint_for key lem goal_lhs :=
+  let tac := ltac2:(key lem goal_lhs |- InlineInfra.tc_hint_for_iso Init.true Init.false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac key lem goal_lhs.
+
+Abbreviation import_of f :=
+  (match tt return _ with tt =>
+    ltac2:(Control.refine (fun () => InlineInfra.import_of (Constr.open_pretype_no_tc f)))
+  end) (only parsing).
+
+#[local] Unset Universe Polymorphism.
+#[local] Set Implicit Arguments.
+#[local] Hint Constants Opaque : typeclass_instances.
+
+(** -- Original-side definitions ------------------------------------------- *)
+
+(** [pred] and [eq_axiom] mirror [ssrbool.pred] and
+    [eqtype.eq_axiom] from mathcomp / Corelib.ssr. *)
+
+Definition pred (T : Type) : Type := T -> bool.
+Definition addb (b1 b2 : bool) : bool := if b2 then negb b1 else b1.
+Definition eqb (b : bool) : bool -> bool := addb (negb b).
+Definition eq_axiom (T : Type) (e : T -> pred T) :=
+  forall x y : T, reflect (@Corelib.Init.Logic.eq T x y) (e x y).
+
+Axiom eqbP : eq_axiom eqb.
+(** i.e. [eqbP : forall x y : bool, reflect (@eq bool x y) (eqb x y)] *)
+
+(** -- Imported-side parameters -------------------------------------------- *)
+
+Parameter imported_bool : Type.
+Parameter bool_iso : @UR.pr _ _ _ (UR.PR_Type UR.univalent) bool imported_bool.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Datatypes.bool) bool_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Datatypes.bool) bool_iso goal_lhs : typeclass_instances.
+
+Parameter imported_false : imported_bool.
+Parameter false_iso : false ≈[_] imported_false.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Datatypes.false) false_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Datatypes.false) false_iso goal_lhs : typeclass_instances.
+
+Parameter imported_negb : imported_bool -> imported_bool.
+Parameter negb_iso : negb ≈[_] imported_negb.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Datatypes.negb) negb_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Datatypes.negb) negb_iso goal_lhs : typeclass_instances.
+
+Parameter imported_true : imported_bool.
+Parameter true_iso : true ≈[_] imported_true.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Datatypes.true) true_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Datatypes.true) true_iso goal_lhs : typeclass_instances.
+
+Parameter imported_False : SProp.
+Parameter False_iso : @UR.pr _ _ _ (UR.PR_Type UR.univalent) False imported_False.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Logic.False) False_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Logic.False) False_iso goal_lhs : typeclass_instances.
+
+Parameter imported_eq : forall y : Type, y -> y -> SProp.
+Parameter eq_iso :
+  (@UR.pr _ _ _
+     (@UR.URForall UR.univalent Type Type
+        (fun x : Type => forall (_ : x) (_ : x), Prop)
+        (fun H : Type => forall (_ : H) (_ : H), SProp)
+        (UR.PR_Type UR.univalent)
+        (fun (x y : Type) (H : @UR.pr _ _ _ (UR.PR_Type UR.univalent) x y) =>
+         @UR.URArrow UR.univalent x y (forall _ : x, Prop)
+           (forall _ : y, SProp) (UR.PR_Type_gen UR.univalent x y H)
+           (fun (x0 : x) (y0 : y)
+                (_ : @UR.pr _ _ _ (UR.PR_Type_gen UR.univalent x y H) x0 y0) =>
+            @UR.URArrow UR.univalent x y Prop SProp
+              (UR.PR_Type_gen UR.univalent x y H)
+              (fun (x1 : x) (y1 : y)
+                   (_ : @UR.pr _ _ _ (UR.PR_Type_gen UR.univalent x y H) x1 y1) =>
+               UR.PR_Type UR.univalent))))
+     (@eq) imported_eq).
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Logic.eq) eq_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Logic.eq) eq_iso goal_lhs : typeclass_instances.
+
+Parameter imported_not : SProp -> SProp.
+Parameter not_iso :
+  (@UR.pr _ _ _
+     (@UR.URArrow UR.univalent Prop SProp Prop SProp (UR.PR_Type UR.univalent)
+        (fun (x : Prop) (y : SProp) (_ : @UR.pr _ _ _ (UR.PR_Type UR.univalent) x y) =>
+         UR.PR_Type UR.univalent))
+     not imported_not).
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Logic.not) not_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Logic.not) not_iso goal_lhs : typeclass_instances.
+
+Parameter imported_reflect : SProp -> imported_bool -> Type.
+Parameter reflect_iso : reflect ≈[_] imported_reflect.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Datatypes.reflect) reflect_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@Corelib.Init.Datatypes.reflect) reflect_iso goal_lhs : typeclass_instances.
+
+Parameter imported_addb : imported_bool -> imported_bool -> imported_bool.
+Parameter addb_iso : addb ≈[_] imported_addb.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@addb) addb_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@addb) addb_iso goal_lhs : typeclass_instances.
+
+Parameter imported_eqb : imported_bool -> imported_bool -> imported_bool.
+Parameter eqb_iso : eqb ≈[_] imported_eqb.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@eqb) eqb_iso goal_lhs : typeclass_instances.
+(* #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@eqb) eqb_iso goal_lhs : typeclass_instances. *)
+
+#[export] Hint Extern 1 (eqb ≈[ _ ] _) =>
+  first [ eapply eqb_iso
+        | let H := fresh "H" in pose proof (H := eqb_iso); 
+          repeat (intros x y e; specialize (H x y e)); cbn; ltac2:(print_ur ()) ]
+ : typeclass_instances.
+
+
+(** [imported_pred] corresponds to [ssrbool.pred] on the imported side.
+    The key structural requirement: [imported_eq_axiom] must use
+    [imported_pred y] (not [imported_bool -> imported_bool]) so that
+    the URForall PR for [eq_axiom_iso] is well-typed. *)
+Parameter imported_pred : Type -> Type.
+Parameter pred_iso :
+  (@UR.pr _ _ _
+     (@UR.URArrow UR.univalent Type Type Type Type
+        (UR.PR_Type UR.univalent)
+        (fun (x y : Type) (_ : @UR.pr _ _ _ (UR.PR_Type UR.univalent) x y) =>
+         UR.PR_Type UR.univalent))
+     pred imported_pred).
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@pred) pred_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@pred) pred_iso goal_lhs : typeclass_instances. 
+(* 
+#[export] Hint Extern 1 => progress (unfold pred) : typeclass_instances.
+Definition imported_pred := fun T => T -> imported_bool. *)
+
+Parameter imported_eq_axiom : forall y : Type, (y -> imported_pred y) -> Type.
+Parameter eq_axiom_iso : eq_axiom ≈[_] imported_eq_axiom.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@eq_axiom) eq_axiom_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@eq_axiom) eq_axiom_iso goal_lhs : typeclass_instances.
+
+(** -- The partial-application unification failure -------------------------
+
+    [import_of (@eqbP)] creates a fresh evar [f2 : ?T] and elaborates
+    [@UR.pr univalent (eq_axiom eqb) _ _ eqbP f2].  Since [eq_axiom]
+    is NOT unfolded, TC resolution applies [eq_axiom_iso] via
+    [eapply], which decomposes [eq_axiom eqb ≈[_] ?B] into subgoals
+    including [eqb ≈[_] ?e'] (the second argument of eq_axiom, typed
+    [T -> pred T]).  URArrow then decomposes this into
+    [eqb x ≈[_] ?e' y] for bound variables x, y.  The [eqb_iso] hint
+    fires (key match on [eqb]) but [eapply eqb_iso] fails: it provides
+    the fully-applied [eqb ?a ?b ≈[_] imported_eqb ?c ?d] while the
+    goal has [eqb x ≈[_] ?Goal] (one argument, partially applied).
+
+    Expected error (approximately):
+      Unable to unify
+        "forall ... eqb x ≈[ _] imported_eqb y"
+      with
+        "eqb x ≈[ _] ?Goal0@{X:=y}" *)
+
+#[universes(polymorphic,collapse_sort_variables=no)]
+Goal {B : _ & PR univalent (eq_axiom eqb) B}.
+Proof.
+eexists. Fail tc. 
+Abort.    
+
+Fail Parameter imported_eqbP : import_of (@eqbP).
+
+#[export] Hint Extern 1 => progress (unfold total_map) : typeclass_instances.
 
 (* 
 #[export] Hint Extern 0 (Vector.t ?A ?n ≃ _) =>
