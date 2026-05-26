@@ -177,20 +177,45 @@ Ltac2 mutable failure_white_message (c:constr) :=
   Message.concat (Message.of_string "the following instance should be white boxed: ")
                  (Message.of_constr c).
 
+Ltac2 mutable failure_white_message_conflict (c:constr) (c':constr) :=
+  Message.concat (Message.of_string "one of the following two instances should be white boxed: ")
+ (Message.concat (Message.of_constr c)
+ (Message.concat (Message.of_string " and ")
+                 (Message.of_constr c'))).
+                 
+Ltac2 print_ur () := 
+  match! goal with 
+  | [ |- @pr _ _ _ (@Ur _ _ ?pr_inst) _ _] => 
+      let (pr_head, _) := Constr.decompose_app_nocast pr_inst in
+      Control.throw (Tactic_failure (Some (failure_white_message pr_head)))          
+  end.
+
 Ltac2 apply_var_tac c := 
   let (c_head, c_args) := Constr.decompose_app_nocast c in
-  if is_var c_head
-  then
-    if Int.equal (Array.length c_args) 0 
-    then first [eassumption |
-                erefineb (PR_Type_gen _ _ _ _) ; eassumption |
-                erefineb (PR_Type_plain_univ _); eassumption]
-    else 
-      let cbn_h () := match! goal with 
+  let cbn_h () := match! goal with 
         | [ h : ?c ≈[_] _ |- _] => if Constr.equal c_head c 
           then cbn in $h
           else Control.zero Match_failure
       end in
+  if is_var c_head
+  then
+    if Int.equal (Array.length c_args) 0 
+    then 
+    let error () := match! goal with 
+              | [ _ : @pr _ _ _ (@Ur _ _ ?pr_inst) ?c _ |- @pr _ _ _ (@Ur _ _ ?pr_inst') _ _] => 
+                if Constr.equal c_head c 
+                then
+                  let (pr_head, _) := Constr.decompose_app_nocast pr_inst in
+                  let (pr_head', _) := Constr.decompose_app_nocast pr_inst' in
+                  Control.throw (Tactic_failure (Some (failure_white_message_conflict pr_head pr_head')))          
+                else 
+                  Control.zero Match_failure
+              end
+    in first [eassumption |
+              erefineb (PR_Type_gen _ _ _ _) ; eassumption |
+              erefineb (PR_Type_plain_univ _); eassumption | 
+              cbn_h () ; cbn ; error ()]
+    else 
       let apply_h () := match! goal with 
         | [ h : @pr _ _ _ ?pr_inst ?c _ |- _] => if Constr.equal c_head c 
             then 
@@ -215,13 +240,6 @@ Ltac2 apply_var_tac c :=
              erefineb (PR_Type_gen _ _ _ _); apply_h ()]
   else 
     Control.zero Match_failure.
-
-Ltac2 print_ur () := 
-  match! goal with 
-  | [ |- @pr _ _ _ (@Ur _ _ ?pr_inst) _ _] => 
-      let (pr_head, _) := Constr.decompose_app_nocast pr_inst in
-      Control.throw (Tactic_failure (Some (failure_white_message pr_head)))          
-  end.
 
 Ltac2 apply_var_tac_goal () := 
   match! goal with
