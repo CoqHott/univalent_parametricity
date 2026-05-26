@@ -5,7 +5,7 @@
 Require Import HoTT CanonicalEq.
 Require Import UnivalentParametricity.theories.Transportable.
 Require Import URTactics.
-From Ltac2 Require Import Ltac2.
+From Ltac2 Require Import Ltac2 Printf.
 From Ltac2 Require Import TransparentState.
 From Ltac2 Require Import Bool.
 From Ltac2 Require Import Constr.
@@ -49,6 +49,14 @@ Ltac2 shelve_non_PR () :=
   | [ |- UR_Type _ _ ] => ()
   | [ |- pr _ _ _ ] => ()
   | [ |- _ ] => Control.shelve ()
+  end.
+
+Ltac2 ur_type_of_ur_tc (ur_tc : constr) : constr * constr :=
+  let ty := Constr.type ur_tc in
+  let ty := eval hnf in $ty in
+  lazy_match! ty with
+  | UR_Type ?a ?b => (a, b)
+  | _ => fail "ur_type_of_ur_tc: expected %t ?a ?b, got %t" 'UR_Type ty
   end.
 
 Ltac2 shelve_non_PR_multi () := Control.enter (fun _ => shelve_non_PR ()).
@@ -173,21 +181,28 @@ Ltac2 is_forall_inst (c:constr) :=
   | _ => false
   end.
 
-Ltac2 mutable failure_white_message (c:constr) :=
+Ltac2 mutable rec failure_white_message (_lhs_head:constr) (_rhs_head:constr) (iso_head:constr) :=
   Message.concat (Message.of_string "the following instance should be white boxed: ")
-                 (Message.of_constr c).
+                 (Message.of_constr iso_head).
 
-Ltac2 mutable failure_white_message_conflict (c:constr) (c':constr) :=
+Ltac2 mutable failure_white_message_conflict (_lhs_head:constr) (_lhs_head':constr) (_rhs_head:constr) (_rhs_head':constr) (iso_head:constr) (iso_head':constr) :=
   Message.concat (Message.of_string "one of the following two instances should be white boxed: ")
- (Message.concat (Message.of_constr c)
+ (Message.concat (Message.of_constr iso_head)
  (Message.concat (Message.of_string " and ")
-                 (Message.of_constr c'))).
-                 
-Ltac2 print_ur () := 
-  match! goal with 
-  | [ |- @pr _ _ _ (@Ur _ _ ?pr_inst) _ _] => 
-      let (pr_head, _) := Constr.decompose_app_nocast pr_inst in
-      Control.throw (Tactic_failure (Some (failure_white_message pr_head)))          
+                 (Message.of_constr iso_head'))).
+
+Ltac2 failure_white_message_args_of_inst (ur_inst : constr) :=
+  let (pr_head, _) := Constr.decompose_app_nocast ur_inst in
+  let (lhs, rhs) := Control.throw_on_error (fun () => ur_type_of_ur_tc ur_inst) in
+  let (lhs_head, _) := Constr.decompose_app_nocast lhs in
+  let (rhs_head, _) := Constr.decompose_app_nocast rhs in
+  (lhs_head, rhs_head, pr_head).
+
+Ltac2 print_ur () :=
+  match! goal with
+  | [ |- @pr _ _ _ (@Ur _ _ ?pr_inst) _ _] =>
+      let (lhs_head, rhs_head, pr_head) := failure_white_message_args_of_inst pr_inst in
+      Control.throw (Tactic_failure (Some (failure_white_message lhs_head rhs_head pr_head)))
   end.
 
 Ltac2 apply_var_tac c := 
@@ -205,10 +220,10 @@ Ltac2 apply_var_tac c :=
               | [ _ : @pr _ _ _ (@Ur _ _ ?pr_inst) ?c _ |- @pr _ _ _ (@Ur _ _ ?pr_inst') _ _] => 
                 if Constr.equal c_head c 
                 then
-                  let (pr_head, _) := Constr.decompose_app_nocast pr_inst in
-                  let (pr_head', _) := Constr.decompose_app_nocast pr_inst' in
-                  Control.throw (Tactic_failure (Some (failure_white_message_conflict pr_head pr_head')))          
-                else 
+                  let (lhs_head, rhs_head, pr_head) := failure_white_message_args_of_inst pr_inst in
+                  let (lhs_head', rhs_head', pr_head') := failure_white_message_args_of_inst pr_inst' in
+                  Control.throw (Tactic_failure (Some (failure_white_message_conflict lhs_head lhs_head' rhs_head rhs_head' pr_head pr_head')))
+                else
                   Control.zero Match_failure
               end
     in first [eassumption |
@@ -228,9 +243,9 @@ Ltac2 apply_var_tac c :=
               | [ _ : @pr _ _ _ (@Ur _ _ ?pr_inst) ?c _ |- _] => 
                 if Constr.equal c_head c 
                 then
-                  let (pr_head, _) := Constr.decompose_app_nocast pr_inst in
-                  Control.throw (Tactic_failure (Some (failure_white_message pr_head)))          
-                else 
+                  let (lhs_head, rhs_head, pr_head) := failure_white_message_args_of_inst pr_inst in
+                  Control.throw (Tactic_failure (Some (failure_white_message lhs_head rhs_head pr_head)))
+                else
                   Control.zero Match_failure
               end)
             else Control.zero Match_failure
