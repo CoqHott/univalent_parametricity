@@ -106,18 +106,8 @@ Defined.
 Definition FP_forall_ur_type (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' : A' -> Type) 
      (eB : B ≈u B') :
   (forall x : A, B x) ≈u (forall x : A', B' x).
+Proof.
   unshelve econstructor.
-  - eapply URForall. intros. tc. unshelve eapply eB. tc.  
-    ltac2:(apply_var_tac_goal ()).
-    ltac2:(b |- match! goal with 
-        | [ h : @pr _ _ _ ?pr_inst ?c _ |- _] => if Constr.equal (Option.get (Ltac1.to_constr b)) c 
-            then 
-              let (pr_head, _) := Constr.decompose_app_nocast pr_inst in
-              if is_forall_inst pr_head 
-              then let h := Control.hyp h in unshelve (eapply $h); shelve_non_PR_multi () 
-              else  Control.zero Init.Match_failure
-              else  Control.zero Init.Match_failure end).
-  unshelve eapply eB; shelve_non_PR. tc.  cbn in eB. tc.   
   - econstructor. intros f g. split; cbn. 
     + intros efg x y e. destruct efg. 
       destruct (Ur_Coh (eB _ y (ur_refl (UR_Type_Inverse A A' eA) y))) as [ur_coh].
