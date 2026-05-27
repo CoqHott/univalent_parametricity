@@ -11,6 +11,65 @@ Unset Universe Minimization ToSet.
 Require Import UnivalentParametricity.theories.Basics UnivalentParametricity.theories.StdLib.UR Record.
 From Stdlib Require Import String.
 
+Module Interface10.
+
+Set Implicit Arguments.
+(** -- Imported-side parameters for sigT and friends -------------------------
+
+    These mirror the declarations in the original Interface.v from
+    RegressionUnivParamTC001HTTP50918a39587b, using exactly the same
+    form as the original. *)
+
+Parameter imported_Corelib__Init__Specif__sigT : forall y : Type, (y -> Type) -> Type.
+Parameter Corelib__Init__Specif__sigT_iso : (@UR.pr _ _ _
+     (@UR.URForall UR.univalent Type Type (fun x : Type => forall _ : forall _ : x, Type, Type) (fun H : Type => forall _ : forall _ : H, Type, Type) (UR.PR_Type UR.univalent)
+        (fun (x y : Type) (H : @UR.pr _ _ _ (UR.PR_Type UR.univalent) x y) =>
+         @UR.URArrow UR.univalent (forall _ : x, Type) (forall _ : y, Type) Type Type
+           (@UR.URArrow UR.univalent x y Type Type (UR.PR_Type_gen UR.univalent x y H) (fun (x0 : x) (y0 : y) (_ : @UR.pr _ _ _ (UR.PR_Type_gen UR.univalent x y H) x0 y0) => UR.PR_Type UR.univalent))
+           (fun (x0 : forall _ : x, Type) (y0 : forall _ : y, Type)
+              (_ : @UR.pr _ _ _
+                     (@UR.URArrow UR.univalent x y Type Type
+                        (UR.PR_Type_gen UR.univalent x y H)
+                        (fun (x1 : x) (y1 : y) (_ : @UR.pr _ _ _ (UR.PR_Type_gen UR.univalent x y H) x1 y1) => UR.PR_Type UR.univalent))
+                     x0 y0) =>
+            UR.PR_Type UR.univalent)))
+     (@sigT) imported_Corelib__Init__Specif__sigT).
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@sigT) Corelib__Init__Specif__sigT_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@sigT) Corelib__Init__Specif__sigT_iso goal_lhs : typeclass_instances.
+
+Parameter imported_Corelib__Init__Specif__existT : forall (y : Type) (y0 : y -> Type) (y1 : y), y0 y1 -> imported_Corelib__Init__Specif__sigT (fun H : y => y0 H).
+Parameter Corelib__Init__Specif__existT_iso : @existT ≈[ _] imported_Corelib__Init__Specif__existT.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@existT) Corelib__Init__Specif__existT_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@existT) Corelib__Init__Specif__existT_iso goal_lhs : typeclass_instances.
+
+Parameter imported_Corelib__Init__Specif__projT1 : forall (y : Type) (y0 : y -> Type), imported_Corelib__Init__Specif__sigT (fun H : y => y0 H) -> y.
+Parameter Corelib__Init__Specif__projT1_iso : @projT1 ≈[ _] imported_Corelib__Init__Specif__projT1.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@projT1) Corelib__Init__Specif__projT1_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@projT1) Corelib__Init__Specif__projT1_iso goal_lhs : typeclass_instances.
+
+Parameter imported_Corelib__Init__Specif__sigTD_rect : forall (y : Type) (y0 : y -> Type) (y1 : imported_Corelib__Init__Specif__sigT (fun H : y => y0 H) -> Type),
+  (forall (y2 : y) (y3 : y0 y2), y1 (imported_Corelib__Init__Specif__existT y0 y2 y3)) -> forall y2 : imported_Corelib__Init__Specif__sigT (fun H : y => y0 H), y1 y2.
+Parameter Corelib__Init__Specif__sigTD_rect_iso : @sigT_rect ≈[ _] imported_Corelib__Init__Specif__sigTD_rect.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
+  tc_hint_for (@sigT_rect) Corelib__Init__Specif__sigTD_rect_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
+  tc_hint_for (@sigT_rect) Corelib__Init__Specif__sigTD_rect_iso goal_lhs : typeclass_instances.
+
+(** -- projT2: this triggers the complex type unification failure ------------ *)
+
+
+Parameter imported_Corelib__Init__Specif__projT2 : import_of (@UnivalentParametricity.theories.HoTT.projT2).
+
+
+End Interface10.
+
+
 (*! FP for Sigma !*)
 
 #[universes(collapse_sort_variables=no)]
@@ -2188,10 +2247,44 @@ Parameter lookup_iso :
 
 Fail Parameter imported_bound_value : import_of (@bound_value).
 
-End Interface9. 
+End Interface9.
 
 
-(* 
+
+Module Type Interface11 (Import args : Args).
+
+Parameter imported_Corelib__Init__Logic__True : SProp.
+(* Parameter Corelib__Init__Logic__True_iso : (UR_Type@{Type Type Type SProp Type Type Prop; _ _ _ _ _ _} True imported_Corelib__Init__Logic__True). *)
+
+Parameter Corelib__Init__Logic__True_iso : @UR.pr _ _ _ (UR.PR_Type UR.univalent) True imported_Corelib__Init__Logic__True. 
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.True) Corelib__Init__Logic__True_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.True) Corelib__Init__Logic__True_iso goal_lhs : typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__and : SProp -> SProp -> SProp.
+Parameter Corelib__Init__Logic__and_iso : (@UR.pr _ _ _
+     (@UR.URArrow UR.univalent Prop SProp (forall _ : Prop, Prop) (forall _ : SProp, SProp) (UR.PR_Type UR.univalent)
+        (fun (x : Prop) (y : SProp) (_ : @UR.pr _ _ _ (UR.PR_Type UR.univalent) x y) =>
+         @UR.URArrow UR.univalent Prop SProp Prop SProp (UR.PR_Type UR.univalent) (fun (x0 : Prop) (y0 : SProp) (_ : @UR.pr _ _ _ (UR.PR_Type UR.univalent) x0 y0) => UR.PR_Type UR.univalent)))
+     and imported_Corelib__Init__Logic__and).
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.and) Corelib__Init__Logic__and_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.and) Corelib__Init__Logic__and_iso goal_lhs : typeclass_instances.
+
+Theorem match_ex2 : and True True.
+Proof.
+  match goal with
+  | [ |- True ] => apply I
+  | [ |- and True True ] => split; apply I
+  end.
+Qed.
+
+Parameter imported_LF__AltAuto__matchD_ex2 : import_of (@match_ex2).
+Parameter LF__AltAuto__matchD_ex2_iso : iso_statement (@match_ex2) imported_LF__AltAuto__matchD_ex2.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@match_ex2) LF__AltAuto__matchD_ex2_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@match_ex2) LF__AltAuto__matchD_ex2_iso goal_lhs : typeclass_instances.
+
+End Interface11.
+
+(*
 #[export] Hint Extern 0 (Vector.t ?A ?n ≃ _) =>
 erefine (ur_type (Equiv_vector_list A _ n)) : typeclass_instances.
 

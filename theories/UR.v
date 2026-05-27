@@ -145,6 +145,9 @@ Hint Extern 1 (UR_Type ?P ?Q) => eapply UR_Type_from_Prop : typeclass_instances.
 
 Hint Extern 1 (?P ≈[ _] ?Q) => eapply UR_Type_from_Prop : typeclass_instances.
 
+Ltac2 Set post_tc_hint_hook := fun () => intros; shelve_non_PR_multi ().
+Ltac2 Set pre_tc_hint_hook := fun () => eapply UR_Prop_from_Type.
+
 Ltac2 head_is_var (c:constr) :=
   let (c_head, _) := Constr.decompose_app_nocast c in
   is_var c_head.
@@ -253,6 +256,9 @@ Ltac2 apply_var_tac c :=
     in first [eassumption |
               erefineb (PR_Type_gen _ _ _ _) ; eassumption |
               erefineb (PR_Type_plain_univ _); eassumption | 
+              pre_tc_hint_hook (); eassumption |
+              erefineb (PR_Type_gen _ _ _ _) ; pre_tc_hint_hook (); eassumption |
+              erefineb (PR_Type_plain_univ _); pre_tc_hint_hook (); eassumption | 
               cbn_h () ; cbn ; error ()]
     else 
       let apply_h () := match! goal with 
@@ -466,8 +472,6 @@ Proof.
 Defined.  
 
 (* Some Ltac2 faciilites *)
-
-Ltac2 Set post_tc_hint_hook := fun () => intros; shelve_non_PR_multi ().
 
 Ltac2 univparamtc_statement_type (f : constr) : constr :=
   Constr.type f.

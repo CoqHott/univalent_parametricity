@@ -2603,13 +2603,15 @@ Ltac2 wrap_check tac :=
 
 
 Ltac post_tc_hint_hook := idtac.
+Ltac pre_tc_hint_hook := idtac.
 
 Ltac2 mutable post_tc_hint_hook () := ltac1:(post_tc_hint_hook).
+Ltac2 mutable pre_tc_hint_hook () := ltac1:(pre_tc_hint_hook).
 
 Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (goal_lhs : constr) :=
   let (goal_lhs, _) := Constr.decompose_app goal_lhs in
   intros;
-  let tac () := unshelve (eapply $lem); post_tc_hint_hook () in
+  let tac () := first [unshelve (eapply $lem) |pre_tc_hint_hook () ; unshelve (eapply $lem)]; post_tc_hint_hook () in
   if Constr.equal_nounivs goal_lhs key then
     if fatal then
       Control.throw_on_error tac
