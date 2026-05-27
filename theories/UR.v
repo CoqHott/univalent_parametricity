@@ -186,14 +186,14 @@ Ltac2 mutable rec failure_white_message (_lhs_head:constr) (_rhs_head:constr) (i
                  (Message.of_constr iso_head).
 
 Ltac2 mutable failure_white_message_conflict (lhs_head:constr) (lhs_head':constr) (rhs_head:constr) (rhs_head':constr) (iso_head:constr) (iso_head':constr) :=
-  match Std.is_forcibly_unfoldable_head lhs_head, Std.is_forcibly_unfoldable_head lhs_head' with
-  | true, true | false, false =>
+  match (Std.is_forcibly_unfoldable_head lhs_head, Std.is_forcibly_unfoldable_head lhs_head') with
+  | (true, true) | (false, false) =>
   Message.concat (Message.of_string "one of the following two instances should be white boxed: ")
  (Message.concat (Message.of_constr iso_head)
  (Message.concat (Message.of_string " and ")
                  (Message.of_constr iso_head')))
-  | true, false => failure_white_message lhs_head rhs_head iso_head
-  | false, true => failure_white_message lhs_head' rhs_head' iso_head'
+  | (true, false) => failure_white_message lhs_head rhs_head iso_head
+  | (false, true) => failure_white_message lhs_head' rhs_head' iso_head'
   end.
 
 Ltac2 failure_white_message_args_of_inst (ur_inst : constr) :=
