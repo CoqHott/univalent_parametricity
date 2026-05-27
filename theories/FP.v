@@ -23,6 +23,35 @@ Instance Canonical_eq_Type : Canonical_eq Type := Canonical_eq_gen _.
 
 Definition FP_Type : Type ≈p Type := {| pr := UR_Type |}.
 
+Inductive Squash (P:Prop) : SProp := sq : P -> Squash P.
+Axiom unsquash : forall P (s:Squash P), P.
+
+Inductive Box (P:SProp) : Prop := box : P -> Box P.
+
+#[universes(polymorphic,collapse_sort_variables=no)]
+Definition FP_Prop_Ext 
+  (prop_ext : forall (P Q : Prop), P ↔ Q -> P = Q) 
+  (sprop_ext : forall (P Q : SProp), P ↔ Q -> P = Q) 
+  : Prop ≈u SProp.
+Proof.
+  unshelve eexists.
+  - econstructor. exact (fun P Q => Squash P ↔ Q).
+  - repeat unshelve econstructor.
+    + exact Squash.
+    + exact Box.
+    + intros. eapply prop_ext. split; intros. destruct H.
+      now eapply unsquash in H. now repeat econstructor.
+    + intros. eapply sprop_ext. split; intros. 
+      now destruct H as [[]]. now repeat econstructor.
+    + reflexivity.
+  - econstructor. unfold univalent_transport; cbn. intros; split; eauto.
+    + destruct 1. split; eauto.
+    + intro e. eapply prop_ext. split ; intro. 
+      pose proof (fst e (sq _ H)). now eapply unsquash in H0.
+      pose proof (snd e (sq _ H)). now eapply unsquash in H0.
+Defined.
+
+
 (*! FP for Dependent product !*)
 (* isequiv_functor_forall can be found in
 [https://github.com/HoTT/HoTT] *)
@@ -78,6 +107,17 @@ Definition FP_forall_ur_type (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' 
      (eB : B ≈u B') :
   (forall x : A, B x) ≈u (forall x : A', B' x).
   unshelve econstructor.
+  - eapply URForall. intros. tc. unshelve eapply eB. tc.  
+    ltac2:(apply_var_tac_goal ()).
+    ltac2:(b |- match! goal with 
+        | [ h : @pr _ _ _ ?pr_inst ?c _ |- _] => if Constr.equal (Option.get (Ltac1.to_constr b)) c 
+            then 
+              let (pr_head, _) := Constr.decompose_app_nocast pr_inst in
+              if is_forall_inst pr_head 
+              then let h := Control.hyp h in unshelve (eapply $h); shelve_non_PR_multi () 
+              else  Control.zero Init.Match_failure
+              else  Control.zero Init.Match_failure end).
+  unshelve eapply eB; shelve_non_PR. tc.  cbn in eB. tc.   
   - econstructor. intros f g. split; cbn. 
     + intros efg x y e. destruct efg. 
       destruct (Ur_Coh (eB _ y (ur_refl (UR_Type_Inverse A A' eA) y))) as [ur_coh].
