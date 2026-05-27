@@ -122,6 +122,25 @@ unshelve econstructor.
   + intros e. now destruct (snd (@ur_coh _ _ _ _ H' a a') e).
 Defined.   
 
+#[universes(polymorphic,collapse_sort_variables=no)]
+Definition UR_Prop_from_Type (P:Prop) (Q:SProp)
+  (H : UR_Type@{Type Type Type SProp Type Type Type; _ _ _ _ _ _} P Q) :
+  UR_Type@{Type Type Type SProp Type Type Prop; _ _ _ _ _ _} P Q.
+unshelve econstructor.
+- assert (H' := @Ur _ _ H). econstructor. intros p q. eapply (p ≈p q).
+- unshelve econstructor.
+  + eapply (equiv H).
+  + unshelve econstructor.
+    * eapply (e_inv (equiv H)).
+    * intro x. eapply PI.
+    * intro x. reflexivity.
+    * reflexivity.
+- econstructor; eauto. assert (H' := @Ur_Coh _ _ H).
+  intros; split.
+  + intros e. eapply (fst (@ur_coh _ _ _ _ H' a a')). now destruct e.
+  + intros e. now destruct (snd (@ur_coh _ _ _ _ H' a a') e).
+Defined.
+
 Hint Extern 1 (UR_Type ?P ?Q) => eapply UR_Type_from_Prop : typeclass_instances.
 
 Hint Extern 1 (?P ≈[ _] ?Q) => eapply UR_Type_from_Prop : typeclass_instances.
