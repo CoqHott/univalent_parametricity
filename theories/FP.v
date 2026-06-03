@@ -71,7 +71,7 @@ Proof.
     (* exact (transportable _ _ ((e_retr f a))). *)
     exact (fun t => transport_eq_gen P (e_retr f a) t).
   - intros h. apply funext. intro a. unfold functor_forall.
-    destruct (e_retr f a). apply e_sect. 
+    destruct (@e_retr _ _ f IsEquiv0 a). apply e_sect. 
   - intros h;apply funext. unfold functor_forall. intros b.
     rewrite e_adj. rewrite (transport_ap P f (e_sect f b)).
     rewrite <- (@e_retr _ _ (g b) (H b) (h b)).
@@ -101,6 +101,7 @@ Proof.
            (BuildEquiv _ _ (functor_forall (e_fun (equiv e))
                                            (fun x => (e_inv' ((equiv (eB' x (e_fun (equiv e) x) (ur_refl e x)))))))
                        _). 
+  apply isequiv_functor_forall_ur.
 Defined.
 
 Definition FP_forall_ur_type (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' : A' -> Type) 
@@ -130,7 +131,7 @@ Proof.
 Defined.
 
 Definition FP_forall_pr_type (A A' : Type) (eA : A ≈p A') (B : A -> Type) (B' : A' -> Type) 
-     (eB : B ≈p B') :
+     (eB : B ≈p B') : 
   (forall x : A, B x) ≈p (forall x : A', B' x).
 Proof. cbn. tc. Defined.
 
@@ -149,10 +150,9 @@ Defined.
 Definition FP_forall k :
           pr k (fun A B => forall x:A , B x) (fun A' B' => forall x:A', B' x).
 Proof.
-  cbn. intros.  
   destruct k.
-  - eapply FP_forall_plain. tc. 
-  - eapply FP_forall_ur. tc. 
+  - eapply FP_forall_plain.
+  - eapply FP_forall_ur.
 Defined.  
 
 Ltac apply_forall := 
@@ -160,13 +160,13 @@ Ltac apply_forall :=
     intros; shelve_non_PR.
 
 Hint Extern 0 => 
-  match goal with | 
+  lazymatch goal with | 
     [ |- UR_Type (forall x:_ , _) _ ] => apply_forall |
     [ |- UR_Type _ (forall x:_ , _) ] => apply_forall |
     [ |- (forall x : _, _) ≈[ _] _  ] => apply_forall |
     [ |- _ ≈[ _] (forall x : _, _)  ] => apply_forall 
   end
-    : typeclass_instances.
+    : typeclass_instances ur_typeclass_instances.
 
 Goal forall k A A' (Aϵ: A ≈[k] A') t t' (tϵ : t ≈[k] t'),
           (fun x:A => t) ≈[k] (fun x:A' => t').
@@ -180,8 +180,8 @@ Proof.
   Fail tc. cbn. tc.
 Defined.
 
-Hint Extern 0 ((fun x : _ => _) ≈[ _] _) => intros ? ? ? : typeclass_instances.
-Hint Extern 0 (_ ≈[ _] (fun x : _ => _)) => intros ? ? ? : typeclass_instances.
+Hint Extern 0 ((fun x : _ => _) ≈[ _] _) => intros ? ? ? : typeclass_instances ur_typeclass_instances.
+Hint Extern 0 (_ ≈[ _] (fun x : _ => _)) => intros ? ? ? : typeclass_instances ur_typeclass_instances.
 
 Goal forall k A A' (Aϵ: A ≈[k] A') t t' (tϵ : t ≈[k] t'),
           (fun x:A => t) ≈[k] (fun x:A' => t').

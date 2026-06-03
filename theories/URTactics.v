@@ -11,7 +11,9 @@ Set Primitive Projections.
 
 Existing Class eq. 
 
-Ltac tc := typeclasses eauto with typeclass_instances.
+Create HintDb ur_typeclass_instances.
+
+Ltac tc := typeclasses eauto with ur_typeclass_instances.
 
 Ltac resolve_eq := intros; 
                    progress (repeat (try reflexivity;
@@ -21,21 +23,23 @@ Ltac resolve_eq := intros;
                    try repeat eapply ap; 
                    try repeat eapply ap2)).
 
-#[export] Hint Extern 100 (_ = _) => resolve_eq : typeclass_instances.
+(* #[export] Hint Extern 100 (_ = _) => resolve_eq : typeclass_instances.
 
 #[export] Hint Extern 10 (?e ?x = _ ) => eapply (ap e) : typeclass_instances.
 
-#[export] Hint Extern 10 (?e ?x ?y = _ ) => eapply (ap2 e) : typeclass_instances.
+#[export] Hint Extern 10 (?e ?x ?y = _ ) => eapply (ap2 e) : typeclass_instances. *)
 
 Ltac clear_eq := cbn in *; repeat match goal with | [e: ?A = ?B |- _] => destruct e end.
 
 Create HintDb equiv.
-#[export] Hint Extern 0 (prod ?A ?B ) => split : typeclass_instances.
 
-#[export] Hint Extern 0 unit => exact tt  : typeclass_instances.
+(* #[export] Hint Extern 0 (prod ?A ?B ) => split : typeclass_instances.
+
+#[export] Hint Extern 0 unit => exact tt  : typeclass_instances. *)
 
 Ltac etransitivity := refine (concat _ _).
 
+(*
 
 #[export] Hint Extern 0 (e_inv' ?e (e_fun ?e ?x) = _ ) =>
 etransitivity ; [exact (e_sect (e_fun e) x) | idtac ] : equiv.
@@ -75,12 +79,12 @@ etransitivity ; [exact (e_retr f n) | idtac ] : equiv.
 Typeclasses Transparent e_inv'  univalent_transport. 
 #[export] Hint Transparent e_inv'  univalent_transport : core. 
 #[export] Hint Unfold e_inv'  univalent_transport : core. 
-
+*)
 Ltac equiv_elim :=
   clear_eq;
   match goal with | [x: ?A |- _] => induction x; simpl; try typeclasses eauto with typeclass_instances end.
 
-#[export] Hint Extern 0 => eassumption : typeclass_instances. 
+(* #[export] Hint Extern 0 => eassumption : typeclass_instances.  *)
 
 Tactic Notation "erefine" uconstr(c) := unshelve notypeclasses refine c.
 

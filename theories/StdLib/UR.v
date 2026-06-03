@@ -14,12 +14,12 @@ Unset Universe Minimization ToSet.
 
 #[universes(collapse_sort_variables=no)]
 Definition PRSigma k (A A':Type) (B : A -> Type)(B' : A' -> Type) `{PR k A A'}
-           `{forall x y (H: x ≈[k] y), PR k (B x) (B' y)} : PR k (sigT B) (sigT B')
+           {HB : forall x y (H: x ≈[k] y), PR k (B x) (B' y)} : PR k (sigT B) (sigT B')
   :=
-  {| pr := fun x y => sigT (fun (_ : x.1 ≈[k] y.1) => x.2 ≈[k] y.2) |}.
+  {| pr := fun x y => sigT (fun (p : x.1 ≈[k] y.1) => @pr k _ _ (HB x.1 y.1 p) x.2 y.2) |}.
 
 #[export] Hint Extern 0 (PR ?k (@sigT _  _) (@sigT _ _)) =>
-  unshelve erefine (@PRSigma k _ _ _ _ _ _); intros; shelve_non_PR : typeclass_instances.
+  unshelve erefine (@PRSigma _ _ _ _ _ _ _); intros; shelve_non_PR : typeclass_instances ur_typeclass_instances.
 
 #[universes(collapse_sort_variables=no)]
 Definition PRProd k (A A' B B' : Type) `{PR k A A'}
@@ -28,7 +28,7 @@ Definition PRProd k (A A' B B' : Type) `{PR k A A'}
   {| pr := fun x y => prod (fst x ≈[k] fst y) (snd x ≈[k] snd y) |}.
 
 #[export] Hint Extern 0 (PR _ (prod _ _) (prod _ _)) =>
-  unshelve erefine (@PRProd _ _ _ _ _ _ _); intros; shelve_non_PR  : typeclass_instances.
+  unshelve erefine (@PRProd _ _ _ _ _ _ _); intros; shelve_non_PR  : typeclass_instances ur_typeclass_instances.
 
 (* eq *)
 
@@ -76,11 +76,11 @@ Inductive PR_list {A B} (R : A -> B -> Type) : list A -> list B -> SProp :=
 Instance PR_list_ (A B:Type) `{A ≈p B} : PR plain (list A) (list B) :=
   {| pr := PR_list (pr plain) |}.
 
-#[export] Hint Extern 0 (PR plain (list ?A) (list ?B)) => unshelve notypeclasses refine (@PR_list_ _ _ _); intros; shelve_non_PR : typeclass_instances. 
+#[export] Hint Extern 0 (PR plain (list ?A) (list ?B)) => unshelve notypeclasses refine (@PR_list_ _ _ _); intros; shelve_non_PR : typeclass_instances ur_typeclass_instances. 
 
-#[export] Hint Extern 0 (PR_list ?R [] []) => exact (PR_list_nil R)  : typeclass_instances.
+#[export] Hint Extern 0 (PR_list ?R [] []) => exact (PR_list_nil R)  : typeclass_instances ur_typeclass_instances.
 
-#[export] Hint Extern 0 (PR_list ?R (_::_) (_::_)) => unshelve refine (PR_list_cons R _ _); intros; shelve_non_PR : typeclass_instances.
+#[export] Hint Extern 0 (PR_list ?R (_::_) (_::_)) => unshelve refine (PR_list_cons R _ _); intros; shelve_non_PR : typeclass_instances ur_typeclass_instances.
 
 (* nat *)
 

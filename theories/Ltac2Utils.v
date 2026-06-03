@@ -393,6 +393,81 @@ Module Constr.
     | _, _ => false
     end).
 
+  Ltac2 compare_sort (s : sort) (s' : sort) := 
+    let is_prop := Constr.equal (Unsafe.make (Unsafe.Sort s)) 'Prop in
+    let is_prop' := Constr.equal (Unsafe.make (Unsafe.Sort s')) 'Prop in
+    Bool.equal is_prop is_prop'.
+
+  Ltac2 rec equal_nounivs_sort (c1 : constr) (c2 : constr) : bool :=
+    Constr.equal c1 c2 ||
+    (match Unsafe.kind c1, Unsafe.kind c2 with
+    | Unsafe.Rel n1, Unsafe.Rel n2 => Int.equal n1 n2
+    | Unsafe.Var id1, Unsafe.Var id2 => Ident.equal id1 id2
+    | Unsafe.Meta m1, Unsafe.Meta m2 => Meta.equal m1 m2
+    | Unsafe.Evar e1 l1, Unsafe.Evar e2 l2 =>
+        Evar.equal e1 e2 && Array.equal equal_nounivs_sort l1 l2
+    | Unsafe.Sort s , Unsafe.Sort s' => compare_sort s s' 
+    | Unsafe.Cast c1' _ t1, Unsafe.Cast c2' _ t2 =>
+        equal_nounivs_sort c1' c2' && equal_nounivs_sort t1 t2
+    | Unsafe.Prod b1 t1, Unsafe.Prod b2 t2 =>
+        equal_nounivs_sort (Binder.type b1) (Binder.type b2)
+        && equal_nounivs_sort t1 t2
+    | Unsafe.Lambda b1 t1, Unsafe.Lambda b2 t2 =>
+        equal_nounivs_sort (Binder.type b1) (Binder.type b2)
+        && equal_nounivs_sort t1 t2
+    | Unsafe.LetIn b1 v1 t1, Unsafe.LetIn b2 v2 t2 =>
+        equal_nounivs_sort (Binder.type b1) (Binder.type b2)
+        && equal_nounivs_sort v1 v2
+        && equal_nounivs_sort t1 t2
+    | Unsafe.App f1 args1, Unsafe.App f2 args2 =>
+        equal_nounivs_sort f1 f2
+        && Array.equal equal_nounivs_sort args1 args2
+    | Unsafe.Constant c1' _, Unsafe.Constant c2' _ =>
+        Constant.equal c1' c2'
+    | Unsafe.Ind ind1 _, Unsafe.Ind ind2 _ =>
+        Ind.equal ind1 ind2
+    | Unsafe.Constructor ctor1 _, Unsafe.Constructor ctor2 _ =>
+        Constructor.equal ctor1 ctor2
+    | Unsafe.Case ci1 (x1, _) iv1 y1 bl1,
+      Unsafe.Case ci2 (x2, _) iv2 y2 bl2 =>
+        Unsafe.Case.equal ci1 ci2
+        && equal_nounivs_sort x1 x2
+        && (match iv1, iv2 with
+            | Unsafe.NoInvert, Unsafe.NoInvert => true
+            | Unsafe.CaseInvert a1, Unsafe.CaseInvert a2 =>
+                Array.equal equal_nounivs_sort a1 a2
+            | _, _ => false
+            end)
+        && equal_nounivs_sort y1 y2
+        && Array.equal equal_nounivs_sort bl1 bl2
+    | Unsafe.Fix structs1 idx1 tl1 bl1,
+      Unsafe.Fix structs2 idx2 tl2 bl2 =>
+        Int.equal idx1 idx2
+        && Array.equal Int.equal structs1 structs2
+        && Array.equal (fun b1 b2 =>
+             equal_nounivs_sort (Binder.type b1) (Binder.type b2))
+           tl1 tl2
+        && Array.equal equal_nounivs_sort bl1 bl2
+    | Unsafe.CoFix idx1 tl1 bl1,
+      Unsafe.CoFix idx2 tl2 bl2 =>
+        Int.equal idx1 idx2
+        && Array.equal (fun b1 b2 =>
+             equal_nounivs_sort (Binder.type b1) (Binder.type b2))
+           tl1 tl2
+        && Array.equal equal_nounivs_sort bl1 bl2
+    | Unsafe.Proj p1 _ c1', Unsafe.Proj p2 _ c2' =>
+        Proj.equal p1 p2 && equal_nounivs_sort c1' c2'
+    | Unsafe.Uint63 n1, Unsafe.Uint63 n2 => Uint63.equal n1 n2
+    | Unsafe.Float f1, Unsafe.Float f2 => Float.equal f1 f2
+    | Unsafe.String _ , Unsafe.String _ => Constr.equal c1 c2
+    | Unsafe.Array _ vals1 def1 ty1,
+      Unsafe.Array _ vals2 def2 ty2 =>
+        Array.equal equal_nounivs_sort vals1 vals2
+        && equal_nounivs_sort def1 def2
+        && equal_nounivs_sort ty1 ty2
+    | _, _ => true
+    end).
+
   Ltac2 Type exn ::= [ DestKO (string, constr) ].
   Ltac2 decompose_app_list (c : constr) :=
     match Unsafe.kind c with
@@ -2601,6 +2676,107 @@ Ltac2 wrap_check tac :=
     let g := Control.goal () in
     '(ltac2:(tac ()) :> $g)).
 
+Ltac2 norm_red_flags : Std.red_flags := {
+  Std.rStrength := Std.Norm;
+  Std.rBeta := true;
+  Std.rMatch := true;
+  Std.rFix := true;
+  Std.rCofix := true;
+  Std.rZeta := true;
+  Std.rDelta := true; (** true = delta all but rConst; false = delta only on rConst*)
+  Std.rConst := []
+}.
+
+Ltac2 check_appvect (t : constr) (args: constr array) : constr result := 
+  Constr.Unsafe.check  (Constr.Unsafe.make (Constr.Unsafe.App t args)).
+
+(** Reduce a term to head normal form, stripping casts. *)
+Ltac2 whnf (c : constr) : constr :=
+  Std.eval_lazy norm_red_flags c.
+
+(** [type_of c] returns the type of [c] via the current goal's
+    environment.  We open a local goal to call [Constr.type]. *)
+Ltac2 type_of (c : constr) : constr := Constr.type c.
+
+(** [is_prod ty] returns [Some (dom, cod)] when [ty] reduces to a
+    [Prod] (i.e. a function type), and [None] otherwise.
+    No cumulativity, no unification — pure structural check. *)
+Ltac2 is_prod (ty : constr) : (constr * constr) option :=
+  match Constr.Unsafe.kind (whnf ty) with
+  | Constr.Unsafe.Prod binder body =>
+      Some (Constr.Binder.type binder, body)
+  | _ => None
+  end.
+
+Ltac2 types_match (dom : constr) (arg : constr) : bool :=
+  let arg_ty := type_of arg in
+  Constr.equal_nounivs_sort (whnf arg_ty) (whnf dom).
+
+Ltac2 first_failing_arg (t : constr) (args : constr list) : (int*constr) option :=
+  let len := List.length args in
+  let rec go (acc : constr) (rest : constr list) :=
+    match rest with
+    | [] => None
+    | a :: tl =>
+        let acc_ty := type_of acc in
+        match is_prod acc_ty with
+        | None => Control.throw (Tactic_failure (Some (Message.concat (Message.of_string "Not a product") (Message.of_constr acc_ty))))
+        (* acc expects an argument of type [dom] *)
+        | Some (dom, _) =>
+            if types_match dom a
+            then
+              (* Types agree: build the application and continue.
+                 We also instantiate [body] with [a] so that
+                 dependent types are handled correctly. *)
+              match check_appvect acc [| a |]  with 
+                | Val t => go t tl
+                | _ => None
+              end
+            else
+              Some (Int.sub len (List.length tl),a) (* [a] is the first failing argument *)
+        end
+    end
+  in
+  go t args.
+
+  Ltac2 check_if_cumul (t:constr) :=
+   let (c_head, c_args) := Constr.decompose_app_nocast t in
+   match first_failing_arg c_head (Array.to_list c_args) with
+    | None => None
+    | Some (n, a) => Some (Message.concat (Message.of_string "The argument ") (Message.concat (Message.of_constr a)
+                (Message.concat (Message.of_string " at position ") (Message.concat (Message.of_int n) 
+                  (Message.concat (Message.of_string " is is making use of cumulativity for head construcor : ") (Message.of_constr c_head))))))
+  end.
+
+Ltac2 mutable compute_triple (_:constr) (_:ident) (_:ident) : unit := ().
+
+From Ltac2 Require Import Constr. 
+
+Ltac2 merge_triple_array (a:constr array) (b : (ident * ident) array) : constr list :=
+  let l1 := Array.to_list a in
+  let l2 := Array.to_list b in
+    List.flatten (List.map2 (fun arg id => let (id1, id2) := id in [arg; Unsafe.make (Unsafe.Var id1) ;Unsafe.make (Unsafe.Var id2)]) l1 l2).
+
+Ltac2 forward_apply (lem:constr) (t:constr):=
+  let (_, c_args) := Constr.decompose_app_nocast t in
+  let n := Array.length c_args in
+  if Int.equal n 0 then
+    unshelve (refine $lem)
+  else
+    let avoid := Ref.ref (Fresh.Free.of_goal ()) in
+    let mk () :=
+      let id := Fresh.fresh (Ref.get avoid) @x in
+      Ref.set avoid (Fresh.Free.union (Ref.get avoid) (Fresh.Free.of_ids [id]));
+      let id' := Fresh.fresh (Ref.get avoid) @x in
+      Ref.set avoid (Fresh.Free.union (Ref.get avoid) (Fresh.Free.of_ids [id']));
+      (id,id')
+    in
+    let fresh_ident := Array.init n (fun _ => mk ()) in
+    let () := Array.iter2 (fun arg id => let (id1, id2) := id in compute_triple arg id1 id2) c_args fresh_ident in
+    match check_appvect lem (Array.of_list (merge_triple_array c_args fresh_ident)) with 
+    | Val apply_lem => unshelve (refine $apply_lem)
+    | _ => Control.zero Match_failure
+    end.
 
 Ltac post_tc_hint_hook := idtac.
 Ltac pre_tc_hint_hook := idtac.
@@ -2608,13 +2784,24 @@ Ltac pre_tc_hint_hook := idtac.
 Ltac2 mutable post_tc_hint_hook () := ltac1:(post_tc_hint_hook).
 Ltac2 mutable pre_tc_hint_hook () := ltac1:(pre_tc_hint_hook).
 
+Ltac2 tc_solve () := ().
+(* typeclasses_eauto with typeclass_instances. *)
+
 Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (goal_lhs : constr) :=
-  let (goal_lhs, _) := Constr.decompose_app goal_lhs in
   intros;
-  let tac () := first [unshelve (eapply $lem) |pre_tc_hint_hook () ; unshelve (eapply $lem)]; post_tc_hint_hook () in
+  match check_if_cumul goal_lhs with
+  | Some m => Message.print m
+  | None => ()
+  end;
+  let tac () := first [unshelve (eapply $lem); tc_solve ()| 
+                       pre_tc_hint_hook (); unshelve (eapply $lem) |
+                       forward_apply lem goal_lhs |
+                       pre_tc_hint_hook () ; forward_apply lem goal_lhs]; 
+                       post_tc_hint_hook () in
+  let (goal_lhs, _) := Constr.decompose_app goal_lhs in
   if Constr.equal_nounivs goal_lhs key then
     if fatal then
-      Control.throw_on_error tac
+      tac ()
     else if warn then
       match Control.case_bt tac with
       | Val_bt (v, _k) => v
@@ -2637,3 +2824,6 @@ Ltac tc_hint_for_warn key lem goal_lhs :=
 Ltac tc_hint_for_nofatal key lem goal_lhs :=
   let tac := ltac2:(key lem goal_lhs |- tc_hint_for false false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
   tac key lem goal_lhs.
+
+
+

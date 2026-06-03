@@ -17,6 +17,8 @@ Set Primitive Projections.
 Set Polymorphic Inductive Cumulativity. 
 Unset Collapse Sorts ToType.
 
+#[export] Set Typeclasses Unique Instances.
+
 (* basic class for parametric relations *)
 Variant parametricity_kind : Set := 
   | plain 
@@ -27,6 +29,7 @@ Class PR (k : parametricity_kind) A B : Type := {
 }.
 
 Arguments pr k {_ _ _} a b.
+
 Notation "x ≈[ k ] y" := (pr k x y) (at level 20).
 Notation "x ≈p y" := (x ≈[plain] y) (at level 20).
 Notation "x ≈u y" := (x ≈[univalent] y) (at level 20).
@@ -44,7 +47,7 @@ Inductive UR_Type A B :=
   }.
 
 Ltac2 shelve_non_PR () :=
-  match! goal with
+  match! reverse goal with
   | [ |- PR _ _ _ ] => ()
   | [ |- UR_Type _ _ ] => ()
   | [ |- pr _ _ _ ] => ()
@@ -54,7 +57,7 @@ Ltac2 shelve_non_PR () :=
 Ltac2 ur_type_of_ur_tc (ur_tc : constr) : constr * constr :=
   let ty := Constr.type ur_tc in
   let ty := eval hnf in $ty in
-  lazy_match! ty with
+  match! ty with
   | UR_Type ?a ?b => (a, b)
   | _ => fail "ur_type_of_ur_tc: expected %t ?a ?b, got %t" 'UR_Type ty
   end.
@@ -77,11 +80,13 @@ Arguments equiv {_ _} _.
 Arguments Ur_Coh {_ _} _.
 Arguments ur_coh {_ _ _ _ _} _ _.
 
-#[export] Hint Extern 100 (_ ≃ _) => erefineb (equiv _): typeclass_instances.
-#[export] Hint Extern 100 (UR_Coh _ _ _ _) => erefineb (Ur_Coh _): typeclass_instances.
+#[export] Hint Extern 100 (_ ≃ _) => erefineb (equiv _): typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 100 (UR_Coh _ _ _ _) => erefineb (Ur_Coh _): typeclass_instances ur_typeclass_instances.
+
+Typeclasses Opaque pr Ur equiv ur_coh Ur_Coh.
 
 Ltac2 apply_PR_Type_gen () :=
-  lazy_match! goal with
+  match! reverse goal with
   | [ |- PR _ Prop  _ ] => exact (@PR_Type@{_ Prop SProp;_ _ _ _} _)
   | [ |- PR _ SProp _ ] => exact (@PR_Type@{_ SProp SProp;_ _ _ _} _)
   | [ |- PR _ _ _ ] => exact (@PR_Type _)
@@ -90,7 +95,7 @@ Ltac2 apply_PR_Type_gen () :=
   | [ |- _ ≈[ _ ] _ ] => exact (@PR_Type _)
   end.
 
-#[export] Hint Extern 0 => apply_PR_Type_gen () : typeclass_instances.
+#[export] Hint Extern 0 => apply_PR_Type_gen () : typeclass_instances ur_typeclass_instances.
 
 Definition PR_Type_plain_univ {A B : Type} (H: A ≈u B) : PR plain A B := Ur H.
 
@@ -107,6 +112,7 @@ Definition PR_Type_gen k (A B:Type) (H:@pr _ _ _ (PR_Type k) A B) : PR k A B :=
 Definition UR_Type_from_Prop (P:Prop) (Q:SProp)
   (H : UR_Type@{Type Type Type SProp Type Type Prop; _ _ _ _ _ _} P Q) :
   UR_Type@{Type Type Type SProp Type Type Type; _ _ _ _ _ _} P Q.
+Proof. 
 unshelve econstructor.
 - assert (H' := @Ur _ _ H). econstructor. intros p q. eapply (p ≈p q).
 - unshelve econstructor.
@@ -126,6 +132,7 @@ Defined.
 Definition UR_Prop_from_Type (P:Prop) (Q:SProp)
   (H : UR_Type@{Type Type Type SProp Type Type Type; _ _ _ _ _ _} P Q) :
   UR_Type@{Type Type Type SProp Type Type Prop; _ _ _ _ _ _} P Q.
+Proof.
 unshelve econstructor.
 - assert (H' := @Ur _ _ H). econstructor. intros p q. eapply (p ≈p q).
 - unshelve econstructor.
@@ -141,19 +148,29 @@ unshelve econstructor.
   + intros e. now destruct (snd (@ur_coh _ _ _ _ H' a a') e).
 Defined.
 
-Hint Extern 1 (UR_Type ?P ?Q) => eapply UR_Type_from_Prop : typeclass_instances.
+Hint Extern 1 (UR_Type ?P ?Q) => eapply UR_Type_from_Prop : typeclass_instances ur_typeclass_instances.
 
-Hint Extern 1 (?P ≈[ _] ?Q) => eapply UR_Type_from_Prop : typeclass_instances.
+Hint Extern 1 (?P ≈[ _] ?Q) => eapply UR_Type_from_Prop : typeclass_instances ur_typeclass_instances. 
 
 Ltac2 Set post_tc_hint_hook := fun () => intros; shelve_non_PR_multi ().
-Ltac2 Set pre_tc_hint_hook := fun () => eapply UR_Prop_from_Type.
+
+Ltac2 uR_Type_from_Prop_tac () := match! reverse goal with | [ |- UR_Type ?p ?q] => eapply (UR_Type_from_Prop $p $q) end.
+Ltac2 uR_Prop_from_Type_tac () := match! reverse goal with | [ |- UR_Type ?p ?q] => eapply (UR_Prop_from_Type $p $q) end.
+
+Ltac2 Set pre_tc_hint_hook := fun () => first [cbn ; uR_Type_from_Prop_tac () | cbn ; uR_Prop_from_Type_tac () | ()].
+Ltac2 pre_tc_hint_hook_contra := fun () => cbn; uR_Prop_from_Type_tac ().
 
 Ltac2 head_is_var (c:constr) :=
   let (c_head, _) := Constr.decompose_app_nocast c in
   is_var c_head.
 
+Ltac2 hyp_not_value (h:ident) := match Control.hyp_value h with
+  | Some _ => false
+  | None => true
+  end.
+
 Ltac2 check_blacklist_PR_Type (lhs:constr) :=
-  lazy_match! lhs with
+  match! lhs with 
   | Type => false
   | Prop => false
   | SProp => false
@@ -174,20 +191,20 @@ Ltac2 apply_Type_gen () :=
       fail "not a variable"
   end. 
 
-#[export] Hint Extern 2 => apply_Type_gen () : typeclass_instances.
+#[export] Hint Extern 2 => apply_Type_gen () : typeclass_instances ur_typeclass_instances.
 
 (* Definition of univalent relation for basic type constructors *)
 (*! Forall !*)
 
 Definition URArrow k A A' B B' {HA : PR k A A'} 
-           {HB: forall x y (H: x ≈[ k ] y), PR k B B'} : PR k (A -> B) (A' -> B')
+           {HB: PR k B B'} : PR k (A -> B) (A' -> B')
   :=
   {| pr := fun f g => forall x y (H:x ≈[ k ] y), f x ≈[ k ] g y |}.
 
 Definition URForall k A A' (B : A -> Type) (B' : A' -> Type) {HA : PR k A A'} 
            {HB: forall x y (H: x ≈[ k ] y), PR k (B x) (B' y)} : PR k (forall x, B x) (forall y, B' y)
   :=
-  {| pr := fun f g => forall x y (H:x ≈[ k ] y), f x ≈[ k ] g y |}.
+  {| pr := fun f g => forall x y (H:x ≈[ k ] y), @pr k _ _ (HB x y H) (f x) (g y) |}.
 
 Ltac2 get_constant (c:constr) :=
   match Unsafe.kind c with
@@ -226,7 +243,7 @@ Ltac2 failure_white_message_args_of_inst (ur_inst : constr) :=
   (lhs_head, rhs_head, pr_head).
 
 Ltac2 print_ur () :=
-  match! goal with
+  match! reverse goal with
   | [ |- @pr _ _ _ (@Ur _ _ ?pr_inst) _ _] =>
       let (lhs_head, rhs_head, pr_head) := failure_white_message_args_of_inst pr_inst in
       Control.throw (Tactic_failure (Some (failure_white_message lhs_head rhs_head pr_head)))
@@ -234,8 +251,8 @@ Ltac2 print_ur () :=
 
 Ltac2 apply_var_tac c := 
   let (c_head, c_args) := Constr.decompose_app_nocast c in
-  let cbn_h () := match! goal with 
-        | [ h : ?c ≈[_] _ |- _] => if Constr.equal c_head c 
+  let cbn_h () := match! reverse goal with 
+        | [ h : ?c ≈[_] _ |- _] => if Constr.equal c_head c && hyp_not_value h
           then cbn in $h
           else Control.zero Match_failure
       end in
@@ -243,35 +260,41 @@ Ltac2 apply_var_tac c :=
   then
     if Int.equal (Array.length c_args) 0 
     then 
-    let error () := match! goal with 
-              | [ _ : @pr _ _ _ (@Ur _ _ ?pr_inst) ?c _ |- @pr _ _ _ (@Ur _ _ ?pr_inst') _ _] => 
-                if Constr.equal c_head c 
+    let error () := match! reverse goal with 
+              | [ h : @pr _ _ _ (@Ur _ _ ?pr_inst) ?c _ |- @pr _ _ _ (@Ur _ _ ?pr_inst') _ _] => 
+                if Constr.equal c_head c && hyp_not_value h
                 then
                   let (lhs_head, rhs_head, pr_head) := failure_white_message_args_of_inst pr_inst in
                   let (lhs_head', rhs_head', pr_head') := failure_white_message_args_of_inst pr_inst' in
                   Control.throw (Tactic_failure (Some (failure_white_message_conflict lhs_head lhs_head' rhs_head rhs_head' pr_head pr_head')))
                 else
                   Control.zero Match_failure
+              end in
+    let local_assumption () := match! reverse goal with 
+              | [ h : @pr _ _ _ _ ?c _ |- _] => 
+                if Constr.equal c_head c && hyp_not_value h
+                then let h := Control.hyp h in exact $h else
+                  Control.zero Match_failure
               end
-    in first [eassumption |
-              erefineb (PR_Type_gen _ _ _ _) ; eassumption |
-              erefineb (PR_Type_plain_univ _); eassumption | 
-              pre_tc_hint_hook (); eassumption |
-              erefineb (PR_Type_gen _ _ _ _) ; pre_tc_hint_hook (); eassumption |
-              erefineb (PR_Type_plain_univ _); pre_tc_hint_hook (); eassumption | 
+    in first [local_assumption () |
+              erefineb (PR_Type_gen _ _ _ _) ; local_assumption () |
+              erefineb (PR_Type_plain_univ _); local_assumption () | 
+              pre_tc_hint_hook_contra (); local_assumption () |
+              erefineb (PR_Type_gen _ _ _ _) ; pre_tc_hint_hook_contra (); local_assumption () |
+              erefineb (PR_Type_plain_univ _); pre_tc_hint_hook_contra (); local_assumption () | 
               cbn_h () ; cbn ; error ()]
     else 
-      let apply_h () := match! goal with 
-        | [ h : @pr _ _ _ ?pr_inst ?c _ |- _] => if Constr.equal c_head c 
+      let apply_h () := match! reverse goal with 
+        | [ h : @pr _ _ _ ?pr_inst ?c _ |- _] => if Constr.equal c_head c && hyp_not_value h
             then 
               let (pr_head, _) := Constr.decompose_app_nocast pr_inst in
               if is_forall_inst pr_head
               then 
                 let h := Control.hyp h in 
                 unshelve (eapply $h); shelve_non_PR_multi () 
-              else (cbn_h (); match! goal with 
+              else (cbn_h (); match! reverse goal with 
               | [ _ : @pr _ _ _ (@Ur _ _ ?pr_inst) ?c _ |- _] => 
-                if Constr.equal c_head c 
+                if Constr.equal c_head c && hyp_not_value h
                 then
                   let (lhs_head, rhs_head, pr_head) := failure_white_message_args_of_inst pr_inst in
                   Control.throw (Tactic_failure (Some (failure_white_message lhs_head rhs_head pr_head)))
@@ -287,7 +310,7 @@ Ltac2 apply_var_tac c :=
     Control.zero Match_failure.
 
 Ltac2 apply_var_tac_goal () := 
-  match! goal with
+  match! reverse goal with
   | [ |- PR _ ?lhs _] => apply_var_tac lhs
   | [ |- PR _ _ ?rhs] => apply_var_tac rhs
   | [ |- ?lhs ≈[_] _] => apply_var_tac lhs
@@ -296,7 +319,7 @@ Ltac2 apply_var_tac_goal () :=
   | [ |- UR_Type _ ?rhs] => apply_var_tac rhs
   end. 
 
-#[export] Hint Extern 0 => apply_var_tac_goal (); intros : typeclass_instances.
+#[export] Hint Extern 0 => apply_var_tac_goal (); intros : typeclass_instances ur_typeclass_instances.
 
 Definition ur_refl {A B: Type} (e : A ≈u B) :
   forall a : A, a ≈u ↑ a.
@@ -321,21 +344,22 @@ Ltac2 apply_closed_tac c :=
            erefineb (ur_refl' _ $c)].
 
 Ltac2 apply_closed_tac_goal () := 
-  match! goal with
+  match! reverse goal with
   | [ |- ?lhs ≈u _] => apply_closed_tac lhs
   | [ |- _ ≈u ?rhs] => apply_closed_tac rhs
   end. 
 
-#[export] Hint Extern 0 => apply_closed_tac_goal () : typeclass_instances.
+#[export] Hint Extern 0 => apply_closed_tac_goal () : typeclass_instances ur_typeclass_instances.
 
-Ltac2 tc () := typeclasses_eauto with typeclass_instances.
+Ltac2 tc () := typeclasses_eauto with ur_typeclass_instances.
 
 (* test Prop SProp instances *)
 
-Goal PR plain Prop SProp. tc (). Abort. 
-Goal PR univalent Prop SProp. tc (). Abort. 
-Goal PR plain SProp SProp. tc (). Abort. 
-Goal PR univalent SProp SProp. tc (). Abort. 
+Goal PR plain Prop SProp. Proof. tc (). Abort. 
+Goal PR univalent Prop SProp. Proof. tc (). Abort. 
+Goal PR plain SProp SProp. Proof. tc (). Abort. 
+Goal PR univalent SProp SProp. Proof. tc (). Abort. 
+Goal PR plain Type Type. Proof. tc (). Abort. 
 
 (* some facilities to create an instance of UR_Type *)
 
@@ -366,7 +390,7 @@ Proof.
 Defined.
 
 Ltac2 apply_forall_tac () := 
-  match! goal with
+  match! reverse goal with
   | [ |- PR _ (_ -> _) _] => first [
     erefineb (@URArrow _ _ _ _ _ _ _); intros; shelve_non_PR_multi ()
     ]
@@ -381,10 +405,11 @@ Ltac2 apply_forall_tac () :=
     ]
   end. 
 
-#[export] Hint Extern 0 => apply_forall_tac () : typeclass_instances.
+#[export] Hint Extern 0 => apply_forall_tac () : typeclass_instances ur_typeclass_instances.
 
   (*! UR is symmetric on types !*)
 Definition UR_Type_Inverse (A B : Type) : A ≈u B -> B ≈u A.
+Proof.
 intro e. unshelve econstructor.
 - eapply PR_inverse. eapply Ur. tc (). 
 - apply Equiv_inverse; tc ().
@@ -400,6 +425,7 @@ Definition compat_inverse k (A A' B B':Type) (pA: PR k A A') (pB: PR k B B')
            (pA' := PR_inverse k pA)
            (pB' := PR_inverse k pB) (f : A -> B) (g : A' -> B') :
   f ≈[k] g -> g ≈[k] f.
+Proof.
   cbn. tc (). 
 Defined.
 
@@ -408,6 +434,7 @@ Definition compat_inverse2 k {A A' B B' C C' :Type} {eA: PR k A A'} (eA' := PR_i
            {eC: PR k C C'} (eC' := PR_inverse k eC)
            {f : A -> B -> C} {g : A' -> B' -> C'} :
   f ≈[k] g -> g ≈[k] f.
+Proof. 
   cbn. tc (). 
 Defined. 
 (*! Canonical UR from a type equivalence !*)
@@ -429,7 +456,7 @@ Definition UR_Equiv (A B C:Type) `{C ≃ B} (eAB:A ≈p B) : A ≈p C :=
   {| pr := fun a b => a ≈p ↑ b |}.
 
 Definition UR_Equiv' (A B C:Type) `{C ≃ A} (eAB :A ≈p B) : C ≈p B :=
-  {| pr := fun c b => ↑ c ≈p b |}.
+  {| pr := fun c b => (↑ c : A) ≈p b |}.
 
 Definition UR_Type_Equiv (A B C:Type) `{C ≃ B} `{A ≈u B} : A ≈u C.
 Proof.
@@ -526,3 +553,7 @@ Abbreviation import_of f :=
   (match tt return _ with tt =>
     ltac2:(Control.refine (fun () => import_of (Constr.open_pretype_no_tc f) None))
   end) (only parsing).
+
+Ltac2 Set compute_triple := fun (t:constr) (f:ident) (g:ident) =>
+  unshelve refine '(let t' : _ := _ in let t'' : $t ≈u @t' := _ in _); shelve_non_PR_multi ();
+   Control.extend [ (fun _ => tc ()) ; (fun _ => unfold &t'; tc () ) ; (fun _ => Std.rename [(@t',f);(@t'',g)]) ] (fun _ => ()) [].
