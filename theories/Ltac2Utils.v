@@ -2739,13 +2739,16 @@ Ltac2 first_failing_arg (t : constr) (args : constr list) : (int*constr) option 
   in
   go t args.
 
-  Ltac2 check_if_cumul (t:constr) :=
+Ltac2 Type exn ::= [ Fatal (message) ].
+
+Ltac2 check_if_cumul (t:constr) :=
    let (c_head, c_args) := Constr.decompose_app_nocast t in
    match first_failing_arg c_head (Array.to_list c_args) with
-    | None => None
-    | Some (n, a) => Some (Message.concat (Message.of_string "The argument ") (Message.concat (Message.of_constr a)
+    | None => Control.zero Match_failure
+    | Some (n, a) => 
+        Control.throw (Fatal (Message.concat (Message.of_string "The argument ") (Message.concat (Message.of_constr a)
                 (Message.concat (Message.of_string " at position ") (Message.concat (Message.of_int n) 
-                  (Message.concat (Message.of_string " is is making use of cumulativity for head construcor : ") (Message.of_constr c_head))))))
+                  (Message.concat (Message.of_string " is is making use of cumulativity for head constructor : ") (Message.of_constr c_head)))))))
   end.
 
 Ltac2 mutable compute_triple (_:constr) (_:ident) (_:ident) : unit := ().
@@ -2784,22 +2787,35 @@ Ltac pre_tc_hint_hook := idtac.
 Ltac2 mutable post_tc_hint_hook () := ltac1:(post_tc_hint_hook).
 Ltac2 mutable pre_tc_hint_hook () := ltac1:(pre_tc_hint_hook).
 
-Ltac2 tc_solve () := ().
-(* typeclasses_eauto with typeclass_instances. *)
+Ltac2 mutable shelve_and_tc () := ().
+
+Ltac2 orelse_fatal t f :=
+match Control.case t with
+| Err (Fatal _ as e) => Control.throw e  
+| Err e => f e
+| Val ans =>
+  let (x, k) := ans in
+  Control.plus (fun _ => x) k
+end.
+
+Ltac2 rec first_fatal0 tacs :=
+match tacs with
+| [] => Control.zero Match_failure
+| tac :: tacs => Control.enter (fun _ => orelse_fatal tac (fun _ => first_fatal0 tacs))
+end.
+
+Ltac2 Notation "first_fatal" "[" tacs(list0(thunk(tactic(6)), "|")) "]" := first_fatal0 tacs.
 
 Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (goal_lhs : constr) :=
   intros;
-  match check_if_cumul goal_lhs with
-  | Some m => Message.print m
-  | None => ()
-  end;
-  let tac () := first [unshelve (eapply $lem); tc_solve ()| 
-                       pre_tc_hint_hook (); unshelve (eapply $lem) |
-                       forward_apply lem goal_lhs |
-                       pre_tc_hint_hook () ; forward_apply lem goal_lhs]; 
-                       post_tc_hint_hook () in
-  let (goal_lhs, _) := Constr.decompose_app goal_lhs in
-  if Constr.equal_nounivs goal_lhs key then
+  let tac () := first_fatal 
+            [unshelve (eapply $lem); shelve_and_tc ()| 
+             pre_tc_hint_hook (); unshelve (eapply $lem); shelve_and_tc () |
+             forward_apply lem goal_lhs |
+             pre_tc_hint_hook () ; forward_apply lem goal_lhs|
+             check_if_cumul goal_lhs] in
+  let (goal_head, _) := Constr.decompose_app goal_lhs in
+  if Constr.equal_nounivs goal_head key then
     if fatal then
       tac ()
     else if warn then

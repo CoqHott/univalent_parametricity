@@ -2685,7 +2685,6 @@ Parameter Corelib__Init__Logic__or_iso : iso_statement (@Corelib.Init.Logic.or) 
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.or) Corelib__Init__Logic__or_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.or) Corelib__Init__Logic__or_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-
 Fail Parameter imported_Cdcl__Formula__NBool : import_of (@NBool).
 
 Parameter imported_Corelib__Init__Datatypes__option' : import_of (@Corelib.Init.Datatypes.option : Prop -> Type).

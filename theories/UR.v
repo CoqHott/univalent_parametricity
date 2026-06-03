@@ -557,3 +557,5 @@ Abbreviation import_of f :=
 Ltac2 Set compute_triple := fun (t:constr) (f:ident) (g:ident) =>
   unshelve refine '(let t' : _ := _ in let t'' : $t ≈u @t' := _ in _); shelve_non_PR_multi ();
    Control.extend [ (fun _ => tc ()) ; (fun _ => unfold &t'; tc () ) ; (fun _ => Std.rename [(@t',f);(@t'',g)]) ] (fun _ => ()) [].
+
+Ltac2 Set shelve_and_tc := fun _ => shelve_non_PR_multi (); tc ().
