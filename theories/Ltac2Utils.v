@@ -2789,26 +2789,9 @@ Ltac2 mutable pre_tc_hint_hook () := ltac1:(pre_tc_hint_hook).
 
 Ltac2 mutable shelve_and_tc () := ().
 
-Ltac2 orelse_fatal t f :=
-match Control.case t with
-| Err (Fatal _ as e) => Control.throw e  
-| Err e => f e
-| Val ans =>
-  let (x, k) := ans in
-  Control.plus (fun _ => x) k
-end.
-
-Ltac2 rec first_fatal0 tacs :=
-match tacs with
-| [] => Control.zero Match_failure
-| tac :: tacs => Control.enter (fun _ => orelse_fatal tac (fun _ => first_fatal0 tacs))
-end.
-
-Ltac2 Notation "first_fatal" "[" tacs(list0(thunk(tactic(6)), "|")) "]" := first_fatal0 tacs.
-
 Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (goal_lhs : constr) :=
   intros;
-  let tac () := first_fatal 
+  let tac () := first 
             [unshelve (eapply $lem); shelve_and_tc ()| 
              pre_tc_hint_hook (); unshelve (eapply $lem); shelve_and_tc () |
              forward_apply lem goal_lhs |
