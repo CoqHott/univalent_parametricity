@@ -152,8 +152,6 @@ Hint Extern 1 (UR_Type ?P ?Q) => eapply UR_Type_from_Prop : typeclass_instances 
 
 Hint Extern 1 (?P ≈[ _] ?Q) => eapply UR_Type_from_Prop : typeclass_instances ur_typeclass_instances. 
 
-Ltac2 Set post_tc_hint_hook := fun () => intros; shelve_non_PR_multi ().
-
 Ltac2 uR_Type_from_Prop_tac () := match! reverse goal with | [ |- UR_Type ?p ?q] => eapply (UR_Type_from_Prop $p $q) end.
 Ltac2 uR_Prop_from_Type_tac () := match! reverse goal with | [ |- UR_Type ?p ?q] => eapply (UR_Prop_from_Type $p $q) end.
 

@@ -396,32 +396,34 @@ Module Constr.
   Ltac2 compare_sort (s : sort) (s' : sort) := 
     let is_prop := Constr.equal (Unsafe.make (Unsafe.Sort s)) 'Prop in
     let is_prop' := Constr.equal (Unsafe.make (Unsafe.Sort s')) 'Prop in
-    Bool.equal is_prop is_prop'.
+    let is_sprop := Constr.equal (Unsafe.make (Unsafe.Sort s)) 'SProp in
+    let is_sprop' := Constr.equal (Unsafe.make (Unsafe.Sort s')) 'SProp in
+    Bool.equal is_prop is_prop' && Bool.equal is_sprop is_sprop'.
 
-  Ltac2 rec equal_nounivs_sort (c1 : constr) (c2 : constr) : bool :=
+  Ltac2 rec equal_nocumul (c1 : constr) (c2 : constr) : bool :=
     Constr.equal c1 c2 ||
     (match Unsafe.kind c1, Unsafe.kind c2 with
     | Unsafe.Rel n1, Unsafe.Rel n2 => Int.equal n1 n2
     | Unsafe.Var id1, Unsafe.Var id2 => Ident.equal id1 id2
     | Unsafe.Meta m1, Unsafe.Meta m2 => Meta.equal m1 m2
     | Unsafe.Evar e1 l1, Unsafe.Evar e2 l2 =>
-        Evar.equal e1 e2 && Array.equal equal_nounivs_sort l1 l2
+        Evar.equal e1 e2 && Array.equal equal_nocumul l1 l2
     | Unsafe.Sort s , Unsafe.Sort s' => compare_sort s s' 
     | Unsafe.Cast c1' _ t1, Unsafe.Cast c2' _ t2 =>
-        equal_nounivs_sort c1' c2' && equal_nounivs_sort t1 t2
+        equal_nocumul c1' c2' && equal_nocumul t1 t2
     | Unsafe.Prod b1 t1, Unsafe.Prod b2 t2 =>
-        equal_nounivs_sort (Binder.type b1) (Binder.type b2)
-        && equal_nounivs_sort t1 t2
+        equal_nocumul (Binder.type b1) (Binder.type b2)
+        && equal_nocumul t1 t2
     | Unsafe.Lambda b1 t1, Unsafe.Lambda b2 t2 =>
-        equal_nounivs_sort (Binder.type b1) (Binder.type b2)
-        && equal_nounivs_sort t1 t2
+        equal_nocumul (Binder.type b1) (Binder.type b2)
+        && equal_nocumul t1 t2
     | Unsafe.LetIn b1 v1 t1, Unsafe.LetIn b2 v2 t2 =>
-        equal_nounivs_sort (Binder.type b1) (Binder.type b2)
-        && equal_nounivs_sort v1 v2
-        && equal_nounivs_sort t1 t2
+        equal_nocumul (Binder.type b1) (Binder.type b2)
+        && equal_nocumul v1 v2
+        && equal_nocumul t1 t2
     | Unsafe.App f1 args1, Unsafe.App f2 args2 =>
-        equal_nounivs_sort f1 f2
-        && Array.equal equal_nounivs_sort args1 args2
+        equal_nocumul f1 f2
+        && Array.equal equal_nocumul args1 args2
     | Unsafe.Constant c1' _, Unsafe.Constant c2' _ =>
         Constant.equal c1' c2'
     | Unsafe.Ind ind1 _, Unsafe.Ind ind2 _ =>
@@ -431,40 +433,40 @@ Module Constr.
     | Unsafe.Case ci1 (x1, _) iv1 y1 bl1,
       Unsafe.Case ci2 (x2, _) iv2 y2 bl2 =>
         Unsafe.Case.equal ci1 ci2
-        && equal_nounivs_sort x1 x2
+        && equal_nocumul x1 x2
         && (match iv1, iv2 with
             | Unsafe.NoInvert, Unsafe.NoInvert => true
             | Unsafe.CaseInvert a1, Unsafe.CaseInvert a2 =>
-                Array.equal equal_nounivs_sort a1 a2
+                Array.equal equal_nocumul a1 a2
             | _, _ => false
             end)
-        && equal_nounivs_sort y1 y2
-        && Array.equal equal_nounivs_sort bl1 bl2
+        && equal_nocumul y1 y2
+        && Array.equal equal_nocumul bl1 bl2
     | Unsafe.Fix structs1 idx1 tl1 bl1,
       Unsafe.Fix structs2 idx2 tl2 bl2 =>
         Int.equal idx1 idx2
         && Array.equal Int.equal structs1 structs2
         && Array.equal (fun b1 b2 =>
-             equal_nounivs_sort (Binder.type b1) (Binder.type b2))
+             equal_nocumul (Binder.type b1) (Binder.type b2))
            tl1 tl2
-        && Array.equal equal_nounivs_sort bl1 bl2
+        && Array.equal equal_nocumul bl1 bl2
     | Unsafe.CoFix idx1 tl1 bl1,
       Unsafe.CoFix idx2 tl2 bl2 =>
         Int.equal idx1 idx2
         && Array.equal (fun b1 b2 =>
-             equal_nounivs_sort (Binder.type b1) (Binder.type b2))
+             equal_nocumul (Binder.type b1) (Binder.type b2))
            tl1 tl2
-        && Array.equal equal_nounivs_sort bl1 bl2
+        && Array.equal equal_nocumul bl1 bl2
     | Unsafe.Proj p1 _ c1', Unsafe.Proj p2 _ c2' =>
-        Proj.equal p1 p2 && equal_nounivs_sort c1' c2'
+        Proj.equal p1 p2 && equal_nocumul c1' c2'
     | Unsafe.Uint63 n1, Unsafe.Uint63 n2 => Uint63.equal n1 n2
     | Unsafe.Float f1, Unsafe.Float f2 => Float.equal f1 f2
     | Unsafe.String _ , Unsafe.String _ => Constr.equal c1 c2
     | Unsafe.Array _ vals1 def1 ty1,
       Unsafe.Array _ vals2 def2 ty2 =>
-        Array.equal equal_nounivs_sort vals1 vals2
-        && equal_nounivs_sort def1 def2
-        && equal_nounivs_sort ty1 ty2
+        Array.equal equal_nocumul vals1 vals2
+        && equal_nocumul def1 def2
+        && equal_nocumul ty1 ty2
     | _, _ => true
     end).
 
@@ -2710,7 +2712,7 @@ Ltac2 is_prod (ty : constr) : (constr * constr) option :=
 
 Ltac2 types_match (dom : constr) (arg : constr) : bool :=
   let arg_ty := type_of arg in
-  Constr.equal_nounivs_sort (whnf arg_ty) (whnf dom).
+  Constr.equal_nocumul (whnf arg_ty) (whnf dom).
 
 Ltac2 first_failing_arg (t : constr) (args : constr list) : (int*constr) option :=
   let len := List.length args in
@@ -2760,7 +2762,7 @@ Ltac2 merge_triple_array (a:constr array) (b : (ident * ident) array) : constr l
   let l2 := Array.to_list b in
     List.flatten (List.map2 (fun arg id => let (id1, id2) := id in [arg; Unsafe.make (Unsafe.Var id1) ;Unsafe.make (Unsafe.Var id2)]) l1 l2).
 
-Ltac2 forward_apply (lem:constr) (t:constr):=
+Ltac2 forward_apply (lem:constr) (t:constr) :=
   let (_, c_args) := Constr.decompose_app_nocast t in
   let n := Array.length c_args in
   if Int.equal n 0 then
@@ -2781,10 +2783,8 @@ Ltac2 forward_apply (lem:constr) (t:constr):=
     | _ => Control.zero Match_failure
     end.
 
-Ltac post_tc_hint_hook := idtac.
 Ltac pre_tc_hint_hook := idtac.
 
-Ltac2 mutable post_tc_hint_hook () := ltac1:(post_tc_hint_hook).
 Ltac2 mutable pre_tc_hint_hook () := ltac1:(pre_tc_hint_hook).
 
 Ltac2 mutable shelve_and_tc () := ().
