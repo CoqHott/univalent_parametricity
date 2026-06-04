@@ -155,6 +155,7 @@ Hint Extern 1 (?P ≈[ _] ?Q) => eapply UR_Type_from_Prop : typeclass_instances 
 Ltac2 uR_Type_from_Prop_tac () := match! reverse goal with | [ |- UR_Type ?p ?q] => eapply (UR_Type_from_Prop $p $q) end.
 Ltac2 uR_Prop_from_Type_tac () := match! reverse goal with | [ |- UR_Type ?p ?q] => eapply (UR_Prop_from_Type $p $q) end.
 
+#[global]
 Ltac2 Set pre_tc_hint_hook := fun () => first [cbn ; uR_Type_from_Prop_tac () | cbn ; uR_Prop_from_Type_tac () | ()].
 Ltac2 pre_tc_hint_hook_contra := fun () => cbn; uR_Prop_from_Type_tac ().
 
@@ -553,6 +554,7 @@ Abbreviation import_of f :=
     ltac2:(Control.refine (fun () => import_of (Constr.open_pretype_no_tc f) None))
   end) (only parsing).
 
+#[global]
 Ltac2 Set compute_triple := fun (t:constr) (f:ident) (g:ident) =>
   unshelve refine '(let t' : _ := _ in let t'' : $t ≈u @t' := _ in _); shelve_non_PR_multi ();
    Control.extend [ (fun _ => tc ()) ; (fun _ => unfold &t'; tc () ) ; (fun _ => Std.rename [(@t',f);(@t'',g)]) ] (fun _ => ()) [].
