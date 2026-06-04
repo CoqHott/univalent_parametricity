@@ -28,10 +28,12 @@ Axiom unsquash : forall P (s:Squash P), P.
 
 Inductive Box (P:SProp) : Prop := box : P -> Box P.
 
+Axiom prop_ext : forall (P Q : Prop), P ↔ Q -> P = Q.
+Axiom sprop_ext : forall (P Q : SProp), P ↔ Q -> P = Q.
+
+
 #[universes(polymorphic,collapse_sort_variables=no)]
 Definition FP_Prop_Ext 
-  (prop_ext : forall (P Q : Prop), P ↔ Q -> P = Q) 
-  (sprop_ext : forall (P Q : SProp), P ↔ Q -> P = Q) 
   : Prop ≈u SProp.
 Proof.
   unshelve eexists.
@@ -51,6 +53,19 @@ Proof.
       pose proof (snd e (sq _ H)). now eapply unsquash in H0.
 Defined.
 
+Hint Extern 0 (Prop ≈u _) => exact FP_Prop_Ext: typeclass_instances ur_typeclass_instances.
+
+Definition UR_Type_Prop_SProp (P : Prop) (Q :SProp) : P ≈u Q -> (Squash P ↔ Q : SProp).
+Proof.
+  intros e. destruct e as [e H coh].
+  split.
+  - intros p. eapply H. now eapply unsquash.
+  - intros q. econstructor. now eapply H.
+Defined.
+
+Hint Extern 0 (_ ≈[ _ ] _) => eapply UR_Type_Prop_SProp: typeclass_instances ur_typeclass_instances.
+
+Inductive STrue : SProp := SI.
 
 (*! FP for Dependent product !*)
 (* isequiv_functor_forall can be found in

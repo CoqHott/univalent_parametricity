@@ -162,7 +162,8 @@ Ltac2 head_is_var (c:constr) :=
   let (c_head, _) := Constr.decompose_app_nocast c in
   is_var c_head.
 
-Ltac2 hyp_not_value (h:ident) := match Control.hyp_value h with
+Ltac2 hyp_not_value (h:ident) :=
+   match Control.hyp_value h with
   | Some _ => false
   | None => true
   end.
@@ -556,4 +557,5 @@ Ltac2 Set compute_triple := fun (t:constr) (f:ident) (g:ident) =>
   unshelve refine '(let t' : _ := _ in let t'' : $t ≈u @t' := _ in _); shelve_non_PR_multi ();
    Control.extend [ (fun _ => tc ()) ; (fun _ => unfold &t'; tc () ) ; (fun _ => Std.rename [(@t',f);(@t'',g)]) ] (fun _ => ()) [].
 
+#[global]
 Ltac2 Set shelve_and_tc := fun _ => shelve_non_PR_multi (); tc ().

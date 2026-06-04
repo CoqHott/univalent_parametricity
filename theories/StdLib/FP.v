@@ -1800,8 +1800,6 @@ Parameter SECF__Maps__includedinD_update_iso : iso_statement (@includedin_update
 
 End Interface7.
 
-Inductive STrue : SProp := SI.
-
 Definition STrue_UR : True ≈u STrue.
 Proof. 
 cbn. unshelve econstructor. 
@@ -2698,6 +2696,29 @@ Parameter Cdcl__Formula__NBool_iso : iso_statement (@NBool) imported_Cdcl__Formu
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@NBool) Cdcl__Formula__NBool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 End Interface17.
+
+Module Type Interface18 (Import args : Args).
+
+Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__iff : import_of (@Corelib.Init.Logic.iff).
+Parameter Corelib__Init__Logic__iff_iso : iso_statement (@Corelib.Init.Logic.iff) imported_Corelib__Init__Logic__iff.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Axiom propositional_extensionality :
+  forall (P Q : Prop), (P <-> Q) -> eq P Q.
+
+
+Parameter imported_Stdlib__Logic__PropExtensionality__propositionalD_extensionality : import_of (@propositional_extensionality).
+Parameter Stdlib__Logic__PropExtensionality__propositionalD_extensionality_iso : iso_statement (@propositional_extensionality) imported_Stdlib__Logic__PropExtensionality__propositionalD_extensionality.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@propositional_extensionality) Stdlib__Logic__PropExtensionality__propositionalD_extensionality_iso goal_lhs : typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@propositional_extensionality) Stdlib__Logic__PropExtensionality__propositionalD_extensionality_iso goal_lhs : typeclass_instances.
+
+End Interface18.
 
 (*
 #[export] Hint Extern 0 (Vector.t ?A ?n ≃ _) =>
