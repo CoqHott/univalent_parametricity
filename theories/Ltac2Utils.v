@@ -2750,7 +2750,7 @@ Ltac2 check_if_cumul (t:constr) :=
     | Some (n, a) => 
         Control.throw (Fatal (Message.concat (Message.of_string "The argument ") (Message.concat (Message.of_constr a)
                 (Message.concat (Message.of_string " at position ") (Message.concat (Message.of_int n) 
-                  (Message.concat (Message.of_string " is is making use of cumulativity for head constructor : ") (Message.of_constr c_head)))))))
+                  (Message.concat (Message.of_string " is making use of cumulativity for head constructor : ") (Message.of_constr c_head)))))))
   end.
 
 Ltac2 mutable compute_triple (_:constr) (_:ident) (_:ident) : unit := ().

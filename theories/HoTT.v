@@ -453,7 +453,7 @@ Coercion e_fun : Equiv >-> Funclass.
 #[universes(collapse_sort_variables=no)]
 Definition univalent_transport {A B : Type} {e: A ≃ B} : A -> B := e_fun e.  
 
-Notation "↑" := univalent_transport (at level 65, only parsing).
+Notation "↑" := univalent_transport (only parsing).
 
 #[universes(collapse_sort_variables=no)]
 Definition e_inv' {A B : Type} (e : A ≃ B) : B -> A := e_inv (e_fun e).
