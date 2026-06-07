@@ -2743,14 +2743,15 @@ Ltac2 first_failing_arg (t : constr) (args : constr list) : (int*constr) option 
 
 Ltac2 Type exn ::= [ Fatal (message) ].
 
+Ltac2 mutable check_if_cumul_message (arg : constr) (pos : int) (head : constr) (_extra_args : constr list) :=
+  fprintf "The argument %t at position %i is is making use of cumulativity for head constructor : %t" arg pos head.
+
 Ltac2 check_if_cumul (t:constr) :=
-   let (c_head, c_args) := Constr.decompose_app_nocast t in
-   match first_failing_arg c_head (Array.to_list c_args) with
+   let (c_head, c_args) := Constr.decompose_app_list_nocast t in
+   match first_failing_arg c_head c_args with
     | None => Control.zero Match_failure
-    | Some (n, a) => 
-        Control.throw (Fatal (Message.concat (Message.of_string "The argument ") (Message.concat (Message.of_constr a)
-                (Message.concat (Message.of_string " at position ") (Message.concat (Message.of_int n) 
-                  (Message.concat (Message.of_string " is making use of cumulativity for head constructor : ") (Message.of_constr c_head)))))))
+    | Some (n, a) =>
+        Control.throw (Fatal (check_if_cumul_message a n c_head c_args))
   end.
 
 Ltac2 mutable compute_triple (_:constr) (_:ident) (_:ident) : unit := ().
@@ -2823,6 +2824,3 @@ Ltac tc_hint_for_warn key lem goal_lhs :=
 Ltac tc_hint_for_nofatal key lem goal_lhs :=
   let tac := ltac2:(key lem goal_lhs |- tc_hint_for false false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
   tac key lem goal_lhs.
-
-
-
