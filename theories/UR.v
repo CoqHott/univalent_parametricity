@@ -18,6 +18,7 @@ Set Polymorphic Inductive Cumulativity.
 Unset Collapse Sorts ToType.
 
 #[export] Set Typeclasses Unique Instances.
+#[export] Set Typeclasses Strict Resolution.
 
 (* basic class for parametric relations *)
 Variant parametricity_kind : Set := 
@@ -89,9 +90,11 @@ Ltac2 apply_PR_Type_gen () :=
   match! reverse goal with
   | [ |- PR _ Prop  _ ] => exact (@PR_Type@{_ Prop SProp;_ _ _ _} _)
   | [ |- PR _ SProp _ ] => exact (@PR_Type@{_ SProp SProp;_ _ _ _} _)
+  | [ |- PR _ Set _ ] => exact (@PR_Type@{_ Type Type;0 0 _ _} _)
   | [ |- PR _ _ _ ] => exact (@PR_Type _)
   | [ |- Prop ≈[ _ ] _ ] => exact (@PR_Type@{_ Prop SProp;_ _ _ _} _)
   | [ |- SProp ≈[ _ ] _ ] => exact (@PR_Type@{_ SProp SProp;_ _ _ _} _)
+  | [ |- Set ≈[ _ ] _ ] => exact (@PR_Type@{_ Type Type;0 0 _ _} _)
   | [ |- _ ≈[ _ ] _ ] => exact (@PR_Type _)
   end.
 
