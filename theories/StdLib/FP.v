@@ -2768,8 +2768,8 @@ Ltac2 missing_iso_warning () :=
     | Some (Std.VarRef id) => throw "Failed to find iso for variable %a (in %t with context %a)" (fun () => Message.of_ident) id (Control.goal ()) (fun () a => a) (Control.fprint_context ())
     | Some r => throw "Missing iso for %a (in %t)" (fun () => Reference.pr_qualified) r (Control.goal ())
     end.
-(* #[export] Hint Extern 1000 (UR.UR_Type _ _) => missing_iso_warning () : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1000 (UR.pr _ _ _) => missing_iso_warning () : typeclass_instances ur_typeclass_instances. *)
+#[export] Hint Extern 1000 (UR.UR_Type _ _) => missing_iso_warning () : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1000 (UR.pr _ _ _) => missing_iso_warning () : typeclass_instances ur_typeclass_instances. 
 
 Require Import Ltac.
 Module Type Interface21 (Import args : Args).
@@ -2787,14 +2787,25 @@ Parameter Corelib__Init__Datatypes__option_iso : (@UnivalentParametricity.theori
      Corelib.Init.Datatypes.option imported_Corelib__Init__Datatypes__option).
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__ssr__ssrbool__true : import_of (@True).
+Parameter Corelib__ssr__ssrbool__pairD_true_iso : iso_statement (@True) imported_Corelib__ssr__ssrbool__true.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@True) Corelib__ssr__ssrbool__pairD_true_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@True) Corelib__ssr__ssrbool__pairD_true_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
 Parameter imported_Corelib__Init__Datatypes__option_Prop : SProp -> Type.
 Parameter Corelib__Init__Datatypes__option_iso_Prop : (@UnivalentParametricity.theories.UR.pr _ _ _
      (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent Prop SProp Type Type
         (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent))
      (fun A : Prop => Corelib.Init.Datatypes.option A)
      imported_Corelib__Init__Datatypes__option_Prop).
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A: Prop => Corelib.Init.Datatypes.option A) Corelib__Init__Datatypes__option_iso_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A: Prop => Corelib.Init.Datatypes.option A) Corelib__Init__Datatypes__option_iso_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
+
+
+Definition test := None : option True. 
+
+Parameter foo_test :  import_of (@test).
 
 Definition has_boolb (b: bool) (o: option bool) :=
     match o with

@@ -2689,12 +2689,27 @@ Ltac2 norm_red_flags : Std.red_flags := {
   Std.rConst := []
 }.
 
+Ltac2 beta_red_flags : Std.red_flags := {
+  Std.rStrength := Std.Head;
+  Std.rBeta := true;
+  Std.rMatch := false;
+  Std.rFix := false;
+  Std.rCofix := false;
+  Std.rZeta := false;
+  Std.rDelta := false; (** true = delta all but rConst; false = delta only on rConst*)
+  Std.rConst := []
+}.
+
 Ltac2 check_appvect (t : constr) (args: constr array) : constr result := 
   Constr.Unsafe.check  (Constr.Unsafe.make (Constr.Unsafe.App t args)).
 
 (** Reduce a term to head normal form, stripping casts. *)
 Ltac2 whnf (c : constr) : constr :=
   Std.eval_lazy norm_red_flags c.
+
+  (** Reduce a term to head normal form, stripping casts. *)
+Ltac2 beta_red (c : constr) : constr :=
+  Std.eval_lazy beta_red_flags c.
 
 (** [type_of c] returns the type of [c] via the current goal's
     environment.  We open a local goal to call [Constr.type]. *)
@@ -2798,19 +2813,24 @@ Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (go
              forward_apply lem goal_lhs |
              pre_tc_hint_hook () ; forward_apply lem goal_lhs|
              check_if_cumul goal_lhs] in
-  let (goal_head, _) := Constr.decompose_app goal_lhs in
-  if Constr.equal_nounivs goal_head key then
-    if fatal then
-      tac ()
-    else if warn then
-      match Control.case_bt tac with
-      | Val_bt (v, _k) => v
-      | Err_bt err info => printf "Warning: %a\n" (fun () => Message.of_exn_pretty) err; Control.zero_bt err info
-      end
-    else
-      tac ()
-  else
-    Control.zero Match_failure.
+  let (_, goal_args) := Constr.decompose_app goal_lhs in
+  match check_appvect key goal_args with
+    | Val key_app =>
+      let key_app := beta_red key_app in 
+      if Constr.equal_nounivs goal_lhs key_app then
+        if fatal then
+         tac ()
+        else if warn then
+         match Control.case_bt tac with
+         | Val_bt (v, _k) => v
+         | Err_bt err info => printf "Warning: %a\n" (fun () => Message.of_exn_pretty) err; Control.zero_bt err info
+         end
+          else
+          tac ()
+      else
+        Control.zero Match_failure
+    | _ => Control.zero Match_failure
+  end.
 
 Ltac tc_hint_for key lem goal_lhs :=
   let tac := ltac2:(key lem goal_lhs |-
