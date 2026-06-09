@@ -2695,6 +2695,15 @@ Parameter Cdcl__Formula__NBool_iso : iso_statement (@NBool) imported_Cdcl__Formu
 
 End Interface17.
 
+(*additional test*)
+Definition id {A} (x : A) := x.
+Goal True.
+Proof.
+Fail ltac2:(check_if_cumul '(prod True bool)).
+Fail ltac2:(check_if_cumul '(@id True I)).
+
+Abort. 
+
 Module Type Interface18 (Import args : Args).
 
 Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
@@ -2838,6 +2847,75 @@ Admitted.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
 
 End Interface22.
+
+Module Type Interface23 (Import args : Args).
+
+Parameter imported_Corelib__Init__Datatypes__nat : Type.
+Parameter Corelib__Init__Datatypes__nat_iso : (@UnivalentParametricity.theories.UR.pr _ _ _ (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) Corelib.Init.Datatypes.nat
+     imported_Corelib__Init__Datatypes__nat).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Stdlib__Strings__String__string : Type.
+Parameter Stdlib__Strings__String__string_iso : (@UnivalentParametricity.theories.UR.pr _ _ _ (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) Stdlib.Strings.String.string
+     imported_Stdlib__Strings__String__string).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Stdlib.Strings.String.string) Stdlib__Strings__String__string_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Stdlib.Strings.String.string) Stdlib__Strings__String__string_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Definition total_map (A : Type) : Type := string -> A.
+
+Parameter imported_LF__Maps__totalD_map : Type -> Type.
+Parameter LF__Maps__totalD_map_iso : (@UnivalentParametricity.theories.UR.pr _ _ _
+     (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent Type Type Type Type
+        (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent))
+     total_map imported_LF__Maps__totalD_map).
+#[export] Hint Extern 1 => progress (unfold total_map) : typeclass_instances ur_typeclass_instances.
+
+Definition state := total_map nat.
+
+Parameter imported_LF__Imp__state : import_of (@state).
+Parameter LF__Imp__state_iso : iso_statement (@state) imported_LF__Imp__state.
+#[export] Hint Extern 1 => progress (unfold state) : typeclass_instances ur_typeclass_instances.
+
+End Interface23.
+
+Module Type Interface24 (Import args : Args).
+
+Require Import Morphisms. 
+Parameter imported_Corelib__Init__Datatypes__nat : import_of nat.
+Parameter Corelib__Init__Datatypes__nat_iso : iso_statement nat imported_Corelib__Init__Datatypes__nat.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__iff : SProp -> SProp -> SProp.
+Parameter Corelib__Init__Logic__iff_iso : (@UR.pr _ _ _
+     (@UR.URArrow UR.univalent Prop SProp (forall _ : Prop, Prop) (forall _ : SProp, SProp) (UR.PR_Type UR.univalent)
+        (@UR.URArrow UR.univalent Prop SProp Prop SProp (UR.PR_Type UR.univalent) (UR.PR_Type UR.univalent)))
+     Logic.iff imported_Corelib__Init__Logic__iff).
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Datatypes__S : imported_Corelib__Init__Datatypes__nat -> imported_Corelib__Init__Datatypes__nat.
+Parameter Corelib__Init__Datatypes__S_iso : S ≈[ _] imported_Corelib__Init__Datatypes__S.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+(* Parameter imported_Corelib__Init__Datatypes__Proper : import_of @Corelib.Classes.Morphisms.respectful.
+Parameter Corelib__Init__Datatypes__Proper_iso : iso_statement Proper imported_Corelib__Init__Datatypes__Proper.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__Proper_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__Proper_iso goal_lhs : typeclass_instances ur_typeclass_instances. *)  
+
+#[export] Hint Extern 1 => progress (unfold Proper) : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 => progress (unfold respectful) : typeclass_instances ur_typeclass_instances.
+
+#[universes(polymorphic,collapse_sort_variables=no)]
+Goal {B : _ & PR univalent (forall A : nat -> Prop, Proper (eq==>Logic.iff) A ->
+    A 0 -> (forall n : nat, A n <-> A (S n)) -> forall n : nat, A n) B}.
+Proof. 
+eexists. tc.
+Abort.
+
+End Interface24.
 
 
 (*

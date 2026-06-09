@@ -2715,14 +2715,27 @@ Ltac2 beta_red (c : constr) : constr :=
     environment.  We open a local goal to call [Constr.type]. *)
 Ltac2 type_of (c : constr) : constr := Constr.type c.
 
-(** [is_prod ty] returns [Some (dom, cod)] when [ty] reduces to a
+(** [get_prod ty] returns [Some (dom, cod)] when [ty] reduces to a
     [Prod] (i.e. a function type), and [None] otherwise.
     No cumulativity, no unification — pure structural check. *)
-Ltac2 is_prod (ty : constr) : (constr * constr) option :=
+Ltac2 get_prod (ty : constr) : (ident option * constr * constr) option :=
   match Constr.Unsafe.kind (whnf ty) with
   | Constr.Unsafe.Prod binder body =>
-      Some (Constr.Binder.type binder, body)
+      Some (Constr.Binder.name binder, Constr.Binder.type binder, body)
   | _ => None
+  end.
+
+Ltac2 rec get_arity (t : constr) : sort option :=
+  match Constr.Unsafe.kind (whnf t) with
+  | Constr.Unsafe.Sort s  => Some s (* base case: reached a sort *)
+  | Constr.Unsafe.Prod _ body => get_arity body  (* strip one binder and recurse *)
+  | _                     => None         (* anything else is not an arity *)
+  end.
+
+Ltac2 get_body (t : constr) : constr :=
+  match Constr.Unsafe.kind t with
+  | Constr.Unsafe.Lambda _ body => body
+  | _ => t
   end.
 
 Ltac2 types_match (dom : constr) (arg : constr) : bool :=
@@ -2736,10 +2749,10 @@ Ltac2 first_failing_arg (t : constr) (args : constr list) : (int*constr) option 
     | [] => None
     | a :: tl =>
         let acc_ty := type_of acc in
-        match is_prod acc_ty with
+        match get_prod acc_ty with
         | None => Control.throw (Tactic_failure (Some (Message.concat (Message.of_string "Not a product") (Message.of_constr acc_ty))))
         (* acc expects an argument of type [dom] *)
-        | Some (dom, _) =>
+        | Some (_ , dom, _) =>
             if types_match dom a
             then
               (* Types agree: build the application and continue.
@@ -2756,18 +2769,72 @@ Ltac2 first_failing_arg (t : constr) (args : constr list) : (int*constr) option 
   in
   go t args.
 
+Ltac2 rec replace_sort_in_arity (arity : constr) (s : sort) : constr :=
+  match Constr.Unsafe.kind arity with
+  | Constr.Unsafe.Sort _ => Constr.Unsafe.make (Constr.Unsafe.Sort s)
+  | Constr.Unsafe.Prod b body =>
+      let new_body := replace_sort_in_arity body s in
+      Constr.Unsafe.make (Constr.Unsafe.Prod b new_body)
+  | _ =>  Control.throw (Tactic_failure (Some (Message.of_string "Not an arity")))
+  end.
+
+Ltac2 get_sub_type (t : constr) (args : constr list) : bool * constr :=
+  let use_cumul := Ref.ref false in 
+  let rec go (acc_ty : constr) (rest : constr list) : constr :=
+    match rest with
+    | [] => acc_ty
+    | a :: tl =>
+      match get_prod acc_ty with
+      | None => Control.throw (Tactic_failure (Some (Message.concat (Message.of_string "Not a product") (Message.of_constr acc_ty))))
+      (* acc expects an argument of type [dom] *)
+      | Some (b , dom, codom) =>
+        let bopt := Option.get b in
+        let codom_open := Constr.Unsafe.substnl [Constr.mkVar bopt] 0 codom in
+        match get_arity dom with
+        | None => 
+          let codom_result := Constr.in_context bopt dom (fun () => Control.refine (fun _ => go codom_open tl)) in
+          let codom_result := get_body codom_result in
+          Constr.Unsafe.make (Constr.Unsafe.Prod (Constr.Binder.make b dom) codom_result)
+        | Some s => 
+          let arg_ty := type_of a in
+          match get_arity arg_ty with
+          | None => Control.throw (Tactic_failure (Some (Message.concat (Message.of_string "Something went wrong") (Message.of_constr arg_ty))))
+          | Some s_arg =>
+              let dom' :=
+                if Constr.compare_sort s s_arg
+                then dom else (Ref.set use_cumul true; replace_sort_in_arity dom s_arg)
+              in
+              let bopt := Option.get b in
+              let codom_result := Constr.in_context bopt dom' (fun () => Control.refine (fun _ => go codom_open tl)) in
+              let codom_result := get_body codom_result in
+              Constr.Unsafe.make (Constr.Unsafe.Prod (Constr.Binder.make b dom') codom_result)
+          end
+        end
+      end 
+  end in 
+  let res := go (type_of t) args in
+  Ref.get use_cumul , res.
+
 Ltac2 Type exn ::= [ Fatal (message) ].
 
-Ltac2 mutable check_if_cumul_message (arg : constr) (pos : int) (head : constr) (_extra_args : constr list) :=
-  fprintf "The argument %t at position %i is is making use of cumulativity for head constructor : %t" arg pos head.
+Ltac2 mutable check_if_cumul_message (key : constr) (given : constr) (expected : constr) :=
+  fprintf "The definition %t has type : %t but is use with type : %t" key given expected.
 
 Ltac2 check_if_cumul (t:constr) :=
    let (c_head, c_args) := Constr.decompose_app_list_nocast t in
-   match first_failing_arg c_head c_args with
-    | None => Control.zero Match_failure
-    | Some (n, a) =>
-        Control.throw (Fatal (check_if_cumul_message a n c_head c_args))
+   match get_sub_type c_head c_args with
+    | (false, _) => Control.zero Match_failure
+    | (true, a) =>
+        Control.throw (Fatal (check_if_cumul_message c_head (type_of c_head) a))
   end.
+
+Definition id {A B : Type} (x : A) := x.
+Goal True.
+Proof.
+Fail check_if_cumul '(option True).
+Fail check_if_cumul '(prod True bool).
+Fail check_if_cumul '(@id True bool I).
+Abort. 
 
 Ltac2 mutable compute_triple (_:constr) (_:ident) (_:ident) : unit := ().
 
