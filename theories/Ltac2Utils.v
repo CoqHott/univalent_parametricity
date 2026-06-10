@@ -2778,8 +2778,8 @@ Ltac2 rec replace_sort_in_arity (arity : constr) (s : sort) : constr :=
   | _ =>  Control.throw (Tactic_failure (Some (Message.of_string "Not an arity")))
   end.
 
-Ltac2 get_sub_type (t : constr) (args : constr list) : bool * constr :=
-  let use_cumul := Ref.ref false in 
+Ltac2 get_sub_type (t : constr) (args : constr list) : bool list * constr :=
+  let use_cumul := Ref.ref [] in 
   let rec go (acc_ty : constr) (rest : constr list) : constr :=
     match rest with
     | [] => acc_ty
@@ -2792,6 +2792,7 @@ Ltac2 get_sub_type (t : constr) (args : constr list) : bool * constr :=
         let codom_open := Constr.Unsafe.substnl [Constr.mkVar bopt] 0 codom in
         match get_arity dom with
         | None => 
+          Ref.set use_cumul (List.append (Ref.get use_cumul) [false]);
           let codom_result := Constr.in_context bopt dom (fun () => Control.refine (fun _ => go codom_open tl)) in
           let codom_result := get_body codom_result in
           Constr.Unsafe.make (Constr.Unsafe.Prod (Constr.Binder.make b dom) codom_result)
@@ -2802,7 +2803,9 @@ Ltac2 get_sub_type (t : constr) (args : constr list) : bool * constr :=
           | Some s_arg =>
               let dom' :=
                 if Constr.compare_sort s s_arg
-                then dom else (Ref.set use_cumul true; replace_sort_in_arity dom s_arg)
+                then 
+                  (Ref.set use_cumul (List.append (Ref.get use_cumul) [false]); dom) 
+                else (Ref.set use_cumul (List.append (Ref.get use_cumul) [true]); replace_sort_in_arity dom s_arg)
               in
               let bopt := Option.get b in
               let codom_result := Constr.in_context bopt dom' (fun () => Control.refine (fun _ => go codom_open tl)) in
@@ -2813,27 +2816,30 @@ Ltac2 get_sub_type (t : constr) (args : constr list) : bool * constr :=
       end 
   end in 
   let res := go (type_of t) args in
-  Ref.get use_cumul , res.
+  let l := Ref.get use_cumul in
+  l , res.
 
 Ltac2 Type exn ::= [ Fatal (message) ].
 
-Ltac2 mutable check_if_cumul_message (key : constr) (given : constr) (expected : constr) :=
-  fprintf "The definition %t has type : %t but is use with type : %t" key given expected.
+Ltac2 mutable check_if_cumul_message (key : constr) (given : constr) (expected : constr) (l : bool list)   :=
+  fprintf "The definition %t has type : %t but is use with type : %t. The list of arguments using cumulativity is : %s" key given expected (String.app "[ " (String.app (String.concat " , " (List.map Bool.to_string l)) " ]")).
 
 Ltac2 check_if_cumul (t:constr) :=
-   let (c_head, c_args) := Constr.decompose_app_list_nocast t in
-   match get_sub_type c_head c_args with
-    | (false, _) => Control.zero Match_failure
-    | (true, a) =>
-        Control.throw (Fatal (check_if_cumul_message c_head (type_of c_head) a))
+  let (c_head, c_args) := Constr.decompose_app_list_nocast t in
+  match get_sub_type c_head c_args with 
+    (l, a) => if List.exist (fun b => Bool.equal b true) l 
+    then
+      Control.throw (Fatal (check_if_cumul_message c_head (type_of c_head) a l))
+    else
+      Control.zero Match_failure
   end.
-
-Definition id {A B : Type} (x : A) := x.
+  
+Definition id {A B : Type} (P: B -> Type) (x : A) := x.
 Goal True.
 Proof.
 Fail check_if_cumul '(option True).
 Fail check_if_cumul '(prod True bool).
-Fail check_if_cumul '(@id True bool I).
+Fail check_if_cumul '(@id True bool (fun x => True) I).
 Abort. 
 
 Ltac2 mutable compute_triple (_:constr) (_:ident) (_:ident) : unit := ().
