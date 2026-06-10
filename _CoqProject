@@ -4,7 +4,6 @@ theories/HoTT.v
 theories/CanonicalEq.v
 theories/Transportable.v
 theories/URTactics.v
-theories/Ltac2Utils.v
 theories/UR.v
 theories/FP.v
 theories/DecidableEq.v
@@ -13,12 +12,3 @@ theories/StdLib/Vector.v
 theories/StdLib/UR.v
 theories/StdLib/FP.v
 theories/StdLib/Record.v
-theories/StdLib/ALCTactics.v
-theories/StdLib/Basics.v
-examples/NatBinDefs.v
-examples/NatBinMonoid.v
-examples/NatBinPow.v
-examples/ListVect.v
-examples/NatBinALC.v
-examples/Expr.v
-examples/FFI.v
