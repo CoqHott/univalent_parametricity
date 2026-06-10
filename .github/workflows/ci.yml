@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        coq_version:
+          - 'dev'
+        ocaml_version:
+          - 'default'
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rocq-prover/docker-opam-action@v1
+        with:
+          opam_file: 'coq-univalent-parametricity.opam'
+          coq_version: ${{ matrix.coq_version }}
+          ocaml_version: ${{ matrix.ocaml_version }}
