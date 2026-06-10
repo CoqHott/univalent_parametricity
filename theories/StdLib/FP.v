@@ -2695,15 +2695,6 @@ Parameter Cdcl__Formula__NBool_iso : iso_statement (@NBool) imported_Cdcl__Formu
 
 End Interface17.
 
-(*additional test*)
-Definition id {A} (x : A) := x.
-Goal True.
-Proof.
-Fail ltac2:(check_if_cumul '(prod True bool)).
-Fail ltac2:(check_if_cumul '(@id True I)).
-
-Abort. 
-
 Module Type Interface18 (Import args : Args).
 
 Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
@@ -2917,6 +2908,37 @@ Abort.
 
 End Interface24.
 
+Module Type Interface25 (Import args : Args).
+
+#[projections(primitive)]
+Record product (A B : Type) := mk_prod { fst : A; snd : B }.
+
+Parameter imported_Corelib__Init__Datatypes__product : import_of product.
+Parameter Corelib__Init__Datatypes__product_iso : iso_statement product imported_Corelib__Init__Datatypes__product.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for @product Corelib__Init__Datatypes__product_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@product) Corelib__Init__Datatypes__product_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Datatypes__fst : import_of fst.
+Parameter Corelib__Init__Datatypes__fst_iso : iso_statement fst imported_Corelib__Init__Datatypes__fst.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for @fst Corelib__Init__Datatypes__fst_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@fst) Corelib__Init__Datatypes__fst_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Datatypes__snd : import_of snd.
+Parameter Corelib__Init__Datatypes__snd_iso : iso_statement snd imported_Corelib__Init__Datatypes__snd.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for @snd Corelib__Init__Datatypes__snd_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@snd) Corelib__Init__Datatypes__snd_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Lemma app_fst : (forall A B (x y:product A B), eq x y -> eq (fst x) (fst y)).
+Proof. 
+intros. now destruct H.
+Qed. 
+
+Parameter imported_Corelib__Init__Datatypes__app_fst : import_of app_fst.
+Parameter Corelib__Init__Datatypes__app_fst_iso : iso_statement app_fst imported_Corelib__Init__Datatypes__app_fst.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for @app_fst Corelib__Init__Datatypes__app_fst_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@app_fst) Corelib__Init__Datatypes__app_fst_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+End Interface25.
 
 (*
 #[export] Hint Extern 0 (Vector.t ?A ?n ≃ _) =>

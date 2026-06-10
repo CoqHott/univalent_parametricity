@@ -2886,7 +2886,16 @@ Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (go
              forward_apply lem goal_lhs |
              pre_tc_hint_hook () ; forward_apply lem goal_lhs|
              check_if_cumul goal_lhs] in
-  let (_, goal_args) := Constr.decompose_app goal_lhs in
+  let (goal_head, goal_args) := Constr.decompose_app goal_lhs in
+  if Constr.is_proj goal_head && Constr.is_const key then
+    match Constr.destProj goal_head, Constr.destConstant key with
+      | (p,_,_), (const_key, _) =>
+        let const_p := Option.get (Proj.to_constant p) in
+        if Constant.equal const_p const_key 
+        then tac ()
+        else Control.zero Match_failure
+    end  
+  else
   match check_appvect key goal_args with
     | Val key_app =>
       let key_app := beta_red key_app in 
