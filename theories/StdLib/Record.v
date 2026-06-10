@@ -13,7 +13,7 @@ Set Universe Polymorphism.
    You have to give it the record constructor and the two record projections as arguments (it has no way to guess what those might be). *)
 
 Definition eta_sigma {A} `{P : A -> Type} (u : sigT P)
-	  : (u.1; u.2) = u 
+	  : (u.1; u.2) = u
 	  := match u with (x;y) => idpath end.
 
 Ltac issig2 build pr1 pr2 :=
@@ -133,12 +133,12 @@ Ltac issig5 build pr1 pr2 pr3 pr4 pr5 :=
 
 Tactic Notation "issig" constr(build) constr(pr1) constr(pr2) constr(pr3) constr(pr4) constr(pr5) :=
   issig5 build pr1 pr2 pr3 pr4 pr5.
-  
+
 
 (* A tactic to show that record type are univalent type constructor *)
-Ltac univ_param_record := 
+Ltac univ_param_record :=
   cbn;   split ; [typeclasses eauto | ]; intros;
   unshelve refine (UR_Type_Equiv_gen _ _ _ _ _ _ _ _);
-  typeclasses eauto with typeclass_instances. 
+  typeclasses eauto with typeclass_instances.
 
 *)

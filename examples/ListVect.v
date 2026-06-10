@@ -16,7 +16,7 @@ Arguments head {_} _ {_ _} _.
 Arguments lib_prop {_} _ {_ _} _ _ _.
 
 
-(* the proof that Lib is a univalent type constructor requires to 
+(* the proof that Lib is a univalent type constructor requires to
    use an equivalent representation with dependent sums *)
 
 Definition Lib_sig C :=   {hd : forall {A : Type} {n : nat}, C A (S n) -> A  &
@@ -64,7 +64,7 @@ Definition libvec : Lib Vector.t :=
      lib_prop := lib_vector_prop |}.
 
 (* using the equivalence between vectors and sized lists
-   we can automatically infer the Lib structure on sized lists. 
+   we can automatically infer the Lib structure on sized lists.
 *)
 
 Definition lib_list : Lib (fun A n => {l: list A & length l = n}) := ↑ libvec.
@@ -113,11 +113,11 @@ Definition foo : ({hd : forall (A : Type) (n : nat), t A (S n) -> A &
                   {map
                   : forall A B : Type,
                     (A -> B) -> forall n : nat, sizedList A n -> sizedList B n &
-                  forall (n : nat) (A : Type) (B : DType) 
+                  forall (n : nat) (A : Type) (B : DType)
                     (f : A -> B) (v : sizedList A (S n)),
                     hd B n (map A B f (S n) v) = f (hd A n v) : Type}}).
-  tc. 
-Defined. 
+  tc.
+Defined.
 #[export] Hint Extern 0 => apply foo :  typeclass_instances.
 
 Transparent vector_to_list.
@@ -127,7 +127,7 @@ Definition liblist : {hd :forall {A : Type} {n : nat}, sizedList A (S n) -> A  &
   sizedList A n -> sizedList B n &
                    forall n A (B:DType) (f : A -> B) (v : sizedList A (S n)), hd _ _ (map _ _ f _ v) = f (hd _ _ v) : Type}}
   := ↑ libvec_.
-  
+
 
 (* Some more tests using the append function *)
 
@@ -163,26 +163,26 @@ Eval compute in (lib_list.(map) Datatypes.S (app_list [[1;2]] [[5;6]])).
 Definition neg : bool -> bool := fun b => match b with
                                           | true => false
                                           | false => true
-                                                       end. 
+                                                       end.
 
 Eval compute in (lib_list.(map) neg (app_list [[true;false]] [[true;false]])).
 
 (* Example of lifting structurally a fixpoint on lists to a fixpoint on vectors. *)
 (* This example would need some more automation to be nicer *)
 
-Definition fold_left (A B : Type) (f : A -> B -> A) 
+Definition fold_left (A B : Type) (f : A -> B -> A)
   := list_rect B (fun _ => A -> A) id (fun x xs IH => fun init => IH (f init x)).
 
 Definition Svect_fold_left_ : forall A B : Type, (A -> B -> A) -> forall l : Svector B, (fun _ : _ => A -> A) l.
-  pose fold_left. unfold fold_left in p. 
+  pose fold_left. unfold fold_left in p.
   let X := fresh "X" in
   assert (X : { opt :forall A B : Type, (A -> B -> A) -> forall l : Svector B, (fun _ : _ => A -> A) l  & fold_left ≈ opt}).
   unfold fold_left. cbn.
   eexists (fun A B f v a => Svect_rect B (fun _ => A -> A) _ _ _ _).
   intros. pose (FP_List_vect_rect _ _ H0 (fun _ => x -> x) (fun _ => y -> y) (ltac:(tc))).
-  cbn in u; eapply u; tc. 
+  cbn in u; eapply u; tc.
   exact X.1.
 Defined.
 
-Definition Svect_fold_left := Eval compute in Svect_fold_left_. 
+Definition Svect_fold_left := Eval compute in Svect_fold_left_.
 

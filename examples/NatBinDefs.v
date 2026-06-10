@@ -19,11 +19,11 @@ Defined.
 Fixpoint plus_assoc (n m p : nat) : n + (m + p) = n + m + p.
  induction n. cbn. reflexivity.
  cbn. apply ap. apply plus_assoc.
-Defined. 
- 
+Defined.
+
 Lemma inj_succ p : Pos.to_nat (Pos.succ p) = S (Pos.to_nat p).
 Proof.
- unfold Pos.to_nat. rewrite iter_op_succ. reflexivity. 
+ unfold Pos.to_nat. rewrite iter_op_succ. reflexivity.
  apply plus_assoc.
 Defined.
 
@@ -32,7 +32,7 @@ Proof.
  induction p using Pos.peano_rect.
  now exists 0.
  destruct IHp as (n,Hn). exists (S n). now rewrite inj_succ, Hn.
-Defined. 
+Defined.
 
 Theorem Pos_id (n:nat) : n<>0 -> Pos.to_nat (Pos.of_nat n) = n.
 Proof.
@@ -44,7 +44,7 @@ Defined.
 Lemma of_nat_succ (n:nat) : Pos.of_succ_nat n = Pos.of_nat (S n).
 Proof.
  induction n. reflexivity. simpl. apply ap. now rewrite IHn.
-Defined. 
+Defined.
 
 Theorem id_succ (n:nat) : Pos.to_nat (Pos.of_succ_nat n) = S n.
 Proof.
@@ -54,12 +54,12 @@ Defined.
 Lemma inj (n m : nat) : Pos.of_succ_nat n = Pos.of_succ_nat m -> n = m.
 Proof.
  intro H. apply (ap Pos.to_nat) in H. rewrite !id_succ in H.
- inversion H. reflexivity. 
+ inversion H. reflexivity.
 Defined.
 
 Theorem Pos2Nat_id p : Pos.of_nat (Pos.to_nat p) = p.
 Proof.
- induction p using Pos.peano_rect. reflexivity. 
+ induction p using Pos.peano_rect. reflexivity.
  rewrite inj_succ. rewrite <- (ap Pos.succ IHp).
  now destruct (is_succ p) as (n,->).
 Defined.
@@ -72,7 +72,7 @@ Defined.
 Lemma N2Nat_id a : N.of_nat (N.to_nat a) = a.
 Proof.
   destruct a as [| p]; simpl. reflexivity.
-  destruct (is_succ p) as [n H]. rewrite H. simpl. apply ap. 
+  destruct (is_succ p) as [n H]. rewrite H. simpl. apply ap.
   apply Pos2Nat_inj. rewrite H. apply id_succ.
 Defined.
 
@@ -89,24 +89,24 @@ Defined.
 Lemma Nat2N_id n : N.to_nat (N.of_nat n) = n.
 Proof.
  induction n; simpl; try reflexivity. apply id_succ'.
-Defined. 
+Defined.
 
 Instance IsEquiv_N_nat : IsEquiv N.of_nat.
 Proof.
   unshelve refine (isequiv_adjointify _ _ _ _).
-  - exact N.to_nat. 
+  - exact N.to_nat.
   - cbn; intro. exact (Nat2N_id _).
   - cbn; intro. exact (N2Nat_id _).
 Defined.
 
 
 Instance Equiv_N_nat : nat ≃ N.
-  refine (BuildEquiv _ _ N.of_nat _).  
+  refine (BuildEquiv _ _ N.of_nat _).
 Defined.
 
 Instance Equiv_nat_N : N ≃ nat := Equiv_inverse _.
 
-Instance UR_N : UR N N := UR_gen N. 
+Instance UR_N : UR N N := UR_gen N.
 
 Instance Decidable_eq_N : DecidableEq N := DecidableEq_equiv nat N _.
 
@@ -124,10 +124,10 @@ Instance compat_N_nat : N ⋈ nat.
 Proof.
   unshelve eexists; try tc.
   econstructor. intros. cbn. rewrite (N2Nat_id _). apply Equiv_id.
-Defined. 
+Defined.
 
 Instance UR_nat_N : UR nat N | 0.
-eapply UR_Equiv; tc. 
+eapply UR_Equiv; tc.
 Defined.
 
 Instance compat_nat_N : nat ⋈ N.
@@ -135,7 +135,7 @@ Proof.
   unshelve eexists; try tc.
   econstructor. intros. cbn.
   rewrite (Nat2N_id _). apply Equiv_id.
-Defined. 
+Defined.
 
 Definition refl_nat_N (n:nat) : n ≈ (↑ n : N) := ur_refl (e:=compat_nat_N) n.
 #[export] Hint Extern 0 (?n = _) => unshelve refine (refl_nat_N _) : typeclass_instances.

@@ -68,8 +68,8 @@ Definition path_univalentRel {A B} (X Y : univalentRel A B)
   cbn in *. destruct ee, eR. cbn in *. destruct eH.
   assert (H  = H').
   apply path_forall; intro. apply path_forall; intro. apply hprop_isequiv.
-  destruct X. reflexivity. 
-Defined. 
+  destruct X. reflexivity.
+Defined.
 
 
 Definition HEqGen A : univalentRel A A.
@@ -94,9 +94,9 @@ Proof.
   unshelve econstructor.
   - eapply UR_Equiv; eassumption.
   - unshelve econstructor.
-    + eapply equiv_compose'. eassumption. destruct e as [e _]. auto. 
+    + eapply equiv_compose'. eassumption. destruct e as [e _]. auto.
     +  unshelve eexists.
-       intro x. cbn. unfold UR_Equiv. cbn. destruct e as [e [ur_refl _]]. cbn. 
+       intro x. cbn. unfold UR_Equiv. cbn. destruct e as [e [ur_refl _]]. cbn.
        refine ((eissect e' (e x))^ # _). eapply ur_refl.
        intros a b. serapply isequiv_adjointify; cbn.
        *  intro p. destruct e as [e [ur_refl ur_is_eq]].
@@ -113,7 +113,7 @@ Proof.
                     (transport (fun x => R a (e x)) p0 (ur_refl a))).
          destruct p0. reflexivity.
          cbn. eapply (moveR_transport_V (R a)).
-         exact (eisretr r0 r). 
+         exact (eisretr r0 r).
        * intros []; cbn. rewrite <- transport_pp.
          rewrite concat_Vp. cbn.
          apply equiv_moveR_equiv_V. reflexivity.
@@ -173,10 +173,10 @@ Definition UR_Type_Struct_transport_equiv {A B C} {e' : B <~> C} {H: A ⋈ B}
   : transport (fun X => A ⋈ X) (path_universe_uncurried e') H
     = UR_Type_Struct_Equiv e' H.
   rewrite <- (equiv_path_path_universe_uncurried e').
-  set (path_universe_uncurried e'). 
+  set (path_universe_uncurried e').
   destruct p. clear e'.
   rewrite eta_path_universe_uncurried; cbn.
-  destruct H as [R [e [u u']]]. 
+  destruct H as [R [e [u u']]].
   unshelve eapply path_UR_Type_Struct.
   intro; reflexivity.
   intros; cbn. reflexivity.
@@ -188,8 +188,8 @@ Definition UR_is_eq_equiv {A B} (e : A ⋈ B) (a : A) (b : B)
 Proof.
   etransitivity. econstructor.
   exact (e.2.2.2 a _).
-  refine (transport (fun X =>  (e.1 a X) <~> _) (eisretr _ b)^ (equiv_idmap _)). 
-Defined. 
+  refine (transport (fun X =>  (e.1 a X) <~> _) (eisretr _ b)^ (equiv_idmap _)).
+Defined.
 
 Definition UR_is_eq_equiv' {A B} (e : A ⋈ B) (a : A) (b : B)
   : (a = (e.2.1)^-1 b) <~> (e.1 a b).
@@ -198,7 +198,7 @@ Proof.
                     (eisretr (e.2.1) b) _).
   econstructor.
   exact (e.2.2.2 a ((e.2.1)^-1 b)).
-Defined. 
+Defined.
 
 Definition Typeᶠ : TYPE.
   refine (mkPack Type Type (fun A₀ A₁ => {R : A₀ -> A₁ -> Type & univalent R})
@@ -207,7 +207,7 @@ Definition Typeᶠ : TYPE.
   unshelve econstructor.
   - exact HEqGen.
   - intros A B; cbn. unshelve eapply isequiv_adjointify.
-    + intro e. apply path_universe_uncurried. destruct e as [_ [e _]]. exact e. 
+    + intro e. apply path_universe_uncurried. destruct e as [_ [e _]]. exact e.
     + intros [R [e [r H]]].
       rewrite UR_Type_Struct_transport_equiv.
       serapply path_UR_Type_Struct; cbn.
@@ -283,7 +283,7 @@ Definition Prodᶠ (A : TYPE) (B : El A -> TYPE) : El Typeᶠ.
                  (fun y => (prp (B a)).1 (f a) (((prp (B a)).2).1 y))).
       reflexivity.
 Defined.
-      
+
 
 Notation "A →ᶠ B" := (Prodᶠ A (fun _ => B)) (at level 99, right associativity, B at level 200).
 Notation "'Πᶠ'  x .. y , P" := (Prodᶠ _ (fun x => .. (Prodᶠ _ (fun y => P)) ..))
@@ -359,8 +359,8 @@ Defined.
 Definition Boolᶠ : El Typeᶠ.
   refine (mkTYPE Bool Bool (fun b₀ b₁ => b₀ = b₁) _).
   exists equiv_idmap. unshelve econstructor.
-  - intros []; reflexivity. 
-  - intros b b'; cbn. 
+  - intros []; reflexivity.
+  - intros b b'; cbn.
     unshelve eapply isequiv_adjointify.
     + exact (fun p => p).
     + intros []; cbn. destruct b; reflexivity.

@@ -10,8 +10,8 @@ Set Universe Polymorphism.
 
 
 (* axiomatizing correspondance between nat and N functions *)
-Definition compat_add : plus ≈ N.add. Admitted. 
-Definition compat_mul : mult ≈ N.mul. Admitted. 
+Definition compat_add : plus ≈ N.add. Admitted.
+Definition compat_mul : mult ≈ N.mul. Admitted.
 Definition compat_div : Nat.div ≈ N.div. Admitted.
 Definition compat_pow : Nat.pow ≈ N.pow. Admitted.
 Definition compat_sub : Nat.sub ≈ N.sub. Admitted.
@@ -22,13 +22,13 @@ Definition compat_le : Peano.le ≈ N.le. Admitted.
 #[export] Hint Extern 0 (Nat.div _ _ = _) => eapply compat_div : typeclass_instances.
 #[export] Hint Extern 0 (Nat.pow _ _ = _) => eapply compat_pow : typeclass_instances.
 #[export] Hint Extern 0 (Nat.sub _ _ = _) => eapply compat_sub : typeclass_instances.
-#[export] Hint Extern 0 (Peano.le _ _ ≃ _) => eapply compat_le : typeclass_instances. 
-#[export] Hint Extern 0 (Peano.le _ _ ⋈ _) => eapply compat_le : typeclass_instances. 
-#[export] Hint Extern 0 (Nat.le _ _ ≃ _) => eapply compat_le : typeclass_instances. 
-#[export] Hint Extern 0 (Nat.le _ _ ⋈ _) => eapply compat_le : typeclass_instances. 
+#[export] Hint Extern 0 (Peano.le _ _ ≃ _) => eapply compat_le : typeclass_instances.
+#[export] Hint Extern 0 (Peano.le _ _ ⋈ _) => eapply compat_le : typeclass_instances.
+#[export] Hint Extern 0 (Nat.le _ _ ≃ _) => eapply compat_le : typeclass_instances.
+#[export] Hint Extern 0 (Nat.le _ _ ⋈ _) => eapply compat_le : typeclass_instances.
 
 Definition compat_add' : N.add ≈ plus. Admitted.
-Definition compat_mul' : N.mul ≈ mult. Admitted. 
+Definition compat_mul' : N.mul ≈ mult. Admitted.
 Definition compat_div' : N.div ≈ Nat.div. Admitted.
 Definition compat_pow' : N.pow ≈ Nat.pow. Admitted.
 Definition compat_sub' : N.sub ≈ Nat.sub. Admitted.
@@ -68,12 +68,12 @@ Defined.
 Lemma nat_distrib' : forall (c a b: nat), (a + b) * c = a * c + b * c.
 Proof.
   intros. rewrite mult_comm. rewrite nat_distrib.
-  rewrite mult_comm. rewrite (mult_comm c b). reflexivity. 
+  rewrite mult_comm. rewrite (mult_comm c b). reflexivity.
 Defined.
 
 (* we can also convert functions from one setting to another *)
 
-Definition cube := fun n => n * n * n.  
+Definition cube := fun n => n * n * n.
 
 (* not that a direct lifting does not using the conversion table *)
 
@@ -86,7 +86,7 @@ Check eq_refl : (↑ cube : N -> N) = (fun x:N => ↑ (cube (↑ x))).
 
 Definition N_cube_def := ltac: (convert cube : (N -> N)).
 
-Check (N_cube_def :{opt : N -> N & cube ≈ opt}). 
+Check (N_cube_def :{opt : N -> N & cube ≈ opt}).
 
 Definition N_cube_def' :  cube ≈ (fun x => (x * x * x)%N).
   unfold cube. tc.
@@ -107,29 +107,29 @@ Arguments cube : simpl never.
 (* we can lift properties up to the conversion table *)
 
 Lemma cube_prop : forall n, cube (3 * n) = 27 * cube n.
-  intro n. unfold cube, mult; cbn; fold mult.  
+  intro n. unfold cube, mult; cbn; fold mult.
   repeat rewrite plus_0_r. repeat rewrite nat_distrib.
-  repeat rewrite nat_distrib'. repeat rewrite plus_assoc. reflexivity. 
-Qed. 
+  repeat rewrite nat_distrib'. repeat rewrite plus_assoc. reflexivity.
+Qed.
 
 Lemma N_cube_prop : forall n, (N_cube (3 * n) = 27 * N_cube n)%N.
-  exact (↑ cube_prop). 
+  exact (↑ cube_prop).
 Qed.
 
 Lemma nat_comm : forall n m, n + m = m + n.
   intros. rewrite plus_comm. reflexivity.
-Defined. 
+Defined.
 
 Lemma bin_comm : forall n m : N, (n + m = m + n)%N.
   exact (↑ nat_comm).
 Defined.
 
 Lemma pow_prop : forall n, Nat.pow 3 (n + 1)  = 3 * Nat.pow 3 n.
-  intro n; rewrite nat_comm; reflexivity. 
+  intro n; rewrite nat_comm; reflexivity.
 Qed.
-  
+
 Lemma N_pow_prop : forall n, (N.pow 3 (n + 1) = 3 * N.pow 3 n)%N.
-  exact (↑ pow_prop). 
+  exact (↑ pow_prop).
 Qed.
 
 (* Test with polynomials *)
@@ -143,7 +143,7 @@ Arguments poly : simpl never.
 #[export] Hint Extern 0 => progress (unfold ge) : typeclass_instances.
 
 Goal poly 50 >= 1000.
-  unfold poly. replace_goal; now compute. 
+  unfold poly. replace_goal; now compute.
 Defined.
 
 #[export] Hint Extern 0 (N.to_nat _ = _) => reflexivity : typeclass_instances.
@@ -159,12 +159,12 @@ Defined.
 Definition polyType := list nat.
 
 Fixpoint evalPoly (p : polyType) (n : nat) (degree : nat) : nat :=
-  match p with 
+  match p with
   | [] => 0
-  | coef :: p => coef * Nat.pow n degree + evalPoly p n (S degree) 
+  | coef :: p => coef * Nat.pow n degree + evalPoly p n (S degree)
   end.
 
-Infix "@@" := (fun p n => evalPoly p n 0) (at level 50).  
+Infix "@@" := (fun p n => evalPoly p n 0) (at level 50).
 
 Eval compute in poly 4.
 
@@ -175,17 +175,17 @@ Eval compute in poly' @@ 4.
 (* Fail Eval compute in poly' @@ 50. *)
 
 Goal poly' @@ 50 >= 1000.
-  replace_goal; now compute. 
+  replace_goal; now compute.
 Defined.
 
 (* Test for sequences *)
 
 Definition g x := fun (n:nat) X => Nat.pow X x.
 
-#[export] Hint Extern 0 => progress (unfold g) : typeclass_instances. 
+#[export] Hint Extern 0 => progress (unfold g) : typeclass_instances.
 
 Section sequence.
-  
+
 Variable acc : Datatypes.nat.
 
 Fixpoint test_sequence n :=
@@ -197,11 +197,11 @@ Fixpoint test_sequence n :=
     (* Nat.pow (f n) acc would be better ... *)
   end.
 
-End sequence. 
+End sequence.
 
 Goal test_sequence 2 5 >= 1000.
   (* Fail compute. *)
-Abort. 
+Abort.
 
 (* Definition test_sequence_conv := ltac: (convert test_sequence : (N -> nat -> N)). *)
 
@@ -211,7 +211,7 @@ Defined.
 
 
 
-(* 
+(*
    Playing with division:
    - show lifting for dependent functions that use subset types
    - show also a version of divide with more refinement
@@ -220,13 +220,13 @@ Defined.
 
 (* we can even convert dependent functions *)
 
-Definition lt (n m : nat) := (S n <= m)%nat. 
+Definition lt (n m : nat) := (S n <= m)%nat.
 Notation "n < m" := (lt n m) : nat_scope.
 #[export] Hint Extern 0 => progress (unfold lt) :  typeclass_instances.
 #[export] Hint Extern 0 => progress (unfold projT1) :  typeclass_instances.
 
 (* the original definition of N.lt is using compare and is more complicated to deal with *)
-Definition lt_N (n m : N) := (N.succ n <= m)%N. 
+Definition lt_N (n m : N) := (N.succ n <= m)%N.
 Notation "n < m" := (lt_N n m) : N_scope.
 #[export] Hint Extern 0 => progress (unfold lt_N) :  typeclass_instances.
 
@@ -255,7 +255,7 @@ Definition divide_dep_p n (m : {m : nat & 0 < m }) : (divide n m <= n)%nat.
     + apply Nat.neq_succ_0.
     + rewrite <- Nat.mul_1_l at 1.
       apply Nat.mul_le_mono_r. apply le_n_S. apply Nat.le_0_l.
-Defined.      
+Defined.
 
 Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & (res <= n)%nat} :=
   (divide n m ; divide_dep_p n m).
@@ -265,7 +265,7 @@ Definition divide_dep n (m : {m : nat & 0 < m }) : {res: nat & (res <= n)%nat} :
 
 (* the above hint is need for the following convert to succeed *)
 Definition N_divide_dep_conv :=
-  ltac: (convert divide_dep : (forall (n:N) (m : {m : N & (0 < m)%N}), {res:N & (res <= n)%N})). 
+  ltac: (convert divide_dep : (forall (n:N) (m : {m : N & (0 < m)%N}), {res:N & (res <= n)%N})).
 
 Definition N_divide_dep := N_divide_dep_conv.1.
 
@@ -278,7 +278,7 @@ Defined.
 Eval lazy in (N_divide_dep 10%N N_two).1.
 
 
-(* Now, we can exploit the new divide - N_divide correspondance 
+(* Now, we can exploit the new divide - N_divide correspondance
 to efficiently convert nat functions that use divide, such as avg below *)
 
 Definition two_zero : 0 < 2.
@@ -333,7 +333,7 @@ Defined.
 
 #[export] Hint Extern 0 (S _ = _) => eapply compat_S : typeclass_instances.
 
-Axiom cheat : forall X, X. 
+Axiom cheat : forall X, X.
 
 Definition nat_rectN_lift : forall P : N -> Type,
     P ON -> (forall n : N, P n -> P (SN n)) -> forall n : N, P n :=
@@ -341,8 +341,8 @@ Definition nat_rectN_lift : forall P : N -> Type,
 
 Definition nat_rectN : forall P : N -> Type,
     P ON -> (forall n : N, P n -> P (SN n)) -> forall n : N, P n.
-  intros. induction n. exact X. apply nat_rectN_lift; auto. 
-Defined. 
+  intros. induction n. exact X. apply nat_rectN_lift; auto.
+Defined.
 
 Fail Definition diffN n (e : ON = SN n) : False :=
   let P := nat_rectN (fun _ => Type) (ON = ON) (fun n _ => False) in

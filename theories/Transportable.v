@@ -1,11 +1,11 @@
 (************************************************************************)
 (* The univalent relation on dependent product uses a framework of transportable type families
-   in order to enhance effectiveness. 
+   in order to enhance effectiveness.
    This file introduces the transportable type class and default instances *)
 (************************************************************************)
 
 Require Import HoTT.
- 
+
 Set Universe Polymorphism.
 
 Class Transportable {A} (P:A -> Type) :=
@@ -20,7 +20,7 @@ Proof.
   unshelve econstructor.
   - intros x y e; destruct e. apply Equiv_id.
   - reflexivity.
-Defined. 
+Defined.
 
 Instance Transportable_Type (P:Type -> Type) : Transportable P :=
   Transportable_default P.
@@ -39,7 +39,7 @@ Instance Transportable_cst A B : Transportable (fun _ : A => B) :=
 Definition Transportable_compose_ A B C (g : B -> C) (P : C -> Type) `{Transportable C P} x:
   forall f f': A -> B, f = f' -> P (g (f x)) ≃ P (g (f' x)).
   intros. assert (g (f x) = g (f' x)). destruct H0; reflexivity.
-  now apply H. 
+  now apply H.
 Defined.
 
 Instance Transportable_compose A B C (g : B -> C) (P : C -> Type)
@@ -54,5 +54,5 @@ Instance Transportable_apply B C (f : B -> C) (P : C -> Type) `{Transportable C 
   Transportable (fun (x:B) => P (f x)).
 Proof.
   unshelve econstructor. intros. apply transportable. now apply ap.
-  cbn; intros. apply transportable_refl. 
+  cbn; intros. apply transportable_refl.
 Defined.
