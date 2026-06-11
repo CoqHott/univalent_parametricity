@@ -19,7 +19,7 @@ Proof.
   cbn.
   (* this instance of transportable is on Type, we can only use the default one*)
   split; [apply Transportable_default | ].
-  intros A B e. 
+  intros A B e.
   rewrite (@e_inv _ _ _ (univalence _ _) (equiv e)). (* and use univalence *)
   apply (@ur_refl_ _ _ _ _ URType_Refl).
 Defined.

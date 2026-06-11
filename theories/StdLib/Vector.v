@@ -43,7 +43,7 @@ Definition t_poly : forall (A : Type) (P : forall n : nat, t A n -> Type),
        P 0 (nil A) ->
        (forall (h : A) (n : nat) (t : t A n), P n t -> P (S n) (cons A h n t)) ->
        forall (n : nat) (t : t A n), P n t :=
-fun (A : Type) (P : forall n : nat, t A n -> Type) 
+fun (A : Type) (P : forall n : nat, t A n -> Type)
   (nil : P 0 (nil A))
   (cons : forall (h : A) (n : nat) (t : t A n),
 	      P n t -> P (S n) (cons A h n t)) =>
@@ -76,7 +76,7 @@ Definition rectS {A} (P:forall {n}, t A (S n) -> Type)
  end.
 
 #[universes(collapse_sort_variables=no)]
-Inductive inhab : Type := inh : inhab. 
+Inductive inhab : Type := inh : inhab.
 
 (** A vector of length [0] is [nil] *)
 #[universes(collapse_sort_variables=no)]

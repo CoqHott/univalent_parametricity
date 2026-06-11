@@ -9,18 +9,18 @@ Require Import HoTT.
 Set Universe Polymorphism.
 Set Primitive Projections.
 
-Existing Class eq. 
+Existing Class eq.
 
 Create HintDb ur_typeclass_instances.
 
 Ltac tc := typeclasses eauto with ur_typeclass_instances.
 
-Ltac resolve_eq := intros; 
+Ltac resolve_eq := intros;
                    progress (repeat (try reflexivity;
                    try eassumption;
-                   cbn; 
+                   cbn;
                    try rewrite inv_inv;
-                   try repeat eapply ap; 
+                   try repeat eapply ap;
                    try repeat eapply ap2)).
 
 (* #[export] Hint Extern 100 (_ = _) => resolve_eq : typeclass_instances.
@@ -76,9 +76,9 @@ etransitivity ; [exact (e_retr f n) | idtac ] : equiv.
 
 #[export] Hint Extern 0 (_ = ?f (?g ?n)) => exact (e_retr f n)^ : equiv.
 
-Typeclasses Transparent e_inv'  univalent_transport. 
-#[export] Hint Transparent e_inv'  univalent_transport : core. 
-#[export] Hint Unfold e_inv'  univalent_transport : core. 
+Typeclasses Transparent e_inv'  univalent_transport.
+#[export] Hint Transparent e_inv'  univalent_transport : core.
+#[export] Hint Unfold e_inv'  univalent_transport : core.
 *)
 Ltac equiv_elim :=
   clear_eq;

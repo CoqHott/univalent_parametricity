@@ -38,11 +38,11 @@ Instance issig_monoid_inv {A : Type} :
 Definition FP_Monoid : Monoid ≈ Monoid.
 Proof.
   univ_param_record.
-Defined. 
+Defined.
 
-#[export] Hint Extern 0 (Monoid ≈ Monoid) => exact (ur_type FP_Monoid) : typeclass_instances. 
+#[export] Hint Extern 0 (Monoid ≈ Monoid) => exact (ur_type FP_Monoid) : typeclass_instances.
 
-#[export] Hint Extern 0 (Monoid _ ≃ Monoid _) => unshelve refine (equiv (ur_type FP_Monoid _ _ _)) : typeclass_instances. 
+#[export] Hint Extern 0 (Monoid _ ≃ Monoid _) => unshelve refine (equiv (ur_type FP_Monoid _ _ _)) : typeclass_instances.
 
 (* we define the monoid structure on N *)
 
@@ -51,9 +51,9 @@ Proof.
   unshelve refine (Build_Monoid _ _ _ _ _ _).
   - exact N0.
   - exact N.add.
-  - intro x. destruct x; reflexivity. 
   - intro x. destruct x; reflexivity.
-  - intros. cbn. apply logic_eq_is_eq. exact (N.add_assoc x y z).  
+  - intro x. destruct x; reflexivity.
+  - intros. cbn. apply logic_eq_is_eq. exact (N.add_assoc x y z).
 Defined.
 
 (* Then we can deduce automatically a monoid structure on nat *)
