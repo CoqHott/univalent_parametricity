@@ -273,7 +273,13 @@ Proof.
       destruct ur_coh. cbn in *.
       set (p0 e1). clearbody p1. destruct p1.
       rewrite transport_eq_gen_refl.
-      unshelve eapply (snd (ur_coh _ _)) in e2; tc.
+      pose (Ur_Coh (H0 x1 (univalent_transport x1) e1)).
+      pose (Ur_Irr _ _ H).
+      unshelve eapply (snd (ur_coh _ _)) in e2. 
+      rewrite (ur_irr _ _ _ e1).
+      all:tc.
+  - econstructor. intros [? ?] [? ?] [? ?] [? ?]; cbn in *.
+    eapply path_sigma_uncurried; unshelve eexists; cbn; eapply ur_irr.
 Defined.
 
 #[export] Hint Extern 0 (sigT _ ≈u _) =>
@@ -358,6 +364,8 @@ unshelve econstructor.
     unshelve eexists; cbn in *.
     unshelve eapply (snd (ur_coh _ _)). shelve. exact (equiv H). exact (Ur H). exact (Ur_Coh H). exact e1.
     unshelve eapply (snd (ur_coh _ _)). shelve. exact (equiv H0). exact (Ur H0). exact (Ur_Coh H0). exact e2.
+- econstructor. intros [? ?] [? ?] [? ?] [? ?]; cbn in *.
+  eapply path_prod_uncurried; unshelve eexists; cbn; eapply ur_irr.
 Defined.
 
 #[export] Hint Extern 0 ((_ * _) ≃ (_ * _)) => erefine (@Equiv_prod _ _ _ _ _ _)
@@ -476,16 +484,18 @@ destruct XX. cbn. apply inverse, concat_refl.
 Defined.
 *)
 
-#[universes(collapse_sort_variables=no)]
+(* #[universes(collapse_sort_variables=no)]
 Definition FP_eq : @eq ≈p @path.
 Proof.
+  cbn; intros; split.  
   econstructor. eapply (PR_eq _ _ (@pr _ _ _ H)); eauto.
 Defined.
+ *)
 
 #[universes(collapse_sort_variables=no)]
 Definition univ_eq : @eq ≈u @path.
 Proof.
-  cbn. intros. unshelve econstructor.
+cbn. intros. unshelve econstructor.
   - eapply Equiv_iff_Prop. split; intro e.
     + eapply (snd (alt_ur_coh _ _ _)) in H0.
       eapply (snd (alt_ur_coh _ _ _)) in H1.
@@ -497,10 +507,10 @@ Proof.
   - econstructor. intros e e'. split; intro E.
     + cbn. destruct E, e. cbn in *.
       match goal with | |- PR_eq _ _ _ _ _ _ _ _ _ _ ?X => set (X) end.
-      destruct p. econstructor.
+      destruct p. rewrite (ur_irr _ _ H0 H1). econstructor.
     + eapply PI.
+  - econstructor. reflexivity.
 Defined.
-
 
 #[universes(collapse_sort_variables=no)]
 Definition univ_eq' : forall (x : Prop) (y:SProp) (H : x ≈u y), @eq x ≈u @path y.
@@ -514,8 +524,9 @@ intros. cbn. intros. unshelve econstructor.
   - econstructor. intros e e'. split; intro E.
     + cbn. destruct E, e. cbn in *.
       match goal with | |- PR_eq _ _ _ _ _ _ _ _ _ _ ?X => set (X) end.
-      destruct p. econstructor.
+      destruct p. rewrite (ur_irr _ _ H0 H1). econstructor.
     + eapply PI.
+  - econstructor. reflexivity.
 Defined.
 
 #[export] Hint Extern 0 (UR_Type (eq _ _) _) =>
@@ -674,6 +685,7 @@ Section SoftwareFoundations.
   unshelve econstructor. exact (fun d d' => ↑ d = d').
   Defined.
 
+  #[universes(collapse_sort_variables=no)]
   Goal decorated ≈u decorated'.
   Proof.
   unshelve econstructor.
@@ -682,11 +694,10 @@ Section SoftwareFoundations.
     split.
     + eapply ap.
     + eapply ap_inv_equiv. apply dec_eq.
+  - econstructor; reflexivity. 
   Defined.
 
 End SoftwareFoundations.
-
-
 
 (*! nat !*)
 
@@ -698,6 +709,7 @@ Definition Sϵ' n m: n ≈p m -> S n ≈p S m := Sϵ.
 Hint Extern 0 (S _ ≈[ _] S _) => apply Sϵ' : typeclass_instances ur_typeclass_instances.
 Hint Extern 0 (natϵ (S _) (S _)) => apply Sϵ' : typeclass_instances ur_typeclass_instances.
 
+#[universes(collapse_sort_variables=no)]
 Definition FP_nat : nat ≈u nat.
 Proof.
   unshelve econstructor.
@@ -705,6 +717,7 @@ Proof.
   - econstructor. intros n m; split.
     + destruct 1. induction n; intros; econstructor; eauto.
     + cbn. induction 1; [econstructor | apply ap; eauto].
+  - econstructor; reflexivity.
 Defined.
 
 Hint Extern 0 (nat ≈u nat) => exact FP_nat : typeclass_instances ur_typeclass_instances.
@@ -720,6 +733,7 @@ Defined.
 
 (*! bool !*)
 
+#[universes(collapse_sort_variables=no)]
 Definition FP_bool : bool ≈u bool.
 Proof.
   unshelve econstructor.
@@ -727,10 +741,12 @@ Proof.
   - econstructor. intros b b'; split.
     + destruct 1. destruct b; intros; econstructor; eauto.
     + cbn. induction 1; econstructor.
+  - econstructor; reflexivity.
 Defined.
 
 (*! False !*)
 
+#[universes(collapse_sort_variables=no)]
 Definition FP_Empty : (Empty:Type) ≈u (Empty:Type).
 Proof.
 unshelve econstructor.
@@ -738,6 +754,7 @@ unshelve econstructor.
   - econstructor. intros b b'; split.
     + destruct 1. destruct b; intros; econstructor; eauto.
     + cbn. induction 1; econstructor.
+  - econstructor; reflexivity.
 Defined.
 
 (*! True !*)
@@ -1798,12 +1815,14 @@ Parameter SECF__Maps__includedinD_update_iso : iso_statement (@includedin_update
 
 End Interface7.
 
-Definition STrue_UR : True ≈u STrue.
+#[universes(polymorphic,collapse_sort_variables=no)]
+Definition STrue_UR : True ≈u Squash True.
 Proof.
 cbn. unshelve econstructor.
-- econstructor. intros. exact STrue.
-- eapply Equiv_iff_Prop. split; intros; econstructor.
-- econstructor; intros; split; intros; cbn in *; try econstructor. destruct a, a'; reflexivity.
+- econstructor. intros. exact (Squash True).
+- eapply Equiv_iff_Prop. split; intros; repeat econstructor.
+- econstructor; intros; split; intros; cbn in *; try repeat econstructor. destruct a, a'; reflexivity.
+- econstructor; reflexivity.
 Defined.
 
 Hint Extern 1 (UR_Type True _) => eapply STrue_UR : typeclass_instances ur_typeclass_instances.
@@ -2152,11 +2171,13 @@ Module Type Interface11 (Import args : Args).
 Parameter imported_Corelib__Init__Logic__True : SProp.
 (* Parameter Corelib__Init__Logic__True_iso : (UR_Type@{Type Type Type SProp Type Type Prop; _ _ _ _ _ _} True imported_Corelib__Init__Logic__True). *)
 
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__True_iso : @UR.pr _ _ _ (UR.PR_Type UR.univalent) True imported_Corelib__Init__Logic__True.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.True) Corelib__Init__Logic__True_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.True) Corelib__Init__Logic__True_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__and : SProp -> SProp -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__and_iso : (@UR.pr _ _ _
      (@UR.URArrow UR.univalent Prop SProp (forall _ : Prop, Prop) (forall _ : SProp, SProp) (UR.PR_Type UR.univalent)
         (@UR.URArrow UR.univalent Prop SProp Prop SProp (UR.PR_Type UR.univalent) (UR.PR_Type UR.univalent)))
@@ -2201,11 +2222,13 @@ Module Type Interface13 (Import args : Args).
 Definition iff (A B : Prop) := (A -> B) /\ (B -> A).
 
 Parameter imported_Corelib__Init__Logic__False : SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__False_iso : (@UR.pr _ _ _ (UR.PR_Type UR.univalent) False imported_Corelib__Init__Logic__False).
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.False) Corelib__Init__Logic__False_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.False) Corelib__Init__Logic__False_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__eq : forall y : Type, y -> y -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__eq_iso : (@UR.pr _ _ _
      (@UR.URForall UR.univalent Type Type (fun x : Type => forall (_ : x) (_ : x), Prop) (fun H : Type => forall (_ : H) (_ : H), SProp) (UR.PR_Type UR.univalent)
         (fun (x y : Type) (H : @UR.pr _ _ _ (UR.PR_Type UR.univalent) x y) =>
@@ -2215,6 +2238,7 @@ Parameter Corelib__Init__Logic__eq_iso : (@UR.pr _ _ _
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 Parameter imported_Corelib__Init__Logic__eq_Prop : forall y : SProp, y -> y -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__eq_iso_Prop : (@UR.pr _ _ _
      (@UR.URForall UR.univalent Prop SProp (fun x : Prop => forall (_ : x) (_ : x), Prop) (fun H : SProp => forall (_ : H) (_ : H), SProp) (UR.PR_Type UR.univalent)
         (fun (x : Prop) (y : SProp) (H : @UR.pr _ _ _ (UR.PR_Type UR.univalent) x y) =>
@@ -2225,6 +2249,7 @@ Parameter Corelib__Init__Logic__eq_iso_Prop : (@UR.pr _ _ _
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__iff : SProp -> SProp -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__iff_iso : (@UR.pr _ _ _
      (@UR.URArrow UR.univalent Prop SProp (forall _ : Prop, Prop) (forall _ : SProp, SProp) (UR.PR_Type UR.univalent)
         (@UR.URArrow UR.univalent Prop SProp Prop SProp (UR.PR_Type UR.univalent) (UR.PR_Type UR.univalent)))
@@ -2233,6 +2258,7 @@ Parameter Corelib__Init__Logic__iff_iso : (@UR.pr _ _ _
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__not : SProp -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__not_iso : (@UR.pr _ _ _ (@UR.URArrow UR.univalent Prop SProp Prop SProp (UR.PR_Type UR.univalent) (UR.PR_Type UR.univalent)) not
      imported_Corelib__Init__Logic__not).
 
@@ -2252,18 +2278,21 @@ Arguments Star {T} _.
 Reserved Notation "s =~ re" (at level 80).
 
 Parameter imported_LF__IndProp__regD_exp : Type -> Type.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter LF__IndProp__regD_exp_iso : (@UR.pr _ _ _ (@UR.URArrow UR.univalent Type Type Type Type (UR.PR_Type UR.univalent) (UR.PR_Type UR.univalent)) reg_exp
      imported_LF__IndProp__regD_exp).
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@reg_exp) LF__IndProp__regD_exp_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@reg_exp) LF__IndProp__regD_exp_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_LF__IndProp__Char : forall y : Type, y -> imported_LF__IndProp__regD_exp y.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter LF__IndProp__Char_iso : @Char ≈[ _] imported_LF__IndProp__Char.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Char) LF__IndProp__Char_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Char) LF__IndProp__Char_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 
 Parameter imported_LF__Poly__list : Type -> Type.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter LF__Poly__list_iso : (@UR.pr _ _ _ (@UR.URArrow UR.univalent Type Type Type Type (UR.PR_Type UR.univalent) (UR.PR_Type UR.univalent)) Datatypes.list
      imported_LF__Poly__list).
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Datatypes.list) LF__Poly__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2301,21 +2330,25 @@ Lemma char_nomatch_char :
 Proof. Admitted.
 
 Parameter imported_LF__IndProp__expD_match : forall y : Type, imported_LF__Poly__list y -> imported_LF__IndProp__regD_exp y -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter LF__IndProp__expD_match_iso : @exp_match ≈[ _] imported_LF__IndProp__expD_match.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@exp_match) LF__IndProp__expD_match_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@exp_match) LF__IndProp__expD_match_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_LF__Poly__cons : forall y : Type, y -> imported_LF__Poly__list y -> imported_LF__Poly__list y.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter LF__Poly__cons_iso : @Datatypes.cons ≈[ _] imported_LF__Poly__cons.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Datatypes.cons) LF__Poly__cons_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Datatypes.cons) LF__Poly__cons_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Stdlib__Strings__Ascii__ascii : Type.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Stdlib__Strings__Ascii__ascii_iso : (@UR.pr _ _ _ (UR.PR_Type UR.univalent) Ascii.ascii imported_Stdlib__Strings__Ascii__ascii).
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Stdlib.Strings.Ascii.ascii) Stdlib__Strings__Ascii__ascii_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Stdlib.Strings.Ascii.ascii) Stdlib__Strings__Ascii__ascii_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_LF__IndProp__charD_nomatchD_char : import_of (@char_nomatch_char).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter LF__IndProp__charD_nomatchD_char_iso : iso_statement (@char_nomatch_char) imported_LF__IndProp__charD_nomatchD_char.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@char_nomatch_char) LF__IndProp__charD_nomatchD_char_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@char_nomatch_char) LF__IndProp__charD_nomatchD_char_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2329,6 +2362,7 @@ Arguments funcomp {A B C} f g x /.
 
 
 Parameter imported_Autosubst__AutosubstD_Basics__funcomp : forall y y0 y1 : Type, (y -> y0) -> (y0 -> y1) -> y -> y1.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Autosubst__AutosubstD_Basics__funcomp_iso : (@UR.pr _ _ _
      (@UR.URForall UR.univalent Type Type (fun x : Type => forall (B C : Type) (_ : forall _ : x, B) (_ : forall _ : B, C) (_ : x), C)
         (fun H : Type => forall (y y0 : Type) (_ : forall _ : H, y) (_ : forall _ : y, y0) (_ : H), y0) (UR.PR_Type UR.univalent)
@@ -2352,6 +2386,7 @@ Parameter Autosubst__AutosubstD_Basics__funcomp_iso : (@UR.pr _ _ _
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@funcomp) Autosubst__AutosubstD_Basics__funcomp_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__nat : Type.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__nat_iso : (@UR.pr _ _ _ (UR.PR_Type UR.univalent) nat imported_Corelib__Init__Datatypes__nat).
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2359,6 +2394,7 @@ Parameter Corelib__Init__Datatypes__nat_iso : (@UR.pr _ _ _ (UR.PR_Type UR.univa
 Definition var := nat.
 
 Parameter imported_Autosubst__AutosubstD_Basics__var : Type.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Autosubst__AutosubstD_Basics__var_iso : (@UR.pr _ _ _ (UR.PR_Type UR.univalent) var imported_Autosubst__AutosubstD_Basics__var).
 
 (* Definition imported_Autosubst__AutosubstD_Basics__var := imported_Corelib__Init__Datatypes__nat.*)
@@ -2370,6 +2406,7 @@ Notation "( + x )" := (lift x) (format "( + x )").
 
 
 Parameter imported_Autosubst__AutosubstD_Basics__lift : imported_Corelib__Init__Datatypes__nat -> imported_Corelib__Init__Datatypes__nat -> imported_Corelib__Init__Datatypes__nat.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Autosubst__AutosubstD_Basics__lift_iso : (@UR.pr _ _ _
      (@UR.URArrow UR.univalent nat imported_Corelib__Init__Datatypes__nat (forall _ : nat, nat) (forall _ : imported_Corelib__Init__Datatypes__nat, imported_Corelib__Init__Datatypes__nat)
         (@UR.PR_Type_univ_univ nat imported_Corelib__Init__Datatypes__nat Corelib__Init__Datatypes__nat_iso)
@@ -2381,6 +2418,7 @@ Parameter Autosubst__AutosubstD_Basics__lift_iso : (@UR.pr _ _ _
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@lift) Autosubst__AutosubstD_Basics__lift_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__eq : forall y : Type, y -> y -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__eq_iso : (@UR.pr _ _ _
      (@UR.URForall UR.univalent Type Type (fun x : Type => forall (_ : x) (_ : x), Prop) (fun H : Type => forall (_ : H) (_ : H), SProp) (UR.PR_Type UR.univalent)
         (fun (x y : Type) (H : @UR.pr _ _ _ (UR.PR_Type UR.univalent) x y) =>
@@ -2391,13 +2429,14 @@ Parameter Corelib__Init__Logic__eq_iso : (@UR.pr _ _ _
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Nat__add : imported_Corelib__Init__Datatypes__nat -> imported_Corelib__Init__Datatypes__nat -> imported_Corelib__Init__Datatypes__nat.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Nat__add_iso : Nat.add ≈[ _] imported_Corelib__Init__Nat__add.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Nat.add) Corelib__Init__Nat__add_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Nat.add) Corelib__Init__Nat__add_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep : forall (y : Type) (y0 : y -> Type) (y1 : forall y1 : y, y0 y1) (y2 : forall y2 : y, y0 y2),
   (forall y3 : y, imported_Corelib__Init__Logic__eq (y1 y3) (y2 y3)) -> imported_Corelib__Init__Logic__eq y1 y2.
-
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep_iso : @FunctionalExtensionality.functional_extensionality_dep ≈[ _] imported_Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Stdlib.Logic.FunctionalExtensionality.functional_extensionality_dep) Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Stdlib.Logic.FunctionalExtensionality.functional_extensionality_dep) Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2423,6 +2462,7 @@ End LemmasForFun.
 
 
 Parameter imported_Autosubst__AutosubstD_Basics__liftD_compR : import_of (@lift_compR).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Autosubst__AutosubstD_Basics__liftD_compR_iso : iso_statement (@lift_compR) imported_Autosubst__AutosubstD_Basics__liftD_compR.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@lift_compR) Autosubst__AutosubstD_Basics__liftD_compR_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@lift_compR) Autosubst__AutosubstD_Basics__liftD_compR_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2630,11 +2670,13 @@ End Interface19.
 Module Type Interface16 (Import args : Args).
 
 Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__eqD_rect : import_of (@Corelib.Init.Logic.eq_rect).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__eqD_rect_iso : iso_statement (@Corelib.Init.Logic.eq_rect) imported_Corelib__Init__Logic__eqD_rect.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq_rect) Corelib__Init__Logic__eqD_rect_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq_rect) Corelib__Init__Logic__eqD_rect_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2657,26 +2699,31 @@ Goal {B : _ & PR univalent
                   B}. *)
 
 Parameter imported_Cdcl__Formula__atomT : import_of (@atomT:Type).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Cdcl__Formula__atomT_iso : iso_statement (@atomT:Type) imported_Cdcl__Formula__atomT.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@atomT:Type) Cdcl__Formula__atomT_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@atomT:Type) Cdcl__Formula__atomT_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__option : import_of (@Corelib.Init.Datatypes.option).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__option_iso : iso_statement (@Corelib.Init.Datatypes.option) imported_Corelib__Init__Datatypes__option.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__False : import_of (@Corelib.Init.Logic.False).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__False_iso : iso_statement (@Corelib.Init.Logic.False) imported_Corelib__Init__Logic__False.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.False) Corelib__Init__Logic__False_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.False) Corelib__Init__Logic__False_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__not : import_of (@Corelib.Init.Logic.not).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__not_iso : iso_statement (@Corelib.Init.Logic.not) imported_Corelib__Init__Logic__not.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.not) Corelib__Init__Logic__not_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.not) Corelib__Init__Logic__not_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__or : import_of (@Corelib.Init.Logic.or).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__or_iso : iso_statement (@Corelib.Init.Logic.or) imported_Corelib__Init__Logic__or.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.or) Corelib__Init__Logic__or_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.or) Corelib__Init__Logic__or_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2684,11 +2731,13 @@ Parameter Corelib__Init__Logic__or_iso : iso_statement (@Corelib.Init.Logic.or) 
 Fail Parameter imported_Cdcl__Formula__NBool : import_of (@NBool).
 
 Parameter imported_Corelib__Init__Datatypes__option' : import_of (@Corelib.Init.Datatypes.option : Prop -> Type).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__option_iso' : iso_statement (@Corelib.Init.Datatypes.option) imported_Corelib__Init__Datatypes__option'.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso' goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso' goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Cdcl__Formula__NBool : import_of (@NBool).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Cdcl__Formula__NBool_iso : iso_statement (@NBool) imported_Cdcl__Formula__NBool.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@NBool) Cdcl__Formula__NBool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@NBool) Cdcl__Formula__NBool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2698,11 +2747,13 @@ End Interface17.
 Module Type Interface18 (Import args : Args).
 
 Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__iff : import_of (@Corelib.Init.Logic.iff).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__iff_iso : iso_statement (@Corelib.Init.Logic.iff) imported_Corelib__Init__Logic__iff.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2711,6 +2762,7 @@ Axiom propositional_extensionality :
   forall (P Q : Prop), (P <-> Q) -> eq P Q.
 
 Parameter imported_Stdlib__Logic__PropExtensionality__propositionalD_extensionality : import_of (@propositional_extensionality).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Stdlib__Logic__PropExtensionality__propositionalD_extensionality_iso : iso_statement (@propositional_extensionality) imported_Stdlib__Logic__PropExtensionality__propositionalD_extensionality.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@propositional_extensionality) Stdlib__Logic__PropExtensionality__propositionalD_extensionality_iso goal_lhs : typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@propositional_extensionality) Stdlib__Logic__PropExtensionality__propositionalD_extensionality_iso goal_lhs : typeclass_instances.
@@ -2720,12 +2772,14 @@ End Interface18.
 Module Type Interface20 (Import args : Args).
 
 Parameter imported_Corelib__Init__Datatypes__prod : import_of (@Corelib.Init.Datatypes.prod).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__prod_iso : iso_statement
      Corelib.Init.Datatypes.prod imported_Corelib__Init__Datatypes__prod.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.prod) Corelib__Init__Datatypes__prod_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.prod) Corelib__Init__Datatypes__prod_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__prod' : SProp -> SProp -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__prod_iso' : iso_statement
      Corelib.Init.Datatypes.prod imported_Corelib__Init__Datatypes__prod'.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.prod) Corelib__Init__Datatypes__prod_iso' goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2733,12 +2787,14 @@ Parameter Corelib__Init__Datatypes__prod_iso' : iso_statement
 
 
 Parameter imported_Corelib__Init__Logic__and : import_of (@Corelib.Init.Logic.and).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__and_iso : iso_statement (@Corelib.Init.Logic.and) imported_Corelib__Init__Logic__and.
 
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.and) Corelib__Init__Logic__and_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.and) Corelib__Init__Logic__and_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__iff : import_of (@Corelib.Init.Logic.iff).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__iff_iso : iso_statement (@Corelib.Init.Logic.iff) imported_Corelib__Init__Logic__iff.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2746,6 +2802,7 @@ Parameter Corelib__Init__Logic__iff_iso : iso_statement (@Corelib.Init.Logic.iff
 Require Import ssrbool.
 
 Parameter imported_Corelib__ssr__ssrbool__pairD_andP : import_of (@Corelib.ssr.ssrbool.pair_andP).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__ssr__ssrbool__pairD_andP_iso : iso_statement (@Corelib.ssr.ssrbool.pair_andP) imported_Corelib__ssr__ssrbool__pairD_andP.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.ssr.ssrbool.pair_andP) Corelib__ssr__ssrbool__pairD_andP_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.ssr.ssrbool.pair_andP) Corelib__ssr__ssrbool__pairD_andP_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2775,12 +2832,14 @@ Require Import Ltac.
 Module Type Interface21 (Import args : Args).
 
 Parameter imported_Corelib__Init__Datatypes__bool : Type.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__bool_iso : (@UnivalentParametricity.theories.UR.pr _ _ _ (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) Corelib.Init.Datatypes.bool
      imported_Corelib__Init__Datatypes__bool).
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.bool) Corelib__Init__Datatypes__bool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.bool) Corelib__Init__Datatypes__bool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__option : Type -> Type.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__option_iso : (@UnivalentParametricity.theories.UR.pr _ _ _
      (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent Type Type Type Type
         (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent))
@@ -2789,11 +2848,13 @@ Parameter Corelib__Init__Datatypes__option_iso : (@UnivalentParametricity.theori
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__ssr__ssrbool__true : import_of (@True).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__ssr__ssrbool__pairD_true_iso : iso_statement (@True) imported_Corelib__ssr__ssrbool__true.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@True) Corelib__ssr__ssrbool__pairD_true_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@True) Corelib__ssr__ssrbool__pairD_true_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__option_Prop : SProp -> Type.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__option_iso_Prop : (@UnivalentParametricity.theories.UR.pr _ _ _
      (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent Prop SProp Type Type
         (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent))
@@ -2801,7 +2862,6 @@ Parameter Corelib__Init__Datatypes__option_iso_Prop : (@UnivalentParametricity.t
      imported_Corelib__Init__Datatypes__option_Prop).
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A: Prop => Corelib.Init.Datatypes.option A) Corelib__Init__Datatypes__option_iso_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A: Prop => Corelib.Init.Datatypes.option A) Corelib__Init__Datatypes__option_iso_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
-
 
 Definition test := None : option True.
 
@@ -2827,6 +2887,7 @@ End Interface21.
 Module Type Interface22 (Import args : Args).
 
 Parameter imported_Corelib__Init__Logic__ex : forall y : Type, (y -> SProp) -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__ex_iso : iso_statement Corelib.Init.Logic.ex imported_Corelib__Init__Logic__ex.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2842,12 +2903,14 @@ End Interface22.
 Module Type Interface23 (Import args : Args).
 
 Parameter imported_Corelib__Init__Datatypes__nat : Type.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__nat_iso : (@UnivalentParametricity.theories.UR.pr _ _ _ (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) Corelib.Init.Datatypes.nat
      imported_Corelib__Init__Datatypes__nat).
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Stdlib__Strings__String__string : Type.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Stdlib__Strings__String__string_iso : (@UnivalentParametricity.theories.UR.pr _ _ _ (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) Stdlib.Strings.String.string
      imported_Stdlib__Strings__String__string).
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Stdlib.Strings.String.string) Stdlib__Strings__String__string_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2856,6 +2919,7 @@ Parameter Stdlib__Strings__String__string_iso : (@UnivalentParametricity.theorie
 Definition total_map (A : Type) : Type := string -> A.
 
 Parameter imported_LF__Maps__totalD_map : Type -> Type.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter LF__Maps__totalD_map_iso : (@UnivalentParametricity.theories.UR.pr _ _ _
      (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent Type Type Type Type
         (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent))
@@ -2865,20 +2929,34 @@ Parameter LF__Maps__totalD_map_iso : (@UnivalentParametricity.theories.UR.pr _ _
 Definition state := total_map nat.
 
 Parameter imported_LF__Imp__state : import_of (@state).
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter LF__Imp__state_iso : iso_statement (@state) imported_LF__Imp__state.
 #[export] Hint Extern 1 => progress (unfold state) : typeclass_instances ur_typeclass_instances.
 
 End Interface23.
 
+
+Section Relation_Definition.
+
+  Variable A : Type.
+
+  Definition relation := A -> A -> Prop.
+End Relation_Definition.
+
+Set Universe Polymorphism.
+Definition relation' (A:Type) := A -> A -> Prop.
+
 Module Type Interface24 (Import args : Args).
 
 Require Import Morphisms.
 Parameter imported_Corelib__Init__Datatypes__nat : import_of nat.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__nat_iso : iso_statement nat imported_Corelib__Init__Datatypes__nat.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__iff : SProp -> SProp -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Logic__iff_iso : (@UR.pr _ _ _
      (@UR.URArrow UR.univalent Prop SProp (forall _ : Prop, Prop) (forall _ : SProp, SProp) (UR.PR_Type UR.univalent)
         (@UR.URArrow UR.univalent Prop SProp Prop SProp (UR.PR_Type UR.univalent) (UR.PR_Type UR.univalent)))
@@ -2887,6 +2965,7 @@ Parameter Corelib__Init__Logic__iff_iso : (@UR.pr _ _ _
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__S : imported_Corelib__Init__Datatypes__nat -> imported_Corelib__Init__Datatypes__nat.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__S_iso : S ≈[ _] imported_Corelib__Init__Datatypes__S.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2910,20 +2989,178 @@ End Interface24.
 
 Module Type Interface25 (Import args : Args).
 
+Parameter imported_Corelib__Init__Logic__eq : forall y : Type, y -> y -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
+Parameter Corelib__Init__Logic__eq_iso : (@UnivalentParametricity.theories.UR.pr _ _ _
+     (@UnivalentParametricity.theories.UR.URForall UnivalentParametricity.theories.UR.univalent Type Type (fun x : Type => forall (_ : x) (_ : x), Prop)
+        (fun H : Type => forall (_ : H) (_ : H), SProp) (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent)
+        (fun (x y : Type) (H : @UnivalentParametricity.theories.UR.pr _ _ _ (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) x y) =>
+         @UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent x y (forall _ : x, Prop) (forall _ : y, SProp)
+           (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x y H)
+           (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent x y Prop SProp
+              (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x y H)
+              (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent))))
+     (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq).
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__eq_Prop : import_of (fun A : Prop => @Corelib.Init.Logic.eq A).
+#[universes(polymorphic,collapse_sort_variables=no)]
+Parameter Corelib__Init__Logic__eq_iso_Prop : iso_statement (fun A : Prop => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq_Prop.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A : Prop => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A : Prop => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
+
+From Stdlib Require Import Logic.Hurkens.
+Fail Parameter imported_Stdlib__Logic__Hurkens__NoRetractToImpredicativeUniverse__paradox : import_of (@Stdlib.Logic.Hurkens.NoRetractToImpredicativeUniverse.paradox).
+
+End Interface25.
+
+Module Type Interface26 (Import args : Args).
+
+Parameter imported_Corelib__Init__Datatypes__nat : Type.
+#[universes(polymorphic,collapse_sort_variables=no)]
+Parameter Corelib__Init__Datatypes__nat_iso : (@UnivalentParametricity.theories.UR.pr _ _ _ (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) Corelib.Init.Datatypes.nat
+     imported_Corelib__Init__Datatypes__nat).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Datatypes__S : import_of (@Corelib.Init.Datatypes.S).
+#[universes(polymorphic,collapse_sort_variables=no)]
+Parameter Corelib__Init__Datatypes__S_iso : iso_statement (@Corelib.Init.Datatypes.S) imported_Corelib__Init__Datatypes__S.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__eq : forall y : Type, y -> y -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
+Parameter Corelib__Init__Logic__eq_iso : (@UnivalentParametricity.theories.UR.pr _ _ _
+     (@UnivalentParametricity.theories.UR.URForall UnivalentParametricity.theories.UR.univalent Type Type (fun x : Type => forall (_ : x) (_ : x), Prop)
+        (fun H : Type => forall (_ : H) (_ : H), SProp) (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent)
+        (fun (x y : Type) (H : @UnivalentParametricity.theories.UR.pr _ _ _ (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) x y) =>
+         @UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent x y (forall _ : x, Prop) (forall _ : y, SProp)
+           (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x y H)
+           (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent x y Prop SProp
+              (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x y H)
+              (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent))))
+     (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq).
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_Corelib__Init__Logic__eq_Prop : import_of (fun A : Prop => @Corelib.Init.Logic.eq A).
+#[universes(polymorphic,collapse_sort_variables=no)]
+Parameter Corelib__Init__Logic__eq_iso_Prop : iso_statement (fun A : Prop => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq_Prop.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A : Prop => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A : Prop => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__iff : SProp -> SProp -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
+Parameter Corelib__Init__Logic__iff_iso : (@UnivalentParametricity.theories.UR.pr _ _ _
+     (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent Prop SProp (forall _ : Prop, Prop) (forall _ : SProp, SProp)
+        (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent)
+        (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent Prop SProp Prop SProp
+           (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent)))
+     Corelib.Init.Logic.iff imported_Corelib__Init__Logic__iff).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Relations__RelationD_Definitions__relation : Type -> Type.
+Parameter Corelib__Relations__RelationD_Definitions__relation_iso : (@UnivalentParametricity.theories.UR.pr _ _ _
+     (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent Type Type Type Type
+        (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent))
+     Corelib.Relations.Relation_Definitions.relation
+     imported_Corelib__Relations__RelationD_Definitions__relation).
+#[export] Hint Extern 1 => progress (unfold Corelib.Relations.Relation_Definitions.relation) : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Classes__Morphisms__Proper : forall y : Type, (y -> y -> SProp) -> y -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
+Parameter Corelib__Classes__Morphisms__Proper_iso : (@UnivalentParametricity.theories.UR.pr _ _ _
+     (@UnivalentParametricity.theories.UR.URForall UnivalentParametricity.theories.UR.univalent Type Type (fun x : Type => forall (_ : forall (_ : x) (_ : x), Prop) (_ : x), Prop)
+        (fun H : Type => forall (_ : forall (_ : H) (_ : H), SProp) (_ : H), SProp) (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent)
+        (fun (x y : Type) (H : @UnivalentParametricity.theories.UR.pr _ _ _ (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) x y) =>
+         @UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent (forall (_ : x) (_ : x), Prop) (forall (_ : y) (_ : y), SProp) (forall _ : x, Prop)
+           (forall _ : y, SProp)
+           (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent x y (forall _ : x, Prop) (forall _ : y, SProp)
+              (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x y H)
+              (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent x y Prop SProp
+                 (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x y H)
+                 (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent)))
+           (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent x y Prop SProp
+              (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x y H)
+              (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent))))
+     (@Corelib.Classes.Morphisms.Proper)
+     imported_Corelib__Classes__Morphisms__Proper).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Classes.Morphisms.Proper) Corelib__Classes__Morphisms__Proper_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Classes.Morphisms.Proper) Corelib__Classes__Morphisms__Proper_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Classes__Morphisms__respectful : forall y y0 : Type, (y -> y -> SProp) -> (y0 -> y0 -> SProp) -> (y -> y0) -> (y -> y0) -> SProp.
+#[universes(polymorphic,collapse_sort_variables=no)]
+Parameter Corelib__Classes__Morphisms__respectful_iso : (@UnivalentParametricity.theories.UR.pr _ _ _
+     (@UnivalentParametricity.theories.UR.URForall UnivalentParametricity.theories.UR.univalent Type Type
+        (fun x : Type => forall (B : Type) (_ : forall (_ : x) (_ : x), Prop) (_ : forall (_ : B) (_ : B), Prop) (_ : forall _ : x, B) (_ : forall _ : x, B), Prop)
+        (fun H : Type => forall (y : Type) (_ : forall (_ : H) (_ : H), SProp) (_ : forall (_ : y) (_ : y), SProp) (_ : forall _ : H, y) (_ : forall _ : H, y), SProp)
+        (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent)
+        (fun (x y : Type) (H : @UnivalentParametricity.theories.UR.pr _ _ _ (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) x y) =>
+         @UnivalentParametricity.theories.UR.URForall UnivalentParametricity.theories.UR.univalent Type Type
+           (fun x0 : Type => forall (_ : forall (_ : x) (_ : x), Prop) (_ : forall (_ : x0) (_ : x0), Prop) (_ : forall _ : x, x0) (_ : forall _ : x, x0), Prop)
+           (fun y0 : Type => forall (_ : forall (_ : y) (_ : y), SProp) (_ : forall (_ : y0) (_ : y0), SProp) (_ : forall _ : y, y0) (_ : forall _ : y, y0), SProp)
+           (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent)
+           (fun (x0 y0 : Type) (H0 : @UnivalentParametricity.theories.UR.pr _ _ _ (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent) x0 y0) =>
+            @UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent (forall (_ : x) (_ : x), Prop) (forall (_ : y) (_ : y), SProp)
+              (forall (_ : forall (_ : x0) (_ : x0), Prop) (_ : forall _ : x, x0) (_ : forall _ : x, x0), Prop)
+              (forall (_ : forall (_ : y0) (_ : y0), SProp) (_ : forall _ : y, y0) (_ : forall _ : y, y0), SProp)
+              (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent x y (forall _ : x, Prop) (forall _ : y, SProp)
+                 (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x y H)
+                 (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent x y Prop SProp
+                    (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x y H)
+                    (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent)))
+              (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent (forall (_ : x0) (_ : x0), Prop) (forall (_ : y0) (_ : y0), SProp)
+                 (forall (_ : forall _ : x, x0) (_ : forall _ : x, x0), Prop) (forall (_ : forall _ : y, y0) (_ : forall _ : y, y0), SProp)
+                 (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent x0 y0 (forall _ : x0, Prop) (forall _ : y0, SProp)
+                    (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x0 y0 H0)
+                    (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent x0 y0 Prop SProp
+                       (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x0 y0 H0)
+                       (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent)))
+                 (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent (forall _ : x, x0) (forall _ : y, y0) (forall _ : forall _ : x, x0, Prop)
+                    (forall _ : forall _ : y, y0, SProp)
+                    (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent x y x0 y0
+                       (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x y H)
+                       (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x0 y0 H0))
+                    (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent (forall _ : x, x0) (forall _ : y, y0) Prop SProp
+                       (@UnivalentParametricity.theories.UR.URArrow UnivalentParametricity.theories.UR.univalent x y x0 y0
+                          (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x y H)
+                          (UnivalentParametricity.theories.UR.PR_Type_gen UnivalentParametricity.theories.UR.univalent x0 y0 H0))
+                       (UnivalentParametricity.theories.UR.PR_Type UnivalentParametricity.theories.UR.univalent)))))))
+     (@Corelib.Classes.Morphisms.respectful)
+     imported_Corelib__Classes__Morphisms__respectful).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Classes.Morphisms.respectful) Corelib__Classes__Morphisms__respectful_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Classes.Morphisms.respectful) Corelib__Classes__Morphisms__respectful_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Stdlib__Arith__PeanoNat__Nat__centralD_induction : import_of (@Stdlib.Arith.PeanoNat.Nat.central_induction).
+#[universes(polymorphic,collapse_sort_variables=no)]
+Parameter Stdlib__Arith__PeanoNat__Nat__centralD_induction_iso : iso_statement (@Stdlib.Arith.PeanoNat.Nat.central_induction) imported_Stdlib__Arith__PeanoNat__Nat__centralD_induction.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Stdlib.Arith.PeanoNat.Nat.central_induction) Stdlib__Arith__PeanoNat__Nat__centralD_induction_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Stdlib.Arith.PeanoNat.Nat.central_induction) Stdlib__Arith__PeanoNat__Nat__centralD_induction_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+End Interface26.
+
+
+Module Type Interface27 (Import args : Args).
+
 #[projections(primitive)]
 Record product (A B : Type) := mk_prod { fst : A; snd : B }.
 
 Parameter imported_Corelib__Init__Datatypes__product : import_of product.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__product_iso : iso_statement product imported_Corelib__Init__Datatypes__product.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for @product Corelib__Init__Datatypes__product_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@product) Corelib__Init__Datatypes__product_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__fst : import_of fst.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__fst_iso : iso_statement fst imported_Corelib__Init__Datatypes__fst.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for @fst Corelib__Init__Datatypes__fst_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@fst) Corelib__Init__Datatypes__fst_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__snd : import_of snd.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__snd_iso : iso_statement snd imported_Corelib__Init__Datatypes__snd.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for @snd Corelib__Init__Datatypes__snd_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@snd) Corelib__Init__Datatypes__snd_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2934,11 +3171,12 @@ intros. now destruct H.
 Qed.
 
 Parameter imported_Corelib__Init__Datatypes__app_fst : import_of app_fst.
+#[universes(polymorphic,collapse_sort_variables=no)]
 Parameter Corelib__Init__Datatypes__app_fst_iso : iso_statement app_fst imported_Corelib__Init__Datatypes__app_fst.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for @app_fst Corelib__Init__Datatypes__app_fst_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@app_fst) Corelib__Init__Datatypes__app_fst_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-End Interface25.
+End Interface27.
 
 (*
 #[export] Hint Extern 0 (Vector.t ?A ?n ≃ _) =>

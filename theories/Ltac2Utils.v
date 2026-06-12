@@ -2879,12 +2879,12 @@ Ltac2 mutable pre_tc_hint_hook () := ltac1:(pre_tc_hint_hook).
 Ltac2 mutable shelve_and_tc () := ().
 
 Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (goal_lhs : constr) :=
-  intros;
   let tac () := first
             [unshelve (eapply $lem); shelve_and_tc ()|
              pre_tc_hint_hook (); unshelve (eapply $lem); shelve_and_tc () |
              forward_apply lem goal_lhs |
              pre_tc_hint_hook () ; forward_apply lem goal_lhs|
+             intros ? ? ? ? ? ? |
              check_if_cumul goal_lhs] in
   let (goal_head, goal_args) := Constr.decompose_app goal_lhs in
   if Constr.is_proj goal_head && Constr.is_const key then
