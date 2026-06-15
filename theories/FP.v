@@ -94,10 +94,9 @@ Proof.
     now destruct H. 
 Qed. 
 
-Definition FP_Prop_Ext: UR_Type Prop SProp.
-(*   : Prop ≈u SProp. *)
+Definition FP_Prop_Ext: Prop ≈u SProp.
 Proof. cbn. 
-  unshelve refine {| Ur := {| pr := fun P Q => UR_Type@{Prop SProp SProp; _ _ _} P Q|} |}.
+  unshelve refine {| Ur := {| pr := fun P Q => UR_Type P Q|} |}.
   - repeat unshelve econstructor.
     + exact Squash.
     + exact Box.
