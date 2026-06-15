@@ -507,7 +507,7 @@ Defined.
 (* Some Ltac2 faciilites *)
 
 Ltac2 univparamtc_statement_type (f : constr) : constr :=
-  Constr.type f.
+  type_of_refresh f.
 
 Ltac2 postreduce (c : constr) :=
   eval cbn [UR.pr

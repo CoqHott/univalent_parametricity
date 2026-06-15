@@ -1982,19 +1982,7 @@ Parameter true_iso : true ≈[_] imported_true.
     true_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_eq : forall y : Type, y -> y -> SProp.
-Parameter eq_iso :
-  (@UR.pr _ _ _
-     (@UR.URForall UR.univalent Type Type
-        (fun x : Type => forall (_ : x) (_ : x), Prop)
-        (fun H : Type => forall (_ : H) (_ : H), SProp)
-        (UR.PR_Type UR.univalent)
-        (fun (x y : Type) (H : @UR.pr _ _ _ (UR.PR_Type UR.univalent) x y) =>
-         @UR.URArrow UR.univalent x y (forall _ : x, Prop)
-           (forall _ : y, SProp) (UR.PR_Type_gen UR.univalent x y H)
-           (@UR.URArrow UR.univalent x y Prop SProp
-              (UR.PR_Type_gen UR.univalent x y H)
-              (UR.PR_Type UR.univalent))))
-     (@eq) imported_eq).
+Parameter eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_eq.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
   tc_hint_for (@Corelib.Init.Logic.eq)
     eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2004,20 +1992,7 @@ Parameter eq_iso :
 
 Parameter imported_ex : forall y : Type, (y -> SProp) -> SProp.
 #[universes(polymorphic,collapse_sort_variables=no)]
-Parameter ex_iso :
-  (@UR.pr _ _ _
-     (@UR.URForall UR.univalent Type Type
-        (fun x : Type => forall _ : forall _ : x, Prop, Prop)
-        (fun H : Type => forall _ : forall _ : H, SProp, SProp)
-        (UR.PR_Type UR.univalent)
-        (fun (x y : Type) (H : @UR.pr _ _ _ (UR.PR_Type UR.univalent) x y) =>
-         @UR.URArrow UR.univalent (forall _ : x, Prop) (forall _ : y, SProp)
-           Prop SProp
-           (@UR.URArrow UR.univalent x y Prop SProp
-              (UR.PR_Type_gen UR.univalent x y H)
-              (UR.PR_Type UR.univalent))
-           (UR.PR_Type UR.univalent)))
-     ex imported_ex).
+Parameter ex_iso : iso_statement (@Corelib.Init.Logic.ex) imported_ex.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
   tc_hint_for (@Corelib.Init.Logic.ex)
     ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2026,9 +2001,7 @@ Parameter ex_iso :
     ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_key : Type.
-Parameter key_iso :
-  (@UR.pr _ _ _ (UR.PR_Type UR.univalent)
-     key imported_key).
+Parameter key_iso : iso_statement key imported_key.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
   tc_hint_for (@key)
     key_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2042,12 +2015,7 @@ Parameter key_iso :
 #[export] Hint Extern 1 => progress (unfold key) : typeclass_instances ur_typeclass_instances. *)
 
 Parameter imported_tree : Type -> Type.
-Parameter tree_iso :
-  (@UR.pr _ _ _
-     (@UR.URArrow UR.univalent Type Type Type Type
-        (UR.PR_Type UR.univalent)
-        (UR.PR_Type UR.univalent))
-     tree imported_tree).
+Parameter tree_iso : iso_statement (@tree) imported_tree.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
   tc_hint_for (@tree)
     tree_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2100,8 +2068,6 @@ End Interface9.
 Module Type Interface11 (Import args : Args).
 
 Parameter imported_Corelib__Init__Logic__True : SProp.
-(* Parameter Corelib__Init__Logic__True_iso : (UR_Type@{Type Type Type SProp Type Type Prop; _ _ _ _ _ _} True imported_Corelib__Init__Logic__True). *)
-
 Parameter Corelib__Init__Logic__True_iso : iso_statement True imported_Corelib__Init__Logic__True.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.True) Corelib__Init__Logic__True_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.True) Corelib__Init__Logic__True_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2834,10 +2800,8 @@ Parameter Corelib__Init__Logic__iff_iso : iso_statement (@Corelib.Init.Logic.iff
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Definition freshen_relation : Type -> Type := @Corelib.Relations.Relation_Definitions.relation.
-
-Parameter imported_Corelib__Relations__RelationD_Definitions__relation : import_of (@freshen_relation).
-Parameter Corelib__Relations__RelationD_Definitions__relation_iso : iso_statement freshen_relation
+Parameter imported_Corelib__Relations__RelationD_Definitions__relation : import_of (@Corelib.Relations.Relation_Definitions.relation).
+Parameter Corelib__Relations__RelationD_Definitions__relation_iso : iso_statement (@Corelib.Relations.Relation_Definitions.relation)
      imported_Corelib__Relations__RelationD_Definitions__relation.
 #[export] Hint Extern 1 => progress (unfold Corelib.Relations.Relation_Definitions.relation) : typeclass_instances ur_typeclass_instances.
 
@@ -2846,7 +2810,7 @@ Parameter Corelib__Classes__Morphisms__Proper_iso : iso_statement (@Corelib.Clas
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Classes.Morphisms.Proper) Corelib__Classes__Morphisms__Proper_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Classes.Morphisms.Proper) Corelib__Classes__Morphisms__Proper_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_Corelib__Classes__Morphisms__respectful : forall y y0 : Type, (y -> y -> SProp) -> (y0 -> y0 -> SProp) -> (y -> y0) -> (y -> y0) -> SProp.
+Parameter imported_Corelib__Classes__Morphisms__respectful : import_of (@Corelib.Classes.Morphisms.respectful).
 Parameter Corelib__Classes__Morphisms__respectful_iso : iso_statement (@Corelib.Classes.Morphisms.respectful) imported_Corelib__Classes__Morphisms__respectful.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Classes.Morphisms.respectful) Corelib__Classes__Morphisms__respectful_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Classes.Morphisms.respectful) Corelib__Classes__Morphisms__respectful_iso goal_lhs : typeclass_instances ur_typeclass_instances.

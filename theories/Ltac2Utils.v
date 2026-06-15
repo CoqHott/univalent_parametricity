@@ -2926,3 +2926,21 @@ Ltac tc_hint_for_warn key lem goal_lhs :=
 Ltac tc_hint_for_nofatal key lem goal_lhs :=
   let tac := ltac2:(key lem goal_lhs |- tc_hint_for false false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
   tac key lem goal_lhs.
+
+Ltac2 type_of_refresh c :=
+  let c := Ltac1.of_constr c in
+  let r := Ref.ref None in
+  let k c :=
+    let () := match Ltac1.to_constr c with
+    | None => ()
+    | Some c => r.(contents) := Some c
+    end in
+    (* dummy return value *)
+    ltac1val:(idtac)
+  in
+  let tac := ltac1val:(c |- fun k => let t := type of c in k t) c in
+  let () := Ltac1.apply tac [Ltac1.lambda k] (fun _ => ()) in
+  match r.(contents) with
+  | None => Control.throw Not_found
+  | Some c => c
+  end.
