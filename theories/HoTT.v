@@ -420,19 +420,18 @@ Qed.
 
 (* Equivalences *)
 
-#[universes(collapse_sort_variables=no)]
-Class IsEquiv {A : Type} {B : Type} (f : A -> B) : Type := BuildIsEquiv {
+Class IsEquiv@{sA sB;uA uB} {A : Type@{sA;uA}} {B : Type@{sB;uB}} (f : A -> B) : Type@{max(uA,uB)} := BuildIsEquiv {
   e_inv : B -> A ;
   e_sect : forall x, e_inv (f x) = x;
   e_retr : forall y, f (e_inv y) = y;
-  e_adj : forall x : A, e_retr (f x) = ap f (e_sect x);
+  e_adj : forall x : A, path@{SProp;0} _ (e_retr (f x)) (ap f (e_sect x))
 }.
 
 (** A class that includes all the data of an adjoint equivalence. *)
-#[universes(collapse_sort_variables=no)]
-Class Equiv A B : Type := BuildEquiv {
+Class Equiv@{sA sB;uA uB} (A : Type@{sA;uA}) (B : Type@{sB;uB}) : Type@{max(uA,uB)} := 
+BuildEquiv {
   e_fun : A -> B ;
-  e_isequiv : IsEquiv e_fun
+  e_isequiv : IsEquiv@{sA sB;uA uB} e_fun
 }.
 
 Hint Resolve e_isequiv : typeclass_instances.
@@ -470,7 +469,7 @@ Definition iff P Q : Type := (prod (P -> Q) (Q -> P)).
 Notation "P ↔ Q" := (iff P Q) (at level 50).
 
 #[universes(collapse_sort_variables=no)]
-Definition Equiv_iff_SProp {A B : SProp} (e : A ↔ B) : A ≃ B.
+Definition Equiv_iff_SProp {A B : SProp} (e : A ↔ B : SProp) : A ≃ B.
 Proof.
   unshelve eapply BuildEquiv.
   - exact (fun a => match e with (a2b, _) => a2b a end).
@@ -483,8 +482,7 @@ Defined.
 
 Axiom PI : forall (P : Prop) (p q : P), path@{Prop;_} _ p q.
 
-#[universes(collapse_sort_variables=no)]
-Definition Equiv_iff_Prop {A: Prop} {B: SProp} (e : A ↔ B) : Equiv@{_ _ Prop SProp;_ _ _} A B.
+Definition Equiv_iff_Prop {A: Prop} {B: SProp} (e : A ↔ B) : Equiv@{Prop SProp;_ _} A B.
 Proof.
   unshelve eapply BuildEquiv.
   - exact (fun a => match e with (a2b, _) => a2b a end).
@@ -712,9 +710,9 @@ Definition UIP (A:SProp) (x y : A) : x = y := idpath.
 Definition IsContr (A:Type) := { x : A & forall y, x = y}.
 Existing Class IsContr.
 
-Definition isequiv_hprop {A B : Type} {f: A -> B} : forall (e e' : IsEquiv f), e = e'.
+(* Definition isequiv_hprop {A B : Type} {f: A -> B} : forall (e e' : IsEquiv f), e = e'.
 Admitted.
-
+ 
 Definition path_Equiv {A B} {f g: A ≃  B} : e_fun f = e_fun g -> f = g.
   destruct f, g. cbn. intro e. destruct e.
   destruct (isequiv_hprop e_isequiv0 e_isequiv1). reflexivity.
@@ -723,12 +721,13 @@ Qed.
 Definition Equiv_inverse_inverse A B (e : A ≃ B) : Equiv_inverse (Equiv_inverse e) = e.
   intros. apply path_Equiv. reflexivity.
 Defined.
-
+*)
 Definition equiv_ind {A B} {f : A ≃  B} (P : B -> Type)
   : (forall x:A, P (e_fun f x)) -> forall y:B, P y
   := fun g y => transport_eq P (e_retr' f y) (g (e_inv' f y)).
 
 Definition apD10_gen (A : Type) (B : A -> Type) (f g : forall x : A, B x) :
   f = g -> forall x y (e:y = x), f x = e # g y.
+Proof. 
   intros H x y e. destruct e. cbn. apply apD10. auto.
 Qed.

@@ -3,7 +3,6 @@
 (************************************************************************)
 Set Polymorphic Inductive Cumulativity.
 Set Universe Polymorphism.
-Unset Universe Minimization ToSet.
 Require Import HoTT CanonicalEq URTactics.
 Require Export UnivalentParametricity.theories.UR.
 Require Import UnivalentParametricity.theories.Transportable.
@@ -15,8 +14,8 @@ Proof.
   unshelve eexists.
   - apply UR_gen.
   - apply Equiv_id.
-  - econstructor. intros; split; eauto.
-  - econstructor. reflexivity.
+  - intros ? ?; split; eauto.
+  - intros ? ?; split; eauto.
 Defined.
 
 Instance Canonical_eq_Type : Canonical_eq Type := Canonical_eq_gen _.
@@ -24,19 +23,81 @@ Instance Canonical_eq_Type : Canonical_eq Type := Canonical_eq_gen _.
 
 Definition FP_Type : Type ≈p Type := {| pr := UR_Type |}.
 
-Axiom sprop_ext : forall (P Q : SProp), P ↔ Q -> P = Q.
-Axiom prop_ext : forall (P Q : Prop), P ↔ Q -> P = Q.
+Inductive Squash (P:Prop) : SProp := sq : P -> Squash P.
+Arguments sq {P} _.
+Axiom unsquash : forall {P}, Squash P -> P.
+Axiom unsquash_eq : forall (P:Prop) (p:P), path@{Prop;_} _ (unsquash (sq p)) p.
+
+Lemma pi_Prop : forall (P:Prop) (p q : P), path@{Prop;_} _ p q.
+Proof.
+  intros P p q.
+  eapply concat. eapply inverse. exact (unsquash_eq _ p).
+  eapply concat. 2: eapply unsquash_eq. reflexivity.
+Qed.
+
+Definition UR_Type_Prop_SProp (P : Prop) (Q :SProp) : P ≈u Q -> (Squash P ↔ Q : SProp).
+Proof.
+  intros e. destruct e as [e H coh]. cbn. 
+  split.
+  - intros p. eapply H. now eapply unsquash.
+  - intros q. econstructor. now eapply H.
+Qed.
+
+Definition UR_Type_Prop_SProp_inv (P : Prop) (Q :SProp) : (Squash P ↔ Q : SProp) -> P ≈u Q.
+Proof.
+  intro e. unshelve econstructor.
+  - exact  {|pr := fun _ _  => Squash True |}.
+  - unshelve econstructor.
+    + intro p. eapply (fst e). now econstructor.
+    + unshelve econstructor.
+      * intro q. eapply unsquash. now eapply (snd e).
+      * intro p; cbn. eapply pi_Prop.
+      * intro; reflexivity.
+      * intro; reflexivity.
+  - unfold univalent_transport; cbn. intros; split; eauto.
+    + destruct 1. repeat econstructor.
+    + intros _. eapply pi_Prop.
+  - econstructor; reflexivity.
+Defined.
+
+Axiom sprop_ext : forall (P Q : SProp), (P ↔ Q:SProp) -> P = Q.
+Axiom prop_ext : forall (P Q : Prop), (P ↔ Q:Prop) -> P = Q.
 
 Inductive Box (P:SProp) : Prop := box : P -> Box P.
 
-Axiom Ur_Irr_Prop_SProp : 
-  UR_Irr Prop SProp {| pr := fun (P : Prop) (Q : SProp) => P ≈u Q |}.
+Definition path_UR_Type_uncurried {P : Prop} {Q: SProp} (u v : P ≈u Q)
+           (pq : (Ur u = Ur v) * (equiv u = equiv v))
+  : u = v.
+Proof.
+  destruct pq as [p q]. destruct u, v. simpl in *. destruct p, q. cbn in *.
+  reflexivity. 
+Defined.
 
-#[universes(polymorphic,collapse_sort_variables=no)]
-Definition FP_Prop_Ext
-  : Prop ≈u SProp.
-Proof.  
-   unshelve refine {| Ur := {| pr := fun P Q => P ≈u Q|} |}.
+Lemma Ur_Irr_Prop_SProp : 
+  UR_Irr Prop SProp {| pr := fun (P : Prop) (Q : SProp) => P ≈u Q |}.
+Proof.
+  intros P Q e e'.
+  unshelve eapply path_UR_Type_uncurried. repeat unshelve eexists.
+  - destruct e, e'. cbn. destruct Ur, Ur0.
+    eapply ap. repeat (apply funext; intro).
+    eapply sprop_ext. rewrite <- (e_retr _ x0).
+    split; intros.
+    + apply (fst (Ur_Coh0 x ((e_inv equiv0 x0)))).
+      now apply (snd (Ur_Coh x ((e_inv equiv0 x0)))) in H.
+    + apply (fst (Ur_Coh x ((e_inv equiv0 x0)))).
+      now apply (snd (Ur_Coh0 x ((e_inv equiv0 x0)))) in H.
+  - destruct e, e'. cbn. destruct equiv, equiv0.
+    unshelve eapply ap. 
+    destruct e_isequiv, e_isequiv0. 
+    assert (e_inv = e_inv0).
+    { apply funext. intro. eapply pi_Prop. }
+    now destruct H. 
+Qed. 
+
+Definition FP_Prop_Ext: UR_Type Prop SProp.
+(*   : Prop ≈u SProp. *)
+Proof. cbn. 
+  unshelve refine {| Ur := {| pr := fun P Q => UR_Type@{Prop SProp SProp; _ _ _} P Q|} |}.
   - repeat unshelve econstructor.
     + exact Squash.
     + exact Box.
@@ -45,12 +106,12 @@ Proof.
     + intros. eapply sprop_ext. split; intros.
       now destruct H as [[]]. now repeat econstructor.
     + reflexivity.
-  - econstructor. unfold univalent_transport; cbn. intros; split; eauto.
+  - unfold univalent_transport; cbn. intros; split; eauto.
     + destruct 1. eapply UR_Type_Prop_SProp_inv. split; eauto.
     + intro e. eapply UR_Type_Prop_SProp in e.  eapply prop_ext. split ; intro.
       pose proof (fst e (sq H)). now eapply unsquash in H0.
       pose proof (snd e (sq H)). now eapply unsquash in H0.
-  - apply Ur_Irr_Prop_SProp.
+  - apply Ur_Irr_Prop_SProp@{SProp;_ _ _ _ _}.
 Defined.
 
 Hint Extern 0 (Prop ≈u _) => exact FP_Prop_Ext: typeclass_instances ur_typeclass_instances.
@@ -119,34 +180,35 @@ Definition FP_forall_ur_type (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' 
   (forall x : A, B x) ≈u (forall x : A', B' x).
 Proof.
   unshelve econstructor.
-  - econstructor. intros f g. split; cbn.
-    + intros efg x y e. destruct efg.
-      destruct (Ur_Coh (eB _ y (ur_refl (UR_Type_Inverse A A' eA) y))) as [ur_coh].
+  - intros f g. split; cbn.
+    + intros efg x y e.
+      destruct efg.
+      pose (ur_coh := Ur_Coh (eB _ y (ur_refl (UR_Type_Inverse A A' eA) y))).
       cbn in ur_coh.
       pose proof (fst (ur_coh (f _) (f _)) idpath).
       unfold univalent_transport in X.
-      pose proof (snd (alt_ur_coh eA _ _) e).
-      cbn in H. destruct H^.
-      pose (Ur_Irr _ _ eA). 
-      erewrite (ur_irr _ _ _ _).
+      pose proof (H := alt_UR_Coh eA x y).
+      destruct H as [_ H].
+      specialize (H e).
+      cbn in H.
+      generalize e; clear e. rewrite H. intro e. 
+      rewrite (Ur_Irr _ _ eA _ _ e (ur_refl (UR_Type_Inverse A A' eA) y)).
       exact X.
     + intros e. apply funext. intros x.
-      destruct (Ur_Coh eA) as [ur_coh].
-      pose proof (fst (ur_coh x _) idpath).
+      pose proof (fst (Ur_Coh eA x _) idpath).
       specialize (e _ _ X). unfold univalent_transport in *.
-      destruct (Ur_Coh (eB _ _ X)) as [ur_cohB].
-      eapply (snd (ur_cohB _ _)). clear ur_cohB. unfold univalent_transport.
+      pose (ur_cohB := Ur_Coh (eB _ _ X)).
+      destruct (ur_cohB (f x) (g x)) as [_ X']. apply X'. 
+      clear ur_cohB. unfold univalent_transport.
       pose proof (e_sect (equiv eA) x).
       set (ur_refl (UR_Type_Inverse A A' eA)
             (equiv eA x)) in *. cbn in p. clearbody p.
       set (e_inv (equiv eA) (equiv eA x)) in *.
-      clearbody a. destruct H. 
-      pose (Ur_Irr _ _ eA). 
-      destruct (ur_irr _ _ X p).
-      exact e.
-  - econstructor. intros f g e e'. 
-    repeat (eapply funext; intro). pose (Ur_Irr _ _ (eB _ _ x1)).
-    now unshelve (eapply ur_irr).
+      clearbody a. revert e. generalize p; clear p. rewrite H.
+      pose (Ur_Irr _ _ eA). intro p. 
+      now rewrite (u _ _ X p).
+  - intros f g e e'. 
+    repeat (eapply funext; intro). eapply (Ur_Irr _ _ (eB _ _ x1)).
 Defined.
 
 Definition FP_forall_pr_type (A A' : Type) (eA : A ≈p A') (B : A -> Type) (B' : A' -> Type)

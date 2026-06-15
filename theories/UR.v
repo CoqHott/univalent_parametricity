@@ -25,8 +25,9 @@ Variant parametricity_kind : Set :=
   | plain
   | univalent.
 
-Class PR (k : parametricity_kind) A B : Type := {
-  pr : A -> B -> Type
+Class PR@{sA sB sR;uA uB uR} (k : parametricity_kind) 
+(A: Type@{sA;uA}) (B : Type@{sB;uB}) : Type@{max(uA,uB,uR+1)} := {
+  pr : A -> B -> Type@{sR;uR}
 }.
 
 Arguments pr k {_ _ _} a b.
@@ -34,21 +35,22 @@ Arguments pr k {_ _ _} a b.
 Notation "x ≈[ k ] y" := (pr k x y) (at level 20).
 Notation "x ≈p y" := (x ≈[plain] y) (at level 20).
 Notation "x ≈u y" := (x ≈[univalent] y) (at level 20).
-Definition PR_Type_plain@{s sA sB;uA uB uR j} : PR@{Type Type Type Type | j j j} plain Type@{sA|uA} Type@{sB|uB} :=
-  Build_PR@{Type Type Type Type | j j j} _ _ _ (PR@{Type sA sB s; uA uB uR} plain).
+Definition PR_Type_plain@{sA sB sR;uA uB uR j} : PR@{Type Type Type | j j j} plain Type@{sA|uA} Type@{sB|uB} :=
+  Build_PR@{Type Type Type | j j j} _ _ _ (PR@{sA sB sR; uA uB uR} plain).
 
-Class UR_Coh (A B :Type) (e : A ≃ B) (H: PR plain A B) : Type := {
-  ur_coh : forall (a a':A), (a = a') ↔ (a ≈p ↑ a')}.
+Definition UR_Coh@{sA sB sR;uA uB uR} (A: Type@{sA;uA}) (B : Type@{sB;uB}) 
+  (e : A ≃ B) (H: PR@{sA sB sR;uA uB uR} plain A B) := 
+  forall (a a':A), (iff@{sR sR SProp; uR uR Set uR}(a = a') (@pr _ _ _ H a (↑ a'))).
 
-Class UR_Irr (A B :Type) (H: PR plain A B) : Type := {
-  ur_irr : forall (a:A) (b:B) (e e' : a ≈p b), e = e'}.
+Definition UR_Irr@{sA sB sR;uA uB uR} (A :Type@{sA;uA}) (B :Type@{sB;uB}) (H: PR@{sA sB sR;uA uB uR} plain A B) := 
+  forall (a:A) (b:B) (e e' : a ≈p b), e = e'.
 
-Inductive UR_Type A B :=
+Record UR_Type@{sA sB sR;uA uB uR} A B : Type@{max(uA,uB,uR+1)}:=
   {
-    Ur : PR plain A B;
-    equiv : A ≃ B;
-    Ur_Coh :: UR_Coh A B equiv Ur;
-    Ur_Irr :: UR_Irr@{Type _ _ _ _; _ _ _ 0} A B Ur
+    Ur : PR@{sA sB sR;uA uB uR} plain A B;
+    equiv : Equiv@{sA sB;uA uB} A B;
+    Ur_Coh : UR_Coh@{sA sB sR;uA uB uR} A B equiv Ur;
+    Ur_Irr : UR_Irr@{sA sB sR;uA uB uR} A B Ur
   }.
 
 Ltac2 shelve_non_PR () :=
@@ -71,32 +73,30 @@ Ltac2 shelve_non_PR_multi () := Control.enter (fun _ => shelve_non_PR ()).
 
 Ltac shelve_non_PR := ltac2:(shelve_non_PR_multi ()).
 
-Definition PR_Type_univ@{sR sA sB;uA uB uR j} : PR@{Type Type Type Type ; j j j} univalent Type@{sA;uA} Type@{sB;uB} :=
-  Build_PR@{Type Type Type Type | j j j} _ _ _ UR_Type@{Type Type Type Type Type Type sA sB sR ; uA uB uR uR uR uR}.
+Definition PR_Type_univ@{sA sB sR;uA uB uR j} : PR@{Type Type Type ; j j j} univalent Type@{sA;uA} Type@{sB;uB} :=
+  Build_PR@{Type Type Type | j j j} _ _ _ UR_Type@{sA sB sR ; uA uB uR}.
 
-Definition PR_Type@{s sA sB;uA uB uR j} k : PR@{Type Type Type Type ; j j j} k Type@{sA;uA} Type@{sB;uB} :=
+Definition PR_Type@{sA sB sR;uA uB uR j} k : PR@{Type Type Type ; j j j} k Type@{sA;uA} Type@{sB;uB} :=
   match k with
-  | plain => PR_Type_plain@{s sA sB; uA uB uR j}
-  | univalent => PR_Type_univ@{s sA sB; uA uB uR j}
+  | plain => PR_Type_plain@{sA sB sR; uA uB uR j}
+  | univalent => PR_Type_univ@{sA sB sR; uA uB uR j}
   end.
 
 Arguments Ur {_ _} _.
 Arguments equiv {_ _} _.
 Arguments Ur_Coh {_ _} _.
-Arguments ur_coh {_ _ _ _ _} _ _.
 
 #[export] Hint Extern 100 (_ ≃ _) => erefineb (equiv _): typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 100 (UR_Coh _ _ _ _) => erefineb (Ur_Coh _): typeclass_instances ur_typeclass_instances.
 
-Typeclasses Opaque pr Ur equiv ur_coh Ur_Coh.
+Typeclasses Opaque pr Ur equiv UR_Coh.
 
 Ltac2 apply_PR_Type_gen () :=
   match! reverse goal with
-  | [ |- PR _ Prop  _ ] => exact (@PR_Type@{_ Prop SProp;_ _ _ _} _)
-  | [ |- PR _ SProp _ ] => exact (@PR_Type@{_ SProp SProp;_ _ _ _} _)
+  | [ |- PR _ Prop  _ ] => exact (@PR_Type@{Prop SProp SProp;_ _ _ _} _)
+  | [ |- PR _ SProp _ ] => exact (@PR_Type@{SProp SProp SProp;_ _ _ _} _)
   | [ |- PR _ _ _ ] => exact (@PR_Type _)
-  | [ |- Prop ≈[ _ ] _ ] => exact (@PR_Type@{_ Prop SProp;_ _ _ _} _)
-  | [ |- SProp ≈[ _ ] _ ] => exact (@PR_Type@{_ SProp SProp;_ _ _ _} _)
+  | [ |- Prop ≈[ _ ] _ ] => exact (@PR_Type@{Prop SProp SProp;_ _ _ _} _)
+  | [ |- SProp ≈[ _ ] _ ] => exact (@PR_Type@{SProp SProp SProp;_ _ _ _} _)
   | [ |- _ ≈[ _ ] _ ] => exact (@PR_Type _)
   end.
 
@@ -113,10 +113,9 @@ Definition PR_Type_gen k (A B:Type) (H:@pr _ _ _ (PR_Type k) A B) : PR k A B :=
   | univalent => fun H => PR_Type_univ_univ H
   end H.
 
-#[universes(polymorphic,collapse_sort_variables=no)]
 Definition UR_Type_from_Prop (P:Prop) (Q:SProp)
-  (H : UR_Type@{Type Type Type Type Type Type Prop SProp SProp; _ _ _ _ _ _} P Q) :
-  UR_Type@{Type Type Type Type Type Type Type SProp SProp; _ _ _ _ _ _} P Q.
+  (H : UR_Type@{Prop SProp SProp; _ _ _} P Q) :
+  UR_Type@{Type SProp SProp; _ _ _} P Q.
 Proof.
 unshelve econstructor.
 - assert (H' := @Ur _ _ H). econstructor. intros p q. eapply (p ≈p q).
@@ -127,17 +126,15 @@ unshelve econstructor.
     * intro x. assert (H' := e_sect (equiv H) x). cbn. rewrite H'. reflexivity.
     * intro x. assert (H' := e_retr (equiv H) x). cbn. rewrite H'. reflexivity.
     * reflexivity.
-- econstructor; eauto. assert (H' := @Ur_Coh _ _ H).
-  intros; split.
-  + intros e. eapply (fst (@ur_coh _ _ _ _ H' a a')). now destruct e.
-  + intros e. now destruct (snd (@ur_coh _ _ _ _ H' a a') e).
-- econstructor. assert (H' := @Ur_Irr _ _ H). now unshelve (eapply ur_irr).
+- intros; split.
+  + intros e. eapply (fst (Ur_Coh H a a')). now destruct e.
+  + intros e. now destruct (snd (Ur_Coh H a a') e).
+- econstructor.
 Defined.
 
-#[universes(polymorphic,collapse_sort_variables=no)]
 Definition UR_Prop_from_Type (P:Prop) (Q:SProp)
-  (H : UR_Type@{Type Type Type Type Type Type Type SProp SProp; _ _ _ _ _ _} P Q) :
-  UR_Type@{Type Type Type Type Type Type Prop SProp SProp; _ _ _ _ _ _} P Q.
+  (H : UR_Type@{Type SProp SProp; _ _ _} P Q) :
+  UR_Type@{Prop SProp SProp; _ _ _} P Q.
 Proof.
 unshelve econstructor.
 - assert (H' := @Ur _ _ H). econstructor. intros p q. eapply (p ≈p q).
@@ -148,11 +145,10 @@ unshelve econstructor.
     * intro x. eapply PI.
     * intro x. reflexivity.
     * reflexivity.
-- econstructor; eauto. assert (H' := @Ur_Coh _ _ H).
-  intros; split.
-  + intros e. eapply (fst (@ur_coh _ _ _ _ H' a a')). now destruct e.
-  + intros e. now destruct (snd (@ur_coh _ _ _ _ H' a a') e).
-- econstructor. assert (H' := @Ur_Irr _ _ H). now unshelve (eapply ur_irr).
+- intros; split.
+  + intros e. eapply (fst (Ur_Coh H a a')). now destruct e.
+  + intros e. now destruct (snd (Ur_Coh H a a') e).
+- econstructor.
 Defined.
 
 Hint Extern 1 (UR_Type ?P ?Q) => eapply UR_Type_from_Prop : typeclass_instances ur_typeclass_instances.
@@ -199,44 +195,6 @@ Ltac2 apply_Type_gen () :=
   end.
 
 #[export] Hint Extern 2 => apply_Type_gen () : typeclass_instances ur_typeclass_instances.
-
-
-Inductive Squash (P:Prop) : SProp := sq : P -> Squash P.
-Arguments sq {P} _.
-Axiom unsquash : forall {P}, Squash P -> P.
-Axiom unsquash_eq : forall (P:Prop) (p:P), path@{Prop;_} _ (unsquash (sq p)) p.
-
-Lemma pi_Prop : forall (P:Prop) (p q : P), path@{Prop;_} _ p q.
-Proof.
-  intros P p q.
-  eapply concat. eapply inverse. exact (unsquash_eq _ p).
-  eapply concat. 2: eapply unsquash_eq. reflexivity.
-Qed.
-
-Definition UR_Type_Prop_SProp (P : Prop) (Q :SProp) : P ≈u Q -> (Squash P ↔ Q : SProp).
-Proof.
-  intros e. destruct e as [e H coh]. cbn. 
-  split.
-  - intros p. eapply H. now eapply unsquash.
-  - intros q. econstructor. now eapply H.
-Qed.
-
-Definition UR_Type_Prop_SProp_inv (P : Prop) (Q :SProp) : (Squash P ↔ Q : SProp) -> P ≈u Q.
-Proof.
-  intro e. unshelve econstructor.
-  - exact  {|pr := fun _ _  => Squash True |}.
-  - unshelve econstructor.
-    + intro p. eapply (fst e). now econstructor.
-    + unshelve econstructor.
-      * intro q. eapply unsquash. now eapply (snd e).
-      * intro p; cbn. eapply pi_Prop.
-      * intro; reflexivity.
-      * intro; reflexivity.
-  - econstructor. unfold univalent_transport; cbn. intros; split; eauto.
-    + destruct 1. repeat econstructor.
-    + intros _. eapply pi_Prop.
-  - econstructor; reflexivity.
-Defined. 
 
 (* Definition of univalent relation for basic type constructors *)
 (*! Forall !*)
@@ -370,8 +328,7 @@ Ltac2 apply_var_tac_goal () :=
 Definition ur_refl {A B: Type} (e : A ≈u B) :
   forall a : A, a ≈u ↑ a.
 Proof.
-  destruct (Ur_Coh e) as [ur_coh].
-  exact (fun a => fst (ur_coh a a) idpath).
+  exact (fun a => fst (Ur_Coh e a a) idpath).
 Defined.
 
 Definition ur_refl' {A B: Type} (e : A ≈u B) :
@@ -418,20 +375,21 @@ Definition PR_inverse k {A B : Type} (ur: PR k A B) : PR k B A :=
 (* The definition of Ur_coh given in the paper is equivalent to *)
 (* the definition given here, but technically, this one is more convenient to use *)
 
-Definition alt_ur_coh {A B:Type} (H:A ≈u B)
-  (einv := Equiv_inverse (equiv H))
-  :
-  forall (a:A) (b:B), (a = ↑ b) ↔ (a ≈p b).
+Definition alt_UR_Coh@{sA sB sR;uA uB uR j +} {A : Type@{sA;uA}}
+  {B:Type@{sB;uB}} (H: A ≈u B)
+  (einv := Equiv_inverse (equiv H)) :  
+  forall (a:A) (b:B), iff@{sR sR SProp; uR uR Set uR} (a = ↑ b) (a ≈p b).
 Proof.
   intros a b. cbn. set (e_inv _ _). rewrite <- (e_sect _ b).
-  unshelve (refine (ur_coh _ _)). tc ().
+  unshelve (refine (Ur_Coh H _ _)). 
 Defined.
 
-Definition alt_ur_coh_inv {A B:Type}  (e:A ≃ B) (H:A ≈p B) (einv := Equiv_inverse e)
-           (HCoh : forall (a:A) (b:B), (a = ↑ b) ↔ (a ≈p b)):
+Definition alt_UR_Coh_inv@{sA sB sR;uA uB uR j +} {A : Type@{sA;uA}}
+      {B:Type@{sB;uB}} (e:A ≃ B) (H:A ≈p B) (einv := Equiv_inverse e)
+      (HCoh : forall (a:A) (b:B), iff@{sR sR SProp; uR uR Set uR} (a = ↑ b) (a ≈p b)):
   UR_Coh A B e H.
 Proof.
-  econstructor; intros. set a' at 2. rewrite <- (e_sect _ a').
+  intros a a'. set a' at 2. rewrite <- (e_sect _ a').
   refine (HCoh _ _).
 Defined.
 
@@ -459,13 +417,13 @@ Proof.
 intro e. unshelve econstructor.
 - eapply PR_inverse. eapply Ur. tc ().
 - apply Equiv_inverse; tc ().
-- apply alt_ur_coh_inv.
+- apply alt_UR_Coh_inv.
   intros b a. cbn.
-  destruct (alt_ur_coh e a b) as [l r].
+  destruct (alt_UR_Coh e a b) as [l r].
   split; intro.
   + eapply l. rewrite H. eapply inverse, e_sect.
   + eapply r in X. rewrite X. eapply inverse, e_retr.
-- econstructor. intros b a. cbn.  unshelve (eapply ur_irr). eapply Ur_Irr.
+- intros a b. unshelve (eapply Ur_Irr).
 Defined.
 
 Definition compat_inverse k (A A' B B':Type) (pA: PR k A A') (pB: PR k B B')
@@ -493,8 +451,7 @@ Definition Canonical_UR (A B:Type) `{A ≃ B} : A ≈u B.
 Proof.
   unshelve econstructor.
   - eapply Canonical_PR.
-  - unshelve (refine {| ur_coh := _ |}).
-    intros a a'. cbn. unfold univalent_transport.
+  - intros a a'. cbn. unfold univalent_transport.
     rewrite (e_sect' H _). split; intro; eauto.
   - econstructor; reflexivity.
 Defined.
@@ -511,10 +468,9 @@ Proof.
   unshelve econstructor.
   - eapply UR_Equiv; eauto. eapply H0.
   - apply (equiv_compose (equiv H0)). apply Equiv_inverse. exact H.
-  - econstructor.
-    intros a a'. cbn. unfold univalent_transport.
-    rewrite (e_retr' H (equiv H0 a')). apply ur_coh; tc ().
-  - econstructor. intros. cbn in *.  unshelve (eapply ur_irr).
+  - intros a a'. cbn. unfold univalent_transport.
+    rewrite (e_retr' H (equiv H0 a')). unshelve (eapply Ur_Coh); tc ().
+  - intros a b. cbn in *.  unshelve (eapply Ur_Irr).
 Defined.
 
 Definition UR_Type_Equiv' (A B C:Type) `{C ≃ A} `{A ≈u B} : C ≈u B.
@@ -522,12 +478,12 @@ Proof.
     unshelve econstructor.
   - eapply UR_Equiv'; eauto. eapply Ur. tc ().
   - apply (equiv_compose H (equiv H0)).
-  - econstructor. intros. cbn.
+  - intros ? ?. cbn.
     unfold univalent_transport.
     split; intros.
-    + exact (fst (ur_coh (H a) (H a')) (ap H H1)).
-    + eapply isequiv_ap. apply (snd (ur_coh (H a) (H a'))); tc ().
-  - econstructor. intros. cbn in *. unshelve (eapply ur_irr).
+    + unshelve (eapply (fst (Ur_Coh H0 (H a) (H a')) (ap H H1))). 
+    + eapply isequiv_ap. unshelve (eapply (snd (Ur_Coh H0 (H a) (H a')))); tc ().
+  - intros a b. cbn in *. unshelve (eapply Ur_Irr).
 Defined.
 
 Definition UR_Equiv_gen (X:Type) (eX : X ≈p X) (A B: X -> Type)
@@ -597,7 +553,6 @@ Abbreviation iso_statement f g :=
     ltac2:(Control.refine
       (fun () => iso_statement (Constr.open_pretype f) (Constr.open_pretype g) None))
   end) (only parsing).
-
 
 Abbreviation import_of f :=
   (match tt return _ with tt =>
