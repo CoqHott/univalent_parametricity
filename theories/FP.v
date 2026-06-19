@@ -82,10 +82,10 @@ Proof.
     eapply ap. repeat (apply funext; intro).
     eapply sprop_ext. rewrite <- (e_retr _ x0).
     split; intros.
-    + apply (fst (Ur_Coh0 x ((e_inv equiv0 x0)))).
-      now apply (snd (Ur_Coh x ((e_inv equiv0 x0)))) in H.
-    + apply (fst (Ur_Coh x ((e_inv equiv0 x0)))).
-      now apply (snd (Ur_Coh0 x ((e_inv equiv0 x0)))) in H.
+    + apply (fst (Ur_Coh0 x (e_inv (e_fun equiv0) x0))).
+      now apply (snd (Ur_Coh x (e_inv (e_fun equiv0) x0))) in H.
+    + apply (fst (Ur_Coh x (e_inv (e_fun equiv0) x0))).
+      now apply (snd (Ur_Coh0 x (e_inv (e_fun equiv0) x0))) in H.
   - destruct e, e'. cbn. destruct equiv, equiv0.
     unshelve eapply ap. 
     destruct e_isequiv, e_isequiv0. 
@@ -151,9 +151,9 @@ Defined.
 
 Instance isequiv_functor_forall_ur {A B : Type} `{P : A -> Type} `{Q : B -> Type} (e : B ≈u A)
   (e' :  forall x y (H:x ≈u y), Q x ≈u P y)
-: IsEquiv (functor_forall (equiv e)
+: IsEquiv (functor_forall (e_fun (equiv e))
                           (fun x =>
-                    (e_inv' ((equiv (e' x (equiv e x) (ur_refl e x))))))).
+                    (e_inv' ((equiv (e' x (e_fun (equiv e) x) (ur_refl e x))))))).
 Proof.
   apply isequiv_functor_forall.
   - apply (equiv e).
@@ -199,10 +199,10 @@ Proof.
       pose (ur_cohB := Ur_Coh (eB _ _ X)).
       destruct (ur_cohB (f x) (g x)) as [_ X']. apply X'. 
       clear ur_cohB. unfold univalent_transport.
-      pose proof (e_sect (equiv eA) x).
+      pose proof (e_sect (e_fun (equiv eA)) x).
       set (ur_refl (UR_Type_Inverse A A' eA)
-            (equiv eA x)) in *. cbn in p. clearbody p.
-      set (e_inv (equiv eA) (equiv eA x)) in *.
+            (e_fun (equiv eA) x)) in *. cbn in p. clearbody p.
+      set (e_inv (e_fun (equiv eA)) (e_fun (equiv eA) x)) in *.
       clearbody a. revert e. generalize p; clear p. rewrite H.
       pose (Ur_Irr _ _ eA). intro p. 
       now rewrite (u _ _ X p).

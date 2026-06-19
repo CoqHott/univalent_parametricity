@@ -113,6 +113,8 @@ Definition PR_Type_gen k (A B:Type) (H:@pr _ _ _ (PR_Type k) A B) : PR k A B :=
   | univalent => fun H => PR_Type_univ_univ H
   end H.
 
+Definition pr_Type_univ {A B : Type} (H: A ≈u B) : A ≈p B := Ur H.
+
 Definition UR_Type_from_Prop (P:Prop) (Q:SProp)
   (H : UR_Type@{Prop SProp SProp; _ _ _} P Q) :
   UR_Type@{Type SProp SProp; _ _ _} P Q.
@@ -122,9 +124,9 @@ unshelve econstructor.
 - unshelve econstructor.
   + eapply (equiv H).
   + unshelve econstructor.
-    * eapply (e_inv (equiv H)).
-    * intro x. assert (H' := e_sect (equiv H) x). cbn. rewrite H'. reflexivity.
-    * intro x. assert (H' := e_retr (equiv H) x). cbn. rewrite H'. reflexivity.
+    * eapply (e_inv (e_fun (equiv H))).
+    * intro x. assert (H' := e_sect (e_fun (equiv H)) x). cbn. rewrite H'. reflexivity.
+    * intro x. assert (H' := e_retr (e_fun (equiv H)) x). cbn. rewrite H'. reflexivity.
     * reflexivity.
 - intros; split.
   + intros e. eapply (fst (Ur_Coh H a a')). now destruct e.
@@ -141,7 +143,7 @@ unshelve econstructor.
 - unshelve econstructor.
   + eapply (equiv H).
   + unshelve econstructor.
-    * eapply (e_inv (equiv H)).
+    * eapply (e_inv (e_fun (equiv H))).
     * intro x. eapply PI.
     * intro x. reflexivity.
     * reflexivity.
@@ -151,12 +153,15 @@ unshelve econstructor.
 - econstructor.
 Defined.
 
-Hint Extern 1 (UR_Type ?P ?Q) => eapply UR_Type_from_Prop : typeclass_instances ur_typeclass_instances.
+Hint Extern 1 (UR_Type ?P ?Q) => erefineb (UR_Type_from_Prop _ _ _); shelve_non_PR_multi () : typeclass_instances ur_typeclass_instances.
 
-Hint Extern 1 (?P ≈[ _] ?Q) => eapply UR_Type_from_Prop : typeclass_instances ur_typeclass_instances.
+(* Definition UR_Type_from_Prop' (P:Prop) (Q:SProp)
+  (H : P ≈u Q) : (P:Type) ≈u Q := UR_Type_from_Prop P Q H.
+*)
+Hint Extern 1 (?P ≈[ _] ?Q) => erefineb (UR_Type_from_Prop _ _ _); shelve_non_PR_multi () : typeclass_instances ur_typeclass_instances.
 
-Ltac2 uR_Type_from_Prop_tac () := match! reverse goal with | [ |- UR_Type ?p ?q] => eapply (UR_Type_from_Prop $p $q) end.
-Ltac2 uR_Prop_from_Type_tac () := match! reverse goal with | [ |- UR_Type ?p ?q] => eapply (UR_Prop_from_Type $p $q) end.
+Ltac2 uR_Type_from_Prop_tac () := match! reverse goal with | [ |- ?p ≈u ?q] => erefineb (UR_Type_from_Prop $p $q _); shelve_non_PR_multi () end.
+Ltac2 uR_Prop_from_Type_tac () := match! reverse goal with | [ |- UR_Type ?p ?q] => erefineb (UR_Prop_from_Type $p $q _); shelve_non_PR_multi () end.
 
 #[global]
 Ltac2 Set pre_tc_hint_hook := fun () => first [cbn ; uR_Type_from_Prop_tac () | cbn ; uR_Prop_from_Type_tac () | ()].
@@ -263,20 +268,30 @@ Ltac2 apply_var_tac c :=
   then
     if Int.equal (Array.length c_args) 0
     then
-    let error () := match! reverse goal with
-              | [ h : @pr _ _ _ (@Ur _ _ ?pr_inst) ?c _ |- @pr _ _ _ (@Ur _ _ ?pr_inst') _ _] =>
-                if Constr.equal c_head c && hyp_not_value h
+    let error () := match! goal with
+              | [ h : @pr _ _ _ (@Ur _ _ ?pr_inst) ?c _ |- @pr _ _ _ (@Ur _ _ ?pr_inst') ?c' _] =>
+                if Constr.equal c' c && hyp_not_value h
                 then
                   let (lhs_head, rhs_head, pr_head) := failure_white_message_args_of_inst pr_inst in
                   let (lhs_head', rhs_head', pr_head') := failure_white_message_args_of_inst pr_inst' in
                   Control.throw (Tactic_failure (Some (failure_white_message_conflict lhs_head lhs_head' rhs_head rhs_head' pr_head pr_head')))
                 else
                   Control.zero Match_failure
+              | [ _ : UR_Type ?c ?d |- UR_Type ?c' ?d'] => 
+                if Constr.equal c' c && Bool.neg (Constr.equal_nocumul (Constr.type d) (Constr.type d'))
+                then
+                  Control.throw (Tactic_failure (Some (Message.concat (Message.of_string "the following variable has been used in a cumulative context: ") 
+                    (Message.concat (Message.of_constr (Constr.type d')) (Message.of_constr (Constr.type d))))))
+                else
+                  Control.zero Match_failure
               end in
     let local_assumption () := match! reverse goal with
               | [ h : @pr _ _ _ _ ?c _ |- _] =>
                 if Constr.equal c_head c && hyp_not_value h
-                then let h := Control.hyp h in exact $h else
+                then 
+                  let h := Control.hyp h in 
+                    refine $h 
+                else
                   Control.zero Match_failure
               end
     in first [local_assumption () |
@@ -289,7 +304,7 @@ Ltac2 apply_var_tac c :=
               cbn_h () ; cbn ; error ()]
     else
       let apply_h () := match! reverse goal with
-        | [ h : @pr _ _ _ ?pr_inst ?c _ |- _] => if Constr.equal c_head c && hyp_not_value h
+        | [ h : @pr _ _ _ ?pr_inst ?c _ |- _] => if Constr.equal_nocumul c_head c && hyp_not_value h
             then
               let (pr_head, _) := Constr.decompose_app_nocast pr_inst in
               if is_forall_inst pr_head
@@ -332,10 +347,10 @@ Proof.
 Defined.
 
 Definition ur_refl' {A B: Type} (e : A ≈u B) :
-  forall b : B, e_inv (equiv e) b ≈u b.
+  forall b : B, e_inv (e_fun (equiv e)) b ≈u b.
 Proof.
-  intro b; pose (p := ur_refl e). specialize (p (e_inv (equiv e) b)).
-  now rewrite (e_retr (equiv e) b) in p.
+  intro b; pose (p := ur_refl e). specialize (p (e_inv (e_fun (equiv e)) b)).
+  now rewrite (e_retr (e_fun (equiv e)) b) in p.
 Defined.
 
 Ltac2 apply_closed_tac c :=
@@ -469,7 +484,7 @@ Proof.
   - eapply UR_Equiv; eauto. eapply H0.
   - apply (equiv_compose (equiv H0)). apply Equiv_inverse. exact H.
   - intros a a'. cbn. unfold univalent_transport.
-    rewrite (e_retr' H (equiv H0 a')). unshelve (eapply Ur_Coh); tc ().
+    rewrite (e_retr' H (e_fun (equiv H0) a')). unshelve (eapply Ur_Coh); tc ().
   - intros a b. cbn in *.  unshelve (eapply Ur_Irr).
 Defined.
 
@@ -481,8 +496,8 @@ Proof.
   - intros ? ?. cbn.
     unfold univalent_transport.
     split; intros.
-    + unshelve (eapply (fst (Ur_Coh H0 (H a) (H a')) (ap H H1))). 
-    + eapply isequiv_ap. unshelve (eapply (snd (Ur_Coh H0 (H a) (H a')))); tc ().
+    + unshelve (eapply (fst (Ur_Coh H0 (e_fun H a) (e_fun H a')) (ap (e_fun H) H1))). 
+    + eapply isequiv_ap. unshelve (eapply (snd (Ur_Coh H0 (e_fun H a) (e_fun H a')))); tc ().
   - intros a b. cbn in *. unshelve (eapply Ur_Irr).
 Defined.
 
@@ -520,17 +535,16 @@ Ltac2 postreduce (c : constr) :=
     UR.URArrow
   ] in $c.
 
-Ltac2 iso_statement (f : constr) (g : constr) (fty : constr option) :=
+Ltac2 iso_statement (k:constr) (f : constr) (g : constr) (fty : constr option) :=
   let ty := match fty with Some ty => ty | None => univparamtc_statement_type f end in
-  let c := constr:(@pr univalent $ty _ _ $f $g) in
+  let c := constr:(@pr $k $ty _ _ $f $g) in
   c.
 
 Ltac2 iso_statement_with_sorts
-    (f : constr) (g : constr) (_sorts : constr list) (fty : constr option) :=
-  iso_statement f g fty.
+    (k:constr) (f : constr) (g : constr) (_sorts : constr list) (fty : constr option) :=
+  iso_statement k f g fty.
 
-
-Ltac2 import_of_with_sorts (f : constr) (sorts : constr list) (fty : constr option) :=
+Ltac2 import_of_with_sorts (k:constr) (f : constr) (sorts : constr list) (fty : constr option) :=
   let (_h, args) := Constr.decompose_app f in
   if Bool.neg (Int.equal (Array.length args) 0) then
     Control.throw
@@ -543,26 +557,44 @@ Ltac2 import_of_with_sorts (f : constr) (sorts : constr list) (fty : constr opti
     let t := '_ in
     let f2 := Fresh.in_goal @f2 in
     let _ := Constr.in_context f2 t (fun () =>
-      Control.refine (fun () => iso_statement_with_sorts f (Control.hyp f2) sorts fty)) in
+      Control.refine (fun () => iso_statement_with_sorts k f (Control.hyp f2) sorts fty)) in
     t.
 
-Ltac2 import_of (f : constr) (fty : constr option) := import_of_with_sorts f [] fty.
+Ltac2 import_of (k:constr) (f : constr) (fty : constr option) := import_of_with_sorts k f [] fty.
 
 Abbreviation iso_statement f g :=
   (match tt return _ with tt =>
     ltac2:(Control.refine
-      (fun () => iso_statement (Constr.open_pretype f) (Constr.open_pretype g) None))
+      (fun () => iso_statement 'univalent (Constr.open_pretype f) (Constr.open_pretype g) None))
+  end) (only parsing).
+
+Abbreviation iso_statement_plain f g :=
+  (match tt return _ with tt =>
+    ltac2:(Control.refine
+      (fun () => iso_statement 'plain (Constr.open_pretype f) (Constr.open_pretype g) None))
   end) (only parsing).
 
 Abbreviation import_of f :=
   (match tt return _ with tt =>
-    ltac2:(Control.refine (fun () => import_of (Constr.open_pretype_no_tc f) None))
+    ltac2:(Control.refine (fun () => import_of 'univalent (Constr.open_pretype_no_tc f) None))
   end) (only parsing).
 
+Abbreviation import_of_plain f :=
+  (match tt return _ with tt =>
+    ltac2:(Control.refine (fun () => import_of 'plain (Constr.open_pretype_no_tc f) None))
+  end) (only parsing).
+
+(*
 #[global]
 Ltac2 Set compute_triple := fun (t:constr) (f:ident) (g:ident) =>
   unshelve refine '(let t' : _ := _ in let t'' : $t ≈u @t' := _ in _); shelve_non_PR_multi ();
    Control.extend [ (fun _ => tc ()) ; (fun _ => unfold &t'; tc () ) ; (fun _ => Std.rename [(@t',f);(@t'',g)]) ] (fun _ => ()) [].
+*)
+#[global]
+Ltac2 Set compute_triple := fun (t:constr) (f:ident) (g:ident) =>
+  unshelve refine '(let t' := _ in let t'' : $t ≈u @t' := _ in _); shelve_non_PR_multi ();
+   Control.extend [ (fun _ => tc ()) ; (fun _ => unfold &t'; tc () ) ; (fun _ => Std.rename [(@t',f);(@t'',g)]) ] (fun _ => ()) [].
+
 
 #[global]
 Ltac2 Set shelve_and_tc := fun _ => shelve_non_PR_multi (); tc ().

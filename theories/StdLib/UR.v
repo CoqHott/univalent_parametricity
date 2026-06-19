@@ -41,13 +41,13 @@ Inductive PR_eq (A_1 A_2 : Type) (A_R : A_1 -> A_2 -> Type) (x_1 : A_1) (x_2 : A
    PR_idpath : PR_eq A_1 A_2 A_R x_1 x_2 x_R x_1 x_2 x_R eq_refl idpath.
 
 #[universes(collapse_sort_variables=no)]
-Instance PREq k (A_1 A_2 : Type) (A_R : A_1 ≈[k] A_2) (x_1 : A_1) (x_2 : A_2) (x_R : x_1 ≈[k] x_2)
-   (y_1 : A_1) (y_2 : A_2) (y_R : y_1 ≈[k] y_2) : PR@{Prop SProp SProp;_ _ _} k (eq x_1 y_1) (x_2 = y_2)  :=
+Instance PREq (A_1 A_2 : Type) (A_R : A_1 ≈p A_2) (x_1 : A_1) (x_2 : A_2) (x_R : x_1 ≈p x_2)
+   (y_1 : A_1) (y_2 : A_2) (y_R : y_1 ≈p y_2) : PR@{Prop SProp SProp;_ _ _} plain (eq x_1 y_1) (x_2 = y_2)  :=
   {| pr := fun e e' => PR_eq _ _ _ _ _ x_R _ _ y_R e e' |}.
 
 #[universes(collapse_sort_variables=no)]
-Instance PREq_Prop k (A_1 : Prop) (A_2 : Type) (A_R : A_1 ≈[k] A_2) (x_1 : A_1) (x_2 : A_2) (x_R : x_1 ≈[k] x_2)
-   (y_1 : A_1) (y_2 : A_2) (y_R : y_1 ≈[k] y_2) : PR@{Prop SProp SProp;_ _ _} k (eq x_1 y_1) (x_2 = y_2)  :=
+Instance PREq_Prop plain (A_1 : Prop) (A_2 : Type) (A_R : A_1 ≈p A_2) (x_1 : A_1) (x_2 : A_2) (x_R : x_1 ≈p x_2)
+   (y_1 : A_1) (y_2 : A_2) (y_R : y_1 ≈p y_2) : PR@{Prop SProp SProp;_ _ _} plain (eq x_1 y_1) (x_2 = y_2)  :=
   {| pr := fun e e' => PR_eq _ _ _ _ _ x_R _ _ y_R e e' |}.
 
 (* lists *)

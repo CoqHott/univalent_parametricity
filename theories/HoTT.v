@@ -447,8 +447,6 @@ Arguments e_isequiv {_ _ _}.
 
 Typeclasses Transparent e_fun e_inv.
 
-Coercion e_fun : Equiv >-> Funclass.
-
 #[universes(collapse_sort_variables=no)]
 Definition univalent_transport {A B : Type} {e: A ≃ B} : A -> B := e_fun e.
 

@@ -402,15 +402,13 @@ Module Constr.
 
   Ltac2 rec equal_nocumul (c1 : constr) (c2 : constr) : bool :=
     Constr.equal c1 c2 ||
-    (match Unsafe.kind c1, Unsafe.kind c2 with
+    (match Unsafe.kind_nocast c1, Unsafe.kind_nocast c2 with
     | Unsafe.Rel n1, Unsafe.Rel n2 => Int.equal n1 n2
     | Unsafe.Var id1, Unsafe.Var id2 => Ident.equal id1 id2
     | Unsafe.Meta m1, Unsafe.Meta m2 => Meta.equal m1 m2
     | Unsafe.Evar e1 l1, Unsafe.Evar e2 l2 =>
         Evar.equal e1 e2 && Array.equal equal_nocumul l1 l2
     | Unsafe.Sort s , Unsafe.Sort s' => compare_sort s s'
-    | Unsafe.Cast c1' _ t1, Unsafe.Cast c2' _ t2 =>
-        equal_nocumul c1' c2' && equal_nocumul t1 t2
     | Unsafe.Prod b1 t1, Unsafe.Prod b2 t2 =>
         equal_nocumul (Binder.type b1) (Binder.type b2)
         && equal_nocumul t1 t2
@@ -2778,8 +2776,15 @@ Ltac2 rec replace_sort_in_arity (arity : constr) (s : sort) : constr :=
   | _ =>  Control.throw (Tactic_failure (Some (Message.of_string "Not an arity")))
   end.
 
+Ltac2 get_ident (i: ident option) (x:ident) : ident :=
+  match i with
+  | Some i => i
+  | None => x
+  end.
+
 Ltac2 get_sub_type (t : constr) (args : constr list) : bool list * constr :=
   let use_cumul := Ref.ref [] in
+  let free_ids := Ref.ref (Fresh.Free.of_goal ()) in
   let rec go (acc_ty : constr) (rest : constr list) : constr :=
     match rest with
     | [] => acc_ty
@@ -2787,15 +2792,17 @@ Ltac2 get_sub_type (t : constr) (args : constr list) : bool list * constr :=
       match get_prod acc_ty with
       | None => Control.throw (Tactic_failure (Some (Message.concat (Message.of_string "Not a product") (Message.of_constr acc_ty))))
       (* acc expects an argument of type [dom] *)
-      | Some (b , dom, codom) =>
-        let bopt := Option.get b in
-        let codom_open := Constr.Unsafe.substnl [Constr.mkVar bopt] 0 codom in
+      | Some (bopt , dom, codom) =>
+        let (id,fr_ids) := Fresh.next (Ref.get free_ids) @toto in
+        Ref.set free_ids fr_ids;
+        let b := id in
+        let codom_open := Constr.Unsafe.substnl [Constr.mkVar b] 0 codom in
         match get_arity dom with
         | None =>
           Ref.set use_cumul (List.append (Ref.get use_cumul) [false]);
-          let codom_result := Constr.in_context bopt dom (fun () => Control.refine (fun _ => go codom_open tl)) in
+          let codom_result := Constr.in_context b dom (fun () => Control.refine (fun _ => go codom_open tl)) in
           let codom_result := get_body codom_result in
-          Constr.Unsafe.make (Constr.Unsafe.Prod (Constr.Binder.make b dom) codom_result)
+          Constr.Unsafe.make (Constr.Unsafe.Prod (Constr.Binder.make bopt dom) codom_result)
         | Some s =>
           let arg_ty := type_of a in
           match get_arity arg_ty with
@@ -2807,10 +2814,10 @@ Ltac2 get_sub_type (t : constr) (args : constr list) : bool list * constr :=
                   (Ref.set use_cumul (List.append (Ref.get use_cumul) [false]); dom)
                 else (Ref.set use_cumul (List.append (Ref.get use_cumul) [true]); replace_sort_in_arity dom s_arg)
               in
-              let bopt := Option.get b in
-              let codom_result := Constr.in_context bopt dom' (fun () => Control.refine (fun _ => go codom_open tl)) in
+              let b := id in
+              let codom_result := Constr.in_context b dom' (fun () => Control.refine (fun _ => go codom_open tl)) in
               let codom_result := get_body codom_result in
-              Constr.Unsafe.make (Constr.Unsafe.Prod (Constr.Binder.make b dom') codom_result)
+              Constr.Unsafe.make (Constr.Unsafe.Prod (Constr.Binder.make bopt dom') codom_result)
           end
         end
       end
@@ -2824,22 +2831,35 @@ Ltac2 Type exn ::= [ Fatal (message) ].
 Ltac2 mutable check_if_cumul_message (key : constr) (given : constr) (expected : constr) (l : bool list)   :=
   fprintf "The definition %t has type : %t but is use with type : %t. The list of arguments using cumulativity is : %s" key given expected (String.app "[ " (String.app (String.concat " , " (List.map Bool.to_string l)) " ]")).
 
-Ltac2 check_if_cumul (t:constr) :=
+Ltac2 check_if_cumul_option (t:constr) : (constr * constr * constr * bool list) option :=
   let (c_head, c_args) := Constr.decompose_app_list_nocast t in
   match get_sub_type c_head c_args with
-    (l, a) => if List.exist (fun b => Bool.equal b true) l
+    (l, a) =>  
+    if List.exist (fun b => Bool.equal b true) l
     then
-      Control.throw (Fatal (check_if_cumul_message c_head (type_of c_head) a l))
+      Some (c_head , type_of c_head, a ,l)
     else
+      None
+  end.
+
+Ltac2 check_if_cumul (m:(constr * constr * constr * bool list) option)  :=
+  match m with
+    | Some (c_head, c_type, a, l) =>  
+      Control.throw (Fatal (check_if_cumul_message c_head c_type a l))
+    | None =>
       Control.zero Match_failure
   end.
 
-Definition id {A B : Type} (P: B -> Type) (x : A) := x.
-Goal True.
+Definition id {A B : Type} (P: B -> Type) (x : A) (e:P=P) := x.
+
+Goal forall (x :nat), x = x.
 Proof.
-Fail check_if_cumul '(option True).
-Fail check_if_cumul '(prod True bool).
-Fail check_if_cumul '(@id True bool (fun x => True) I).
+Fail check_if_cumul (check_if_cumul_option '(option True)).
+Fail check_if_cumul (check_if_cumul_option '(prod True bool)).
+Fail check_if_cumul (check_if_cumul_option '(@eq True I I)).
+intros x. 
+Fail check_if_cumul (check_if_cumul_option '(@id True bool (fun x => True) I)).
+Fail check_if_cumul (check_if_cumul_option '(@eq True I I)). 
 Abort.
 
 Ltac2 mutable compute_triple (_:constr) (_:ident) (_:ident) : unit := ().
@@ -2882,10 +2902,9 @@ Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (go
   let tac () := first
             [unshelve (eapply $lem); shelve_and_tc ()|
              pre_tc_hint_hook (); unshelve (eapply $lem); shelve_and_tc () |
+             check_if_cumul (check_if_cumul_option goal_lhs) |
              forward_apply lem goal_lhs |
-             pre_tc_hint_hook () ; forward_apply lem goal_lhs|
-             intros ? ? ? ? ? ? |
-             check_if_cumul goal_lhs] in
+             pre_tc_hint_hook () ; forward_apply lem goal_lhs ] in
   let (goal_head, goal_args) := Constr.decompose_app goal_lhs in
   if Constr.is_proj goal_head && Constr.is_const key then
     match Constr.destProj goal_head, Constr.destConstant key with
