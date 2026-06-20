@@ -2698,6 +2698,17 @@ Ltac2 beta_red_flags : Std.red_flags := {
   Std.rConst := []
 }.
 
+Ltac2 iota_red_flags : Std.red_flags := {
+  Std.rStrength := Std.Head;
+  Std.rBeta := false;
+  Std.rMatch := true;
+  Std.rFix := false;
+  Std.rCofix := false;
+  Std.rZeta := false;
+  Std.rDelta := false; (** true = delta all but rConst; false = delta only on rConst*)
+  Std.rConst := []
+}.
+
 Ltac2 check_appvect (t : constr) (args: constr array) : constr result :=
   Constr.Unsafe.check  (Constr.Unsafe.make (Constr.Unsafe.App t args)).
 
@@ -2899,19 +2910,32 @@ Ltac2 mutable pre_tc_hint_hook () := ltac1:(pre_tc_hint_hook).
 Ltac2 mutable shelve_and_tc () := ().
 
 Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (goal_lhs : constr) :=
-  let tac () := first
+  let tac goal_head := 
+    match goal_head with 
+      | None => ()
+      | Some goal_head =>
+        let h := Std.eval_cbn iota_red_flags (type lem) in
+        let (_,arg) := Constr.decompose_app h in
+        let a := Std.eval_cbn iota_red_flags (type (Array.get arg 0)) in
+        let type_goal_head := type goal_head in
+        let check_goal := check_if_cumul_option goal_lhs in
+        if Option.is_none check_goal || Bool.neg (Constr.equal_nocumul type_goal_head a) then 
+         () 
+        else check_if_cumul check_goal
+     end;
+        first
             [unshelve (eapply $lem); shelve_and_tc ()|
              pre_tc_hint_hook (); unshelve (eapply $lem); shelve_and_tc () |
-             check_if_cumul (check_if_cumul_option goal_lhs) |
              forward_apply lem goal_lhs |
-             pre_tc_hint_hook () ; forward_apply lem goal_lhs ] in
+             pre_tc_hint_hook () ; forward_apply lem goal_lhs |
+             check_if_cumul (check_if_cumul_option goal_lhs) ] in
   let (goal_head, goal_args) := Constr.decompose_app goal_lhs in
   if Constr.is_proj goal_head && Constr.is_const key then
     match Constr.destProj goal_head, Constr.destConstant key with
       | (p,_,_), (const_key, _) =>
         let const_p := Option.get (Proj.to_constant p) in
         if Constant.equal const_p const_key
-        then tac ()
+        then tac None
         else Control.zero Match_failure
     end
   else
@@ -2920,14 +2944,14 @@ Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (go
       let key_app := beta_red key_app in
       if Constr.equal_nounivs goal_lhs key_app then
         if fatal then
-         tac ()
+         tac (Some goal_head)
         else if warn then
-         match Control.case_bt tac with
+         match Control.case_bt (fun () => tac (Some goal_head)) with
          | Val_bt (v, _k) => v
          | Err_bt err info => printf "Warning: %a\n" (fun () => Message.of_exn_pretty) err; Control.zero_bt err info
          end
           else
-          tac ()
+          tac (Some goal_head)
       else
         Control.zero Match_failure
     | _ => Control.zero Match_failure

@@ -3042,25 +3042,13 @@ Goal {B : _ & PR univalent (eq I I) B}.
 eexists. Fail tc.  
 Abort. 
 
+Fail Parameter imported_Stdlib__Logic__ProofIrrelevance__proofD_irrelevance : import_of (@Stdlib.Logic.ProofIrrelevance.proof_irrelevance).
 
 Parameter imported_Corelib__Init__Logic__eq' : import_of (fun A : Prop => @Corelib.Init.Logic.eq A).
 Parameter Corelib__Init__Logic__eq_iso' : iso_statement (fun A : Prop => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq'.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A : Prop => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso' goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A : Prop => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso' goal_lhs : typeclass_instances ur_typeclass_instances.
 
-
-(*
-#[universes(polymorphic,collapse_sort_variables=no)]
-Lemma proof_ir_ur : {B : _ & PR@{Prop _ _ ; _ _ _} univalent (forall (P : Prop) (p1 p2 : P), eq p1 p2) B}.
-eexists. cbn.
-ltac2:( apply_forall_tac ()). tc.
-ltac2:( apply_forall_tac ()). tc. 
-ltac2:( apply_forall_tac ()). tc.
-eapply PR_Type_univ_univ.
-unshelve eapply @Corelib__Init__Logic__eq_iso; shelve_non_PR.
-Fail tc.  
-Abort.
-*)
 Parameter imported_Stdlib__Logic__ProofIrrelevance__proofD_irrelevance : import_of (@Stdlib.Logic.ProofIrrelevance.proof_irrelevance).
 Parameter Stdlib__Logic__ProofIrrelevance__proofD_irrelevance_iso : iso_statement (@Stdlib.Logic.ProofIrrelevance.proof_irrelevance) imported_Stdlib__Logic__ProofIrrelevance__proofD_irrelevance.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Stdlib.Logic.ProofIrrelevance.proof_irrelevance) Stdlib__Logic__ProofIrrelevance__proofD_irrelevance_iso goal_lhs : typeclass_instances ur_typeclass_instances.
