@@ -3056,6 +3056,78 @@ Parameter Stdlib__Logic__ProofIrrelevance__proofD_irrelevance_iso : iso_statemen
 
 End Interface30.
 
+Module Type Interface31 (Import args : Args).
+
+From Stdlib Require Import PropExtensionality.
+From UnivalentParametricity Require Import theories.UR theories.FP.
+
+#[local] Unset Universe Polymorphism.
+#[local] Set Implicit Arguments.
+#[local] Hint Constants Opaque : typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__iff : import_of (@Corelib.Init.Logic.iff).
+(* Parameter Corelib__Init__Logic__iff_iso : iso_statement (@Corelib.Init.Logic.iff) imported_Corelib__Init__Logic__iff.
+ *)
+Parameter Corelib__Init__Logic__iff_iso : (@UR.pr UR.univalent _ _
+     (@UR.URArrow UR.univalent Prop SProp (forall _ : Prop, Prop) (forall _ : SProp, SProp) _
+        (@UR.URArrow UR.univalent Prop SProp Prop SProp _ (UR.PR_Type UR.univalent)))
+     (@Corelib.Init.Logic.iff) imported_Corelib__Init__Logic__iff).
+
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Stdlib__Logic__PropExtensionality__propositionalD_extensionality : import_of (@Stdlib.Logic.PropExtensionality.propositional_extensionality).
+
+End Interface31.
+
+Module Type Interface32 (Import args : Args).
+
+Parameter imported_Corelib__Init__Datatypes__list : import_of (@Corelib.Init.Datatypes.list).
+Parameter Corelib__Init__Datatypes__list_iso : iso_statement (@Corelib.Init.Datatypes.list) imported_Corelib__Init__Datatypes__list.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.list) Corelib__Init__Datatypes__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.list) Corelib__Init__Datatypes__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Datatypes__nat : import_of (@Corelib.Init.Datatypes.nat).
+Parameter Corelib__Init__Datatypes__nat_iso : iso_statement (@Corelib.Init.Datatypes.nat) imported_Corelib__Init__Datatypes__nat.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+From Stdlib Require Import List.
+Import ListNotations.
+Inductive sorted: Datatypes.list nat -> Prop :=
+ | sorted_nil: sorted []
+ | sorted_1: forall i, sorted (i::[])
+ | sorted_cons: forall i j l, i <= j -> sorted (j :: l) -> sorted (i :: j :: l).
+
+Parameter imported_VFA__Selection__sorted : import_of (@sorted).
+Parameter VFA__Selection__sorted_iso : iso_statement (@sorted) imported_VFA__Selection__sorted.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@sorted) VFA__Selection__sorted_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@sorted) VFA__Selection__sorted_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+End Interface32.
+
+Module Type Interface33 (Import args : Args).
+
+Parameter imported_Corelib__Init__Datatypes__prod : import_of (@Corelib.Init.Datatypes.prod).
+Parameter Corelib__Init__Datatypes__prod_iso : iso_statement (@Corelib.Init.Datatypes.prod) imported_Corelib__Init__Datatypes__prod.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.prod) Corelib__Init__Datatypes__prod_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.prod) Corelib__Init__Datatypes__prod_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Definition curry3 A1 A2 A3 B (f : Corelib.Init.Datatypes.prod (Corelib.Init.Datatypes.prod A1  A2) A3 -> B) : A1 -> A2 -> A3 -> B :=
+  fun x1 x2 x3 => f (Corelib.Init.Datatypes.pair (Corelib.Init.Datatypes.pair x1 x2) x3).
+
+Parameter imported_TLC__LibProd__curry3 : import_of (@curry3).
+Parameter TLC__LibProd__curry3_iso : iso_statement (@curry3) imported_TLC__LibProd__curry3.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@curry3) TLC__LibProd__curry3_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@curry3) TLC__LibProd__curry3_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+End Interface33.
+
 (*
 #[export] Hint Extern 0 (Vector.t ?A ?n ≃ _) =>
 erefine (ur_type (Equiv_vector_list A _ n)) : typeclass_instances ur_typeclass_instances.
