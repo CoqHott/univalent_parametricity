@@ -2793,6 +2793,25 @@ Ltac2 get_ident (i: ident option) (x:ident) : ident :=
   | None => x
   end.
 
+Ltac2 type_of_refresh c :=
+  let c := Ltac1.of_constr c in
+  let r := Ref.ref None in
+  let k c :=
+    let () := match Ltac1.to_constr c with
+    | None => ()
+    | Some c => r.(contents) := Some c
+    end in
+    (* dummy return value *)
+    ltac1val:(idtac)
+  in
+  let tac := ltac1val:(c |- fun k => let t := type of c in k t) c in
+  let () := Ltac1.apply tac [Ltac1.lambda k] (fun _ => ()) in
+  match r.(contents) with
+  | None => Control.throw Not_found
+  | Some c => c
+  end.
+
+
 Ltac2 get_sub_type (t : constr) (args : constr list) : bool list * constr :=
   let use_cumul := Ref.ref [] in
   let free_ids := Ref.ref (Fresh.Free.of_goal ()) in
@@ -2815,7 +2834,7 @@ Ltac2 get_sub_type (t : constr) (args : constr list) : bool list * constr :=
           let codom_result := get_body codom_result in
           Constr.Unsafe.make (Constr.Unsafe.Prod (Constr.Binder.make bopt dom) codom_result)
         | Some s =>
-          let arg_ty := type_of a in
+          let arg_ty := type_of_refresh a in
           match get_arity arg_ty with
           | None => Control.throw (Tactic_failure (Some (Message.concat (Message.of_string "Something went wrong") (Message.of_constr arg_ty))))
           | Some s_arg =>
@@ -2833,7 +2852,7 @@ Ltac2 get_sub_type (t : constr) (args : constr list) : bool list * constr :=
         end
       end
   end in
-  let res := go (type_of t) args in
+  let res := go (type_of_refresh t) args in
   let l := Ref.get use_cumul in
   l , res.
 
@@ -2848,7 +2867,7 @@ Ltac2 check_if_cumul_option (t:constr) : (constr * constr * constr * bool list) 
     (l, a) =>  
     if List.exist (fun b => Bool.equal b true) l
     then
-      Some (c_head , type_of c_head, a ,l)
+      Some (c_head , type_of_refresh c_head, a ,l)
     else
       None
   end.
@@ -2914,10 +2933,10 @@ Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (go
     match goal_head with 
       | None => ()
       | Some goal_head =>
-        let h := Std.eval_cbn iota_red_flags (type lem) in
+        let h := Std.eval_cbn iota_red_flags (type_of_refresh lem) in
         let (_,arg) := Constr.decompose_app h in
-        let a := Std.eval_cbn iota_red_flags (type (Array.get arg 0)) in
-        let type_goal_head := type goal_head in
+        let a := Std.eval_cbn iota_red_flags (type_of_refresh (Array.get arg 0)) in
+        let type_goal_head := type_of_refresh goal_head in
         let check_goal := check_if_cumul_option goal_lhs in
         if Option.is_none check_goal || Bool.neg (Constr.equal_nocumul type_goal_head a) then 
          () 
@@ -2969,21 +2988,3 @@ Ltac tc_hint_for_warn key lem goal_lhs :=
 Ltac tc_hint_for_nofatal key lem goal_lhs :=
   let tac := ltac2:(key lem goal_lhs |- tc_hint_for false false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
   tac key lem goal_lhs.
-
-Ltac2 type_of_refresh c :=
-  let c := Ltac1.of_constr c in
-  let r := Ref.ref None in
-  let k c :=
-    let () := match Ltac1.to_constr c with
-    | None => ()
-    | Some c => r.(contents) := Some c
-    end in
-    (* dummy return value *)
-    ltac1val:(idtac)
-  in
-  let tac := ltac1val:(c |- fun k => let t := type of c in k t) c in
-  let () := Ltac1.apply tac [Ltac1.lambda k] (fun _ => ()) in
-  match r.(contents) with
-  | None => Control.throw Not_found
-  | Some c => c
-  end.
