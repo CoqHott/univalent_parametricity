@@ -3128,6 +3128,378 @@ Parameter TLC__LibProd__curry3_iso : iso_statement (@curry3) imported_TLC__LibPr
 
 End Interface33.
 
+Module Type Interface34 (Import args : Args).
+
+Parameter imported_Corelib__Init__Logic__not : import_of (@Corelib.Init.Logic.not).
+Parameter Corelib__Init__Logic__not_iso : iso_statement (@Corelib.Init.Logic.not) imported_Corelib__Init__Logic__not.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.not) Corelib__Init__Logic__not_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.not) Corelib__Init__Logic__not_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__ssr__ssrbool__implies : import_of (@Corelib.ssr.ssrbool.implies).
+Parameter Corelib__ssr__ssrbool__implies_iso : iso_statement (@Corelib.ssr.ssrbool.implies) imported_Corelib__ssr__ssrbool__implies.
+#[export] Hint Extern 2 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.ssr.ssrbool.implies) Corelib__ssr__ssrbool__implies_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 2 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.ssr.ssrbool.implies) Corelib__ssr__ssrbool__implies_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__ssr__ssrbool__implies_Prop_Prop : import_of ((fun P Q : Prop => Corelib.ssr.ssrbool.implies P Q)).
+Parameter Corelib__ssr__ssrbool__implies_iso_Prop_Prop : iso_statement ((fun P Q : Prop => Corelib.ssr.ssrbool.implies P Q)) imported_Corelib__ssr__ssrbool__implies_Prop_Prop.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for ((fun P Q : Prop => Corelib.ssr.ssrbool.implies P Q)) Corelib__ssr__ssrbool__implies_iso_Prop_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for ((fun P Q : Prop => Corelib.ssr.ssrbool.implies P Q)) Corelib__ssr__ssrbool__implies_iso_Prop_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__ssr__ssrbool__implies_Type_Prop : import_of (fun (P : Type) (Q : Prop) => ssrbool.implies P Q).
+Parameter Corelib__ssr__ssrbool__implies_iso_Type_Prop : iso_statement (fun (P : Type) (Q : Prop) => ssrbool.implies P Q) imported_Corelib__ssr__ssrbool__implies_Type_Prop.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for ((fun (P : Type) (Q : Prop) => Corelib.ssr.ssrbool.implies P Q)) Corelib__ssr__ssrbool__implies_iso_Type_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for ((fun (P : Type) (Q : Prop) => Corelib.ssr.ssrbool.implies P Q)) Corelib__ssr__ssrbool__implies_iso_Type_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
+
+(*
+Parameter imported_Corelib__ssr__ssrbool__impliesPn : import_of (@Corelib.ssr.ssrbool.impliesPn).
+Parameter Corelib__ssr__ssrbool__impliesPn_iso : iso_statement (@Corelib.ssr.ssrbool.impliesPn) imported_Corelib__ssr__ssrbool__impliesPn.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.ssr.ssrbool.impliesPn) Corelib__ssr__ssrbool__impliesPn_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.ssr.ssrbool.impliesPn) Corelib__ssr__ssrbool__impliesPn_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor (@Corelib.ssr.ssrbool.impliesPn)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+*)
+End Interface34.
+
+Module Type Interface35 (Import args : Args).
+From Stdlib Require Import Reals.ROrderedType.
+Parameter imported_Stdlib__Reals__ROrderedType__RD_asD_OT__t : import_of (@Stdlib.Reals.ROrderedType.R_as_OT.t).
+Parameter Stdlib__Reals__ROrderedType__RD_asD_OT__t_iso : iso_statement (@Stdlib.Reals.ROrderedType.R_as_DT.t) imported_Stdlib__Reals__ROrderedType__RD_asD_OT__t.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Stdlib.Reals.ROrderedType.R_as_OT.t) Stdlib__Reals__ROrderedType__RD_asD_OT__t_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Stdlib.Reals.ROrderedType.R_as_OT.t) Stdlib__Reals__ROrderedType__RD_asD_OT__t_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+End Interface35.
+
+(*
+Module Type Interface36 (Import args : Args).
+
+From Stdlib Require Import Formula. 
+Parameter imported_Cdcl__Formula__IntMap__ptrie : Type -> Type -> Type.
+Parameter Cdcl__Formula__IntMap__ptrie_iso : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type (forall _ : Type, Type) (forall _ : Type, Type) (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+        (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type Type Type (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+           (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)))
+     Formula.IntMap.ptrie imported_Cdcl__Formula__IntMap__ptrie).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Cdcl.Formula.IntMap.ptrie) Cdcl__Formula__IntMap__ptrie_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Cdcl.Formula.IntMap.ptrie) Cdcl__Formula__IntMap__ptrie_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor (@Cdcl.Formula.IntMap.ptrie)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Datatypes__nat : Type.
+Parameter Corelib__Init__Datatypes__nat_iso : (@UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) nat imported_Corelib__Init__Datatypes__nat).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor (@Corelib.Init.Datatypes.nat)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Datatypes__prod : Type -> Type -> Type.
+Parameter Corelib__Init__Datatypes__prod_iso : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type (forall _ : Type, Type) (forall _ : Type, Type) (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+        (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type Type Type (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+           (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)))
+     prod imported_Corelib__Init__Datatypes__prod).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.prod) Corelib__Init__Datatypes__prod_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.prod) Corelib__Init__Datatypes__prod_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor (@Corelib.Init.Datatypes.prod)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Numbers__BinNums__Z : Type.
+Parameter Corelib__Numbers__BinNums__Z_iso : (@UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) BinNums.Z imported_Corelib__Numbers__BinNums__Z).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Numbers.BinNums.Z) Corelib__Numbers__BinNums__Z_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Numbers.BinNums.Z) Corelib__Numbers__BinNums__Z_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor (@Corelib.Numbers.BinNums.Z)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int : Type.
+Parameter Corelib__Numbers__Cyclic__Int63__PrimInt63__int_iso : (@UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Numbers.Cyclic.Int63.PrimInt63.int) Corelib__Numbers__Cyclic__Int63__PrimInt63__int_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Numbers.Cyclic.Int63.PrimInt63.int) Corelib__Numbers__Cyclic__Int63__PrimInt63__int_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor (@Corelib.Numbers.Cyclic.Int63.PrimInt63.int)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Cdcl__Formula__hmap : Type.
+Parameter Cdcl__Formula__hmap_iso : (@UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) Formula.hmap imported_Cdcl__Formula__hmap).
+#[export] Hint Extern 1 => progress (unfold Cdcl.Formula.hmap) : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Datatypes__bool : Type.
+Parameter Corelib__Init__Datatypes__bool_iso : (@UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) bool imported_Corelib__Init__Datatypes__bool).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.bool) Corelib__Init__Datatypes__bool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.bool) Corelib__Init__Datatypes__bool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor (@Corelib.Init.Datatypes.bool)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__eqb : imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int -> imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int -> imported_Corelib__Init__Datatypes__bool.
+Parameter Corelib__Numbers__Cyclic__Int63__PrimInt63__eqb_iso : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+        (forall _ : Corelib.Numbers.Cyclic.Int63.PrimInt63.int, bool) (forall _ : imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int, imported_Corelib__Init__Datatypes__bool)
+        (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+           Corelib__Numbers__Cyclic__Int63__PrimInt63__int_iso)
+        (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int bool
+           imported_Corelib__Init__Datatypes__bool
+           (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+              Corelib__Numbers__Cyclic__Int63__PrimInt63__int_iso)
+           (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} bool imported_Corelib__Init__Datatypes__bool Corelib__Init__Datatypes__bool_iso)))
+     Corelib.Numbers.Cyclic.Int63.PrimInt63.eqb imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__eqb).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Numbers.Cyclic.Int63.PrimInt63.eqb) Corelib__Numbers__Cyclic__Int63__PrimInt63__eqb_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Numbers.Cyclic.Int63.PrimInt63.eqb) Corelib__Numbers__Cyclic__Int63__PrimInt63__eqb_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor (@Corelib.Numbers.Cyclic.Int63.PrimInt63.eqb)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__land : imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int -> imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int -> imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int.
+Parameter Corelib__Numbers__Cyclic__Int63__PrimInt63__land_iso : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+        (forall _ : Corelib.Numbers.Cyclic.Int63.PrimInt63.int, Corelib.Numbers.Cyclic.Int63.PrimInt63.int)
+        (forall _ : imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int, imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int)
+        (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+           Corelib__Numbers__Cyclic__Int63__PrimInt63__int_iso)
+        (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+           Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+           (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+              Corelib__Numbers__Cyclic__Int63__PrimInt63__int_iso)
+           (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+              Corelib__Numbers__Cyclic__Int63__PrimInt63__int_iso)))
+     Corelib.Numbers.Cyclic.Int63.PrimInt63.land imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__land).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Numbers.Cyclic.Int63.PrimInt63.land) Corelib__Numbers__Cyclic__Int63__PrimInt63__land_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Numbers.Cyclic.Int63.PrimInt63.land) Corelib__Numbers__Cyclic__Int63__PrimInt63__land_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor (@Corelib.Numbers.Cyclic.Int63.PrimInt63.land)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__lsr : imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int -> imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int -> imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int.
+Parameter Corelib__Numbers__Cyclic__Int63__PrimInt63__lsr_iso : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+        (forall _ : Corelib.Numbers.Cyclic.Int63.PrimInt63.int, Corelib.Numbers.Cyclic.Int63.PrimInt63.int)
+        (forall _ : imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int, imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int)
+        (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+           Corelib__Numbers__Cyclic__Int63__PrimInt63__int_iso)
+        (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+           Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+           (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+              Corelib__Numbers__Cyclic__Int63__PrimInt63__int_iso)
+           (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} Corelib.Numbers.Cyclic.Int63.PrimInt63.int imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__int
+              Corelib__Numbers__Cyclic__Int63__PrimInt63__int_iso)))
+     Corelib.Numbers.Cyclic.Int63.PrimInt63.lsr imported_Corelib__Numbers__Cyclic__Int63__PrimInt63__lsr).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Numbers.Cyclic.Int63.PrimInt63.lsr) Corelib__Numbers__Cyclic__Int63__PrimInt63__lsr_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Numbers.Cyclic.Int63.PrimInt63.lsr) Corelib__Numbers__Cyclic__Int63__PrimInt63__lsr_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor (@Corelib.Numbers.Cyclic.Int63.PrimInt63.lsr)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Stdlib__micromega__ZifyClasses__InjTyp : Type -> Type -> Type.
+Parameter Stdlib__micromega__ZifyClasses__InjTyp_iso : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type (forall _ : Type, Type) (forall _ : Type, Type) (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+        (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type Type Type (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+           (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)))
+     ZifyClasses.InjTyp imported_Stdlib__micromega__ZifyClasses__InjTyp).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Stdlib.micromega.ZifyClasses.InjTyp) Stdlib__micromega__ZifyClasses__InjTyp_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Stdlib.micromega.ZifyClasses.InjTyp) Stdlib__micromega__ZifyClasses__InjTyp_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor (@Stdlib.micromega.ZifyClasses.InjTyp)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+Definition plain_imported_Stdlib__micromega__ZifyClasses__InjTyp : Type -> Type -> Type := imported_Stdlib__micromega__ZifyClasses__InjTyp.
+Parameter Stdlib__micromega__ZifyClasses__InjTyp_iso_plain : plain_iso_statement (@Stdlib.micromega.ZifyClasses.InjTyp) plain_imported_Stdlib__micromega__ZifyClasses__InjTyp.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Stdlib.micromega.ZifyClasses.InjTyp) Stdlib__micromega__ZifyClasses__InjTyp_iso_plain goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Stdlib.micromega.ZifyClasses.InjTyp) Stdlib__micromega__ZifyClasses__InjTyp_iso_plain goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor (@Stdlib.micromega.ZifyClasses.InjTyp)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Stdlib__micromega__ZifyUint63__InjD_intD_Z : import_of (@Stdlib.micromega.ZifyUint63.Inj_int_Z).
+Parameter Stdlib__micromega__ZifyUint63__InjD_intD_Z_iso : iso_statement (@Stdlib.micromega.ZifyUint63.Inj_int_Z) imported_Stdlib__micromega__ZifyUint63__InjD_intD_Z.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Stdlib.micromega.ZifyUint63.Inj_int_Z) Stdlib__micromega__ZifyUint63__InjD_intD_Z_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Stdlib.micromega.ZifyUint63.Inj_int_Z) Stdlib__micromega__ZifyUint63__InjD_intD_Z_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor (@Stdlib.micromega.ZifyUint63.Inj_int_Z)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+End Interface37.
+*)
+Module Type Interface36 (Import args : Args).
+
+Class Monad@{d c} (m : Type@{d} -> Type@{c}) : Type :=
+{ ret : forall {t : Type@{d}}, t -> m t
+; bind : forall {t u : Type@{d}}, m t -> (t -> m u) -> m u
+}.
+
+Parameter imported_ExtLib__Structures__Monad__Monad : (Type -> Type) -> Type.
+Parameter ExtLib__Structures__Monad__Monad_iso : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent (forall _ : Type, Type) (forall _ : Type, Type) Type Type
+        (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type Type Type (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+           (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent))
+        (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent))
+     Monad imported_ExtLib__Structures__Monad__Monad).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Monad) ExtLib__Structures__Monad__Monad_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Monad) ExtLib__Structures__Monad__Monad_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Definition plain_imported_ExtLib__Structures__Monad__Monad : (Type -> Type) -> Type := imported_ExtLib__Structures__Monad__Monad.
+Parameter ExtLib__Structures__Monad__Monad_iso_plain : iso_statement (@Monad) plain_imported_ExtLib__Structures__Monad__Monad.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Monad) ExtLib__Structures__Monad__Monad_iso_plain goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Monad) ExtLib__Structures__Monad__Monad_iso_plain goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter IO : Type -> Type.
+
+Parameter imported_SimpleIO__IOD_Monad__IO : Type -> Type.
+Parameter SimpleIO__IOD_Monad__IO_iso : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type Type Type (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+        (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent))
+     IO imported_SimpleIO__IOD_Monad__IO).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@IO) SimpleIO__IOD_Monad__IO_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@IO) SimpleIO__IOD_Monad__IO_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter IObind : forall {a b}, IO a -> (a -> IO b) -> IO b.
+
+Parameter imported_SimpleIO__IOD_Monad__IO__bind : forall y y0 : Type, imported_SimpleIO__IOD_Monad__IO y -> (y -> imported_SimpleIO__IOD_Monad__IO y0) -> imported_SimpleIO__IOD_Monad__IO y0.
+Parameter SimpleIO__IOD_Monad__IO__bind_iso : (@UR.pr _ _ _
+     (@UR.URForall@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type (fun x : Type => forall (b : Type) (_ : IO x) (_ : forall _ : x, IO b), IO b)
+        (fun H : Type => forall (y : Type) (_ : imported_SimpleIO__IOD_Monad__IO H) (_ : forall _ : H, imported_SimpleIO__IOD_Monad__IO y), imported_SimpleIO__IOD_Monad__IO y)
+        (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+        (fun (x y : Type) (H : @UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) x y) =>
+         @UR.URForall@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type (fun x0 : Type => forall (_ : IO x) (_ : forall _ : x, IO x0), IO x0)
+           (fun y0 : Type => forall (_ : imported_SimpleIO__IOD_Monad__IO y) (_ : forall _ : y, imported_SimpleIO__IOD_Monad__IO y0), imported_SimpleIO__IOD_Monad__IO y0)
+           (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+           (fun (x0 y0 : Type) (H0 : @UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) x0 y0) =>
+            @UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent (IO x) (imported_SimpleIO__IOD_Monad__IO y) (forall _ : forall _ : x, IO x0, IO x0)
+              (forall _ : forall _ : y, imported_SimpleIO__IOD_Monad__IO y0, imported_SimpleIO__IOD_Monad__IO y0)
+              (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} (IO x) (imported_SimpleIO__IOD_Monad__IO y) (@SimpleIO__IOD_Monad__IO_iso x y H))
+              (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent (forall _ : x, IO x0) (forall _ : y, imported_SimpleIO__IOD_Monad__IO y0) 
+                 (IO x0) (imported_SimpleIO__IOD_Monad__IO y0)
+                 (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent x y (IO x0) (imported_SimpleIO__IOD_Monad__IO y0)
+                    (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.univalent x y H)
+                    (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} (IO x0) (imported_SimpleIO__IOD_Monad__IO y0) (@SimpleIO__IOD_Monad__IO_iso x0 y0 H0)))
+                 (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} (IO x0) (imported_SimpleIO__IOD_Monad__IO y0) (@SimpleIO__IOD_Monad__IO_iso x0 y0 H0))))))
+     (@IObind) imported_SimpleIO__IOD_Monad__IO__bind).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@IObind) SimpleIO__IOD_Monad__IO__bind_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@IObind) SimpleIO__IOD_Monad__IO__bind_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter IOret : forall {a}, a -> IO a.
+
+Parameter imported_SimpleIO__IOD_Monad__IO__ret : forall y : Type, y -> imported_SimpleIO__IOD_Monad__IO y.
+Parameter SimpleIO__IOD_Monad__IO__ret_iso : (@UR.pr _ _ _
+     (@UR.URForall@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type (fun x : Type => forall _ : x, IO x)
+        (fun H : Type => forall _ : H, imported_SimpleIO__IOD_Monad__IO H) (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+        (fun (x y : Type) (H : @UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) x y) =>
+         @UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent x y (IO x) (imported_SimpleIO__IOD_Monad__IO y)
+           (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.univalent x y H)
+           (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} (IO x) (imported_SimpleIO__IOD_Monad__IO y) (@SimpleIO__IOD_Monad__IO_iso x y H))))
+     (@IOret) imported_SimpleIO__IOD_Monad__IO__ret).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@IOret) SimpleIO__IOD_Monad__IO__ret_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@IOret) SimpleIO__IOD_Monad__IO__ret_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Global Instance Monad_IO : Monad IO := {
+  ret _ := IOret;
+  bind _ _ := IObind;
+}.
+
+Parameter imported_SimpleIO__IOD_Monad__MonadD_IO : import_of (@Monad_IO).
+Parameter SimpleIO__IOD_Monad__MonadD_IO_iso : iso_statement (@Monad_IO) imported_SimpleIO__IOD_Monad__MonadD_IO.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Monad_IO) SimpleIO__IOD_Monad__MonadD_IO_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+End Interface36.
+
+Module Type Interface37 (Import args : Args).
+
+Parameter imported_Corelib__Init__Logic__and : SProp -> SProp -> SProp.
+Parameter Corelib__Init__Logic__and_iso : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Prop SProp (forall _ : Prop, Prop) (forall _ : SProp, SProp) (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent)
+        (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Prop SProp Prop SProp (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent)
+           (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent)))
+     and imported_Corelib__Init__Logic__and).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.and) Corelib__Init__Logic__and_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.and) Corelib__Init__Logic__and_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+(* Definition plain_imported_Corelib__Init__Logic__and : SProp -> SProp -> SProp := imported_Corelib__Init__Logic__and.
+Parameter Corelib__Init__Logic__and_iso_plain : iso_statement (@Corelib.Init.Logic.and) plain_imported_Corelib__Init__Logic__and.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.and) Corelib__Init__Logic__and_iso_plain goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.and) Corelib__Init__Logic__and_iso_plain goal_lhs : typeclass_instances ur_typeclass_instances.
+ *)
+Parameter imported_Corelib__Init__Logic__ex : forall y : Type, (y -> SProp) -> SProp.
+Parameter Corelib__Init__Logic__ex_iso : (@UR.pr _ _ _
+     (@UR.URForall@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type (fun x : Type => forall _ : forall _ : x, Prop, Prop)
+        (fun H : Type => forall _ : forall _ : H, SProp, SProp) (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+        (fun (x y : Type) (H : @UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) x y) =>
+         @UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent (forall _ : x, Prop) (forall _ : y, SProp) Prop SProp
+           (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent x y Prop SProp (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.univalent x y H)
+              (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent))
+           (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent)))
+     ex imported_Corelib__Init__Logic__ex).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__subrelation : forall y y0 : Type, (y -> y0 -> SProp) -> (y -> y0 -> SProp) -> SProp.
+Parameter Corelib__Init__Logic__subrelation_iso : (@UR.pr _ _ _
+     (@UR.URForall@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type
+        (fun x : Type => forall (B : Type) (_ : forall (_ : x) (_ : B), Prop) (_ : forall (_ : x) (_ : B), Prop), Prop)
+        (fun H : Type => forall (y : Type) (_ : forall (_ : H) (_ : y), SProp) (_ : forall (_ : H) (_ : y), SProp), SProp) (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+        (fun (x y : Type) (H : @UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) x y) =>
+         @UR.URForall@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type
+           (fun x0 : Type => forall (_ : forall (_ : x) (_ : x0), Prop) (_ : forall (_ : x) (_ : x0), Prop), Prop)
+           (fun y0 : Type => forall (_ : forall (_ : y) (_ : y0), SProp) (_ : forall (_ : y) (_ : y0), SProp), SProp) (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+           (fun (x0 y0 : Type) (H0 : @UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) x0 y0) =>
+            @UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent (forall (_ : x) (_ : x0), Prop) (forall (_ : y) (_ : y0), SProp)
+              (forall _ : forall (_ : x) (_ : x0), Prop, Prop) (forall _ : forall (_ : y) (_ : y0), SProp, SProp)
+              (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent x y (forall _ : x0, Prop) (forall _ : y0, SProp)
+                 (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.univalent x y H)
+                 (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent x0 y0 Prop SProp (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.univalent x0 y0 H0)
+                    (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent)))
+              (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent (forall (_ : x) (_ : x0), Prop) (forall (_ : y) (_ : y0), SProp) Prop SProp
+                 (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent x y (forall _ : x0, Prop) (forall _ : y0, SProp)
+                    (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.univalent x y H)
+                    (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent x0 y0 Prop SProp (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.univalent x0 y0 H0)
+                       (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent)))
+                 (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent)))))
+     subrelation imported_Corelib__Init__Logic__subrelation).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.subrelation) Corelib__Init__Logic__subrelation_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.subrelation) Corelib__Init__Logic__subrelation_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__unique : forall y : Type, (y -> SProp) -> y -> SProp.
+Parameter Corelib__Init__Logic__unique_iso : (@UR.pr _ _ _
+     (@UR.URForall@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type (fun x : Type => forall (_ : forall _ : x, Prop) (_ : x), Prop)
+        (fun H : Type => forall (_ : forall _ : H, SProp) (_ : H), SProp) (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+        (fun (x y : Type) (H : @UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) x y) =>
+         @UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent (forall _ : x, Prop) (forall _ : y, SProp) (forall _ : x, Prop) (forall _ : y, SProp)
+           (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent x y Prop SProp (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.univalent x y H)
+              (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent))
+           (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent x y Prop SProp (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.univalent x y H)
+              (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent))))
+     unique imported_Corelib__Init__Logic__unique).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.unique) Corelib__Init__Logic__unique_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.unique) Corelib__Init__Logic__unique_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+From Stdlib Require Import Logic.RelationalChoice.
+
+Parameter imported_Stdlib__Logic__RelationalChoice__relationalD_choice : import_of (@Stdlib.Logic.RelationalChoice.relational_choice).
+Parameter Stdlib__Logic__RelationalChoice__relationalD_choice_iso : iso_statement (@Stdlib.Logic.RelationalChoice.relational_choice) imported_Stdlib__Logic__RelationalChoice__relationalD_choice.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Stdlib.Logic.RelationalChoice.relational_choice) Stdlib__Logic__RelationalChoice__relationalD_choice_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Stdlib.Logic.RelationalChoice.relational_choice) Stdlib__Logic__RelationalChoice__relationalD_choice_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+End Interface37.
+
+Module Type Interface38 (Import args : Args).
+
+Parameter imported_Corelib__Init__Datatypes__nat : Type.
+Parameter Corelib__Init__Datatypes__nat_iso : (@UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) nat imported_Corelib__Init__Datatypes__nat).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__ex : forall y : Type, (y -> SProp) -> SProp.
+Parameter Corelib__Init__Logic__ex_iso : iso_statement
+     ex imported_Corelib__Init__Logic__ex.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Inductive bool : Type :=
+  | true : bool
+  | false : bool.
+
+Parameter imported_LF__Basics__bool : Type.
+Parameter LF__Basics__bool_iso : (@UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) bool imported_LF__Basics__bool).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@bool) LF__Basics__bool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@bool) LF__Basics__bool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Inductive Toy : Type := 
+  | con1 : bool -> Toy
+  | con2 : nat -> Toy -> Toy.
+
+Parameter imported_LF__IndPrinciples__Toy : Type.
+Parameter LF__IndPrinciples__Toy_iso : (@UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) Toy imported_LF__IndPrinciples__Toy).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Toy) LF__IndPrinciples__Toy_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Toy) LF__IndPrinciples__Toy_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Theorem Toy_correct : exists f g,
+  forall P : Toy -> Prop,
+    (forall b : bool, P (f b)) ->
+    (forall (n : nat) (t : Toy), P t -> P (g n t)) ->
+    forall t : Toy, P t.
+Admitted. 
+
+Parameter imported_LF__IndPrinciples__ToyD_correct : import_of (@Toy_correct).
+Parameter LF__IndPrinciples__ToyD_correct_iso : iso_statement (@Toy_correct) imported_LF__IndPrinciples__ToyD_correct.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Toy_correct) LF__IndPrinciples__ToyD_correct_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Toy_correct) LF__IndPrinciples__ToyD_correct_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+End Interface38.
+
 (*
 #[export] Hint Extern 0 (Vector.t ?A ?n ≃ _) =>
 erefine (ur_type (Equiv_vector_list A _ n)) : typeclass_instances ur_typeclass_instances.

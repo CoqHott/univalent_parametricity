@@ -189,8 +189,8 @@ Ltac2 check_blacklist_PR_Type (lhs:constr) :=
 Ltac2 apply_Type_gen () :=
   match! goal with
   | [ |- PR _ ?lhs ?rhs] =>
-    if (check_blacklist_PR_Type lhs && Bool.neg (head_is_var lhs)) ||
-       (check_blacklist_PR_Type rhs && Bool.neg (head_is_var rhs))
+    if (check_blacklist_PR_Type lhs) ||
+       (check_blacklist_PR_Type rhs)
     then
       first [
           erefineb (PR_Type_univ_univ _); shelve_non_PR_multi () |
@@ -257,6 +257,11 @@ Ltac2 print_ur () :=
       Control.throw (Tactic_failure (Some (failure_white_message lhs_head rhs_head pr_head)))
   end.
 
+Ltac2 refine_n_holes (c : constr) (n : int) : unit :=
+  Control.refine (fun () =>
+    let holes := Array.init n (fun _ => open_constr:(_)) in
+    Constr.Unsafe.make (Constr.Unsafe.App c holes)).
+
 Ltac2 apply_var_tac c :=
   let (c_head, c_args) := Constr.decompose_app_nocast c in
   let cbn_h () := match! reverse goal with
@@ -264,9 +269,10 @@ Ltac2 apply_var_tac c :=
           then cbn in $h
           else Control.zero Match_failure
       end in
+  let nargs := Array.length c_args in
   if is_var c_head
   then
-    if Int.equal (Array.length c_args) 0
+    if Int.equal nargs 0
     then
     let error () := match! goal with
               | [ h : @pr _ _ _ (@Ur _ _ ?pr_inst) ?c _ |- @pr _ _ _ (@Ur _ _ ?pr_inst') ?c' _] =>
@@ -304,13 +310,16 @@ Ltac2 apply_var_tac c :=
               cbn_h () ; cbn ; error ()]
     else
       let apply_h () := match! reverse goal with
-        | [ h : @pr _ _ _ ?pr_inst ?c _ |- _] => if Constr.equal_nocumul c_head c && hyp_not_value h
+        | [ h : @pr _ _ _ _ ?c _ |- _] => if Constr.equal_nocumul c_head c && hyp_not_value h
             then
-              let (pr_head, _) := Constr.decompose_app_nocast pr_inst in
-              if is_forall_inst pr_head
+              let h' := Control.hyp h in
+              let type_h := Std.eval_cbn RedFlags.all (type h') in
+              if Constr.is_prod type_h
               then
-                let h := Control.hyp h in
-                unshelve (eapply $h); shelve_non_PR_multi ()
+                first [
+                  unshelve (refine_n_holes h' (Int.mul 3 nargs)) | 
+                  forward_apply h' c];
+                shelve_non_PR_multi ()
               else (cbn_h (); match! reverse goal with
               | [ _ : @pr _ _ _ (@Ur _ _ ?pr_inst) ?c _ |- _] =>
                 if Constr.equal c_head c && hyp_not_value h
