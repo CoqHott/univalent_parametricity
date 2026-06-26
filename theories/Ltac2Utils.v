@@ -2709,6 +2709,17 @@ Ltac2 iota_red_flags : Std.red_flags := {
   Std.rConst := []
 }.
 
+Ltac2 zeta_red_flags : Std.red_flags := {
+  Std.rStrength := Std.Head;
+  Std.rBeta := false;
+  Std.rMatch := false;
+  Std.rFix := false;
+  Std.rCofix := false;
+  Std.rZeta := true;
+  Std.rDelta := false; (** true = delta all but rConst; false = delta only on rConst*)
+  Std.rConst := []
+}.
+
 Ltac2 check_appvect (t : constr) (args: constr array) : constr result :=
   Constr.Unsafe.check  (Constr.Unsafe.make (Constr.Unsafe.App t args)).
 
