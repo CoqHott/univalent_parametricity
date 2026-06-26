@@ -2861,35 +2861,32 @@ Ltac2 Type exn ::= [ Fatal (message) ].
 Ltac2 mutable check_if_cumul_message (key : constr) (given : constr) (expected : constr) (l : bool list)   :=
   fprintf "The definition %t has type : %t but is use with type : %t. The list of arguments using cumulativity is : %s" key given expected (String.app "[ " (String.app (String.concat " , " (List.map Bool.to_string l)) " ]")).
 
-Ltac2 check_if_cumul_option (t:constr) : (constr * constr * constr * bool list) option :=
+Ltac2 check_if_cumul_decompose (t:constr) : (constr * constr * constr * bool list) :=
   let (c_head, c_args) := Constr.decompose_app_list_nocast t in
   match get_sub_type c_head c_args with
-    (l, a) =>  
-    if List.exist (fun b => Bool.equal b true) l
-    then
-      Some (c_head , type_of_refresh c_head, a ,l)
-    else
-      None
+    (l, a) => (c_head , type_of_refresh c_head, a ,l)
   end.
 
-Ltac2 check_if_cumul (m:(constr * constr * constr * bool list) option)  :=
+Ltac2 check_if_cumul (m:constr * constr * constr * bool list)  :=
   match m with
-    | Some (c_head, c_type, a, l) =>  
-      Control.throw (Fatal (check_if_cumul_message c_head c_type a l))
-    | None =>
-      Control.zero Match_failure
+    | (c_head, c_type, a, l) =>  
+      if List.exist (fun b => Bool.equal b true) l
+      then  
+        Control.throw (Fatal (check_if_cumul_message c_head c_type a l))
+      else 
+        Control.zero Match_failure
   end.
 
 Definition id {A B : Type} (P: B -> Type) (x : A) (e:P=P) := x.
 
 Goal forall (x :nat), x = x.
 Proof.
-Fail check_if_cumul (check_if_cumul_option '(option True)).
-Fail check_if_cumul (check_if_cumul_option '(prod True bool)).
-Fail check_if_cumul (check_if_cumul_option '(@eq True I I)).
+Fail check_if_cumul (check_if_cumul_decompose '(option True)).
+Fail check_if_cumul (check_if_cumul_decompose '(prod True True)).
+Fail check_if_cumul (check_if_cumul_decompose '(@eq True I I)).
 intros x. 
-Fail check_if_cumul (check_if_cumul_option '(@id True bool (fun x => True) I)).
-Fail check_if_cumul (check_if_cumul_option '(@eq True I I)). 
+Fail check_if_cumul (check_if_cumul_decompose '(@id True bool (fun x => True) I)).
+Fail check_if_cumul (check_if_cumul_decompose '(@eq True I I)). 
 Abort.
 
 Ltac2 mutable compute_triple (_:constr) (_:ident) (_:ident) : unit := ().
@@ -2928,26 +2925,42 @@ Ltac2 mutable pre_tc_hint_hook () := ltac1:(pre_tc_hint_hook).
 
 Ltac2 mutable shelve_and_tc () := ().
 
-Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (goal_lhs : constr) :=
+Ltac2 adjust_type (a : constr) (goal_lhs : constr) : constr :=
+  let goal_type := type_of_refresh goal_lhs in
+  if Constr.is_sort goal_type then 
+   let s := Option.get (get_arity goal_type) in
+   replace_sort_in_arity a s
+  else a.
+  
+Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : constr list ) (goal_lhs : constr) :=
   let tac goal_head := 
-    match goal_head with 
-      | None => ()
-      | Some goal_head =>
-        let h := Std.eval_cbn iota_red_flags (type_of_refresh lem) in
+     let compare_lemmas lem1 lem2 := 
+        let h := Std.eval_cbn iota_red_flags (type_of_refresh lem2) in
         let (_,arg) := Constr.decompose_app h in
         let a := Std.eval_cbn iota_red_flags (type_of_refresh (Array.get arg 0)) in
-        let type_goal_head := type_of_refresh goal_head in
-        let check_goal := check_if_cumul_option goal_lhs in
-        if Option.is_none check_goal || Bool.neg (Constr.equal_nocumul type_goal_head a) then 
-         () 
-        else check_if_cumul check_goal
-     end;
+        Constr.equal_nocumul lem1 a
+     in
+     let selected_lemma := match goal_head with 
+      | None => List.hd lems
+      | Some goal_lhs =>
+        match check_if_cumul_decompose goal_lhs with
+          (c_head, c_type, a, l) =>  
+          let a := adjust_type a goal_lhs in
+          let lems := List.filter (compare_lemmas a) lems in
+          if List.is_empty lems 
+          then check_if_cumul (c_head, c_type, a, l)
+          else 
+            let selected_lemma := List.hd lems in selected_lemma
+        end 
+      end
+      in
         first
-            [unshelve (eapply $lem); shelve_and_tc ()|
-             pre_tc_hint_hook (); unshelve (eapply $lem); shelve_and_tc () |
-             forward_apply lem goal_lhs |
-             pre_tc_hint_hook () ; forward_apply lem goal_lhs |
-             check_if_cumul (check_if_cumul_option goal_lhs) ] in
+            [
+             unshelve (eapply $selected_lemma); shelve_and_tc ()|
+             pre_tc_hint_hook (); unshelve (eapply $selected_lemma); shelve_and_tc () |
+             forward_apply selected_lemma goal_lhs |
+             pre_tc_hint_hook () ; forward_apply selected_lemma goal_lhs 
+            ] in
   let (goal_head, goal_args) := Constr.decompose_app goal_lhs in
   if Constr.is_proj goal_head && Constr.is_const key then
     match Constr.destProj goal_head, Constr.destConstant key with
@@ -2963,9 +2976,9 @@ Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (go
       let key_app := beta_red key_app in
       if Constr.equal_nounivs goal_lhs key_app then
         if fatal then
-         tac (Some goal_head)
+         tac (Some goal_lhs)
         else if warn then
-         match Control.case_bt (fun () => tac (Some goal_head)) with
+         match Control.case_bt (fun () => tac (Some goal_lhs)) with
          | Val_bt (v, _k) => v
          | Err_bt err info => printf "Warning: %a\n" (fun () => Message.of_exn_pretty) err; Control.zero_bt err info
          end
@@ -2975,6 +2988,9 @@ Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (go
         Control.zero Match_failure
     | _ => Control.zero Match_failure
   end.
+
+Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (goal_lhs : constr) :=
+  tc_hint_for_list fatal warn key [lem] goal_lhs.
 
 Ltac tc_hint_for key lem goal_lhs :=
   let tac := ltac2:(key lem goal_lhs |-
