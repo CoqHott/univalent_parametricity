@@ -3000,6 +3000,9 @@ Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : const
     | _ => Control.zero Match_failure
   end.
 
+Ltac2 tc_hint_for_ur_plain_list (fatal : bool) (warn : bool) (key : constr) (ur_lems : constr list) (plain_lems : constr list) (goal_lhs : constr) :=
+  tc_hint_for_list fatal warn key (List.append ur_lems plain_lems) goal_lhs.
+
 Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (goal_lhs : constr) :=
   tc_hint_for_list fatal warn key [lem] goal_lhs.
 
