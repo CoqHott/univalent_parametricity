@@ -2721,7 +2721,7 @@ Ltac2 zeta_red_flags : Std.red_flags := {
 }.
 
 Ltac2 check_appvect (t : constr) (args: constr array) : constr result :=
-  Constr.Unsafe.check  (Constr.Unsafe.make (Constr.Unsafe.App t args)).
+  Constr.Unsafe.check (Constr.Unsafe.make (Constr.Unsafe.App t args)).
 
 (** Reduce a term to head normal form, stripping casts. *)
 Ltac2 whnf (c : constr) : constr :=
@@ -2831,8 +2831,9 @@ Ltac2 get_sub_type (t : constr) (args : constr list) : bool list * constr :=
     | [] => acc_ty
     | a :: tl =>
       match get_prod acc_ty with
-      | None => Control.throw (Tactic_failure (Some (Message.concat (Message.of_string "Not a product") (Message.of_constr acc_ty))))
-      (* acc expects an argument of type [dom] *)
+      (* when not a product, this means that the list of arguments is bigger that the original arity 
+        and no commulativity needs to be computed *)
+      | None => acc_ty
       | Some (bopt , dom, codom) =>
         let (id,fr_ids) := Fresh.next (Ref.get free_ids) @toto in
         Ref.set free_ids fr_ids;
@@ -2944,14 +2945,14 @@ Ltac2 adjust_type (a : constr) (goal_lhs : constr) : constr :=
   else a.
   
 Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : constr list ) (goal_lhs : constr) :=
-  let tac goal_head := 
+  let tac goal := 
      let compare_lemmas lem1 lem2 := 
         let h := Std.eval_cbn iota_red_flags (type_of_refresh lem2) in
         let (_,arg) := Constr.decompose_app h in
         let a := Std.eval_cbn iota_red_flags (type_of_refresh (Array.get arg 0)) in
         Constr.equal_nocumul lem1 a
      in
-     let selected_lemma := match goal_head with 
+     let selected_lemma := match goal with 
       | None => List.hd lems
       | Some goal_lhs =>
         match check_if_cumul_decompose goal_lhs with
