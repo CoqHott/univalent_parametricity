@@ -2864,7 +2864,8 @@ Ltac2 get_sub_type (t : constr) (args : constr list) : bool list * constr :=
         end
       end
   end in
-  let res := go (type_of_refresh t) args in
+  let type_of_t := type_of_refresh t in
+  let res := go (type_of_t) args in
   let l := Ref.get use_cumul in
   l , res.
 
@@ -2873,11 +2874,14 @@ Ltac2 Type exn ::= [ Fatal (message) ].
 Ltac2 mutable check_if_cumul_message (key : constr) (given : constr) (expected : constr) (l : bool list)   :=
   fprintf "The definition %t has type : %t but is use with type : %t. The list of arguments using cumulativity is : %s" key given expected (String.app "[ " (String.app (String.concat " , " (List.map Bool.to_string l)) " ]")).
 
-Ltac2 check_if_cumul_decompose (t:constr) : (constr * constr * constr * bool list) :=
-  let (c_head, c_args) := Constr.decompose_app_list_nocast t in
+Ltac2 check_if_cumul_decompose_args (c_head:constr) (c_args:constr list) : (constr * constr * constr * bool list) :=
   match get_sub_type c_head c_args with
     (l, a) => (c_head , type_of_refresh c_head, a ,l)
   end.
+
+Ltac2 check_if_cumul_decompose (t:constr) : (constr * constr * constr * bool list) :=
+  let (c_head, c_args) := Constr.decompose_app_list_nocast t in
+  check_if_cumul_decompose_args c_head c_args.
 
 Ltac2 check_if_cumul (m:constr * constr * constr * bool list)  :=
   match m with
@@ -2955,8 +2959,9 @@ Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : const
      let selected_lemma := match goal with 
       | None => List.hd lems
       | Some goal_lhs =>
-        match check_if_cumul_decompose goal_lhs with
-          (c_head, c_type, a, l) =>  
+        let (c_head, c_args) := Constr.decompose_app_list_nocast goal_lhs in
+        match check_if_cumul_decompose_args key c_args with
+          (c_head, c_type, a, l) =>
           let a := adjust_type a goal_lhs in
           let lems := List.filter (compare_lemmas a) lems in
           if List.is_empty lems 
