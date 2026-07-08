@@ -1952,6 +1952,58 @@ Ltac2 all_ind_dep_scheme_kinds () : Scheme.kind list :=
 Ltac2 all_case_scheme_kinds () : Scheme.kind list :=
   [Scheme.case_dep; Scheme.case_nodep; Scheme.casep_dep; Scheme.casep_nodep; Scheme.scase_dep; Scheme.scase_nodep].
 
+Ltac2 get_case_scheme (c : constr) (sort : constr) :=
+  let (c_head, _) := Constr.decompose_app_nocast c in
+  let c_ref := Reference.of_constr c_head in
+  let sort := eval cbv beta in $sort in
+  let kind := sort_to_case_dep_scheme_kind sort in
+  match Scheme.lookup kind c_ref with
+  | Some ref => Env.instantiate ref
+  | None =>
+      (* Fall back to typeclass resolution for sorts where Scheme.lookup
+         may not have the right kind (e.g., Set, SProp) *)
+      let rec get_case_scheme_internal (sort : constr) (allow_generalization_on_failure : bool) :=
+        let (is_generalizable, ndep_name, sort) :=
+          lazy_match! sort with
+          | Set => (false, "_case", sort)
+          | Prop => (false, "_casep", sort)
+          | SProp => (false, "_casesp", sort)
+          | Type => (true, "_caset", 'Type)
+          | _ =>
+            printf "Warning: get_case_scheme: unexpected sort %t, using Type" sort;
+            (true, "_caset", sort)
+          end in
+        match Control.case (fun () => constr:(_ : CaseScheme $c $sort _)) with
+        | Val (v, _) =>
+            match Control.case (fun () => Constr.type v) with
+            | Val (vt, _) =>
+              lazy_match! vt with
+              | CaseScheme _ _ ?scheme => scheme
+              | ?ty => Control.throw (Tactic_failure (Some (fprintf "get_case_scheme: expected a CaseScheme, got %t" ty)))
+              end
+            | Err err => Control.throw (Tactic_failure (Some (fprintf "get_case_scheme: error on Control.type %t: %a" v (fun () => Message.of_exn_pretty) err)))
+            end
+        | Err _err =>
+            match Control.case (fun () => '(CaseScheme $c $sort)) with
+            | Val (caseSchemeTy, _) =>
+                let c_str := Constr.to_string c in
+                let c_str := String.strip_prefix "@" (String.strip_brackets "(" ")" c_str) in
+                let qualified_flattened_c_str := String.replace_char (String.get "." 0) "_" c_str in
+                let build_CaseScheme_str := Constr.to_string '(@Build_CaseScheme) in
+                let build_CaseScheme_str := String.strip_prefix "@" (String.strip_brackets "(" ")" build_CaseScheme_str) in
+                let isCaseScheme_str := Constr.to_string '(@IsCaseScheme) in
+                let isCaseScheme_str := String.strip_prefix "@" (String.strip_brackets "(" ")" isCaseScheme_str) in
+                let msg := fprintf "Register a scheme for `Scheme %s%s := Elimination for %s Sort %t.%a#[global] Hint Extern 0 (%t ?scheme) => unify scheme %s%s; exact %s : typeclass_instances.%a#[global] Instance: %s %s%s := {}.`"
+                  qualified_flattened_c_str ndep_name c_str sort (fun () a => a) Message.force_new_line caseSchemeTy qualified_flattened_c_str ndep_name build_CaseScheme_str (fun () a => a) Message.force_new_line isCaseScheme_str qualified_flattened_c_str ndep_name in
+                Control.zero (SchemeRegistrationError msg)
+            | Err err =>
+                if allow_generalization_on_failure && is_generalizable
+                then get_case_scheme_internal 'Type false
+                else Control.throw (Tactic_failure (Some (fprintf "get_case_scheme: Could not construct case scheme type CaseScheme %t %t _: %a" c sort (fun () => Message.of_exn_pretty) err)))
+            end
+        end in
+      get_case_scheme_internal sort true
+  end.
 
 Ltac2 fold_match_maybe_force_nondep_around (nondep : bool) f :=
   if nondep
@@ -1991,6 +2043,84 @@ Ltac2 get_induction_scheme_for (c : constr) :=
         (fprintf "Register a scheme for `Scheme Induction for %t Sort %t.`" c sort))
   end.
 
+Ltac2 fold_match (c : constr) :=
+  match Constr.Unsafe.kind_nocast c with
+  | Constr.Unsafe.Case case_info (retclause, relevance) ci scrutinee branches =>
+      let rec aux f :=
+        let ty := Constr.type f in
+        lazy_match! ty with
+        | forall _ _, _ => aux '($f _)
+        | _ => '($f $scrutinee)
+        end in
+      let retty := aux retclause in
+      let retty' :=
+        lazy_match! retty with
+        | ?f _ => f
+        end in
+      let scrutinee_ty := Constr.type scrutinee in
+      let scrutinee_ty_hnf := eval hnf in $scrutinee_ty in
+      let (ind_fam, _) := Constr.decompose_app_nocast scrutinee_ty_hnf in
+      let ind_ref := Reference.of_constr ind_fam in
+      let retty_ty := Constr.type retty' in
+      let (_b, sort) := Constr.destProd retty_ty in
+      let lookup_scheme (kind : Scheme.kind) :=
+        match Scheme.lookup kind ind_ref with
+        | Some ref => Env.instantiate ref
+        | None => Control.zero Match_failure
+        end in
+      let preind () :=
+        let kind := sort_to_ind_dep_scheme_kind sort in
+        lookup_scheme kind in
+      let result_of_ind_head ind_head :=
+        let ind := '(ltac2:(let x := Fresh.in_goal @x in intro $x; unshelve (eapply $ind_head); try (clear $x); intros) :> forall x, $retty' x) in
+        let (_, ind_body) := Constr.destLambda ind in
+        let b := Constr.Binder.make None scrutinee_ty in
+        let new_case := Constr.Unsafe.make (Constr.Unsafe.Case case_info (retclause, relevance) ci (Constr.mkRel 1) branches) in
+        let (_, ind_names) := unfold_head_under_lambda_rec ind_head in
+        let ind_refs := List.map (fun n => Std.ConstRef n) ind_names in
+        let (s, _cl) := strategy_clause:([id]) in
+        let s := { s with Std.rConst := ind_refs } in
+        (* we need to keep the folded ind_body around for the term we are returning, but we want to unfold it to allow reduction past case *)
+        let ind_body_red := Std.eval_cbv s ind_body in
+        let eq_ty := Constr.mkProd b (Constr.mkApp_list '(fun a => @sort_poly_eq ($retty' a)) [Constr.mkRel 1; new_case; ind_body_red]) in
+        let _eq_pf := once ('(ltac2:(
+          let x := Fresh.in_goal @x in
+          intro $x;
+          let x := Control.hyp x in
+          cbv beta iota;
+          Control.plus (fun () => ()) (fun _err => destruct $x);
+          cbv beta iota;
+          exact (@sort_poly_eq_refl _ _)
+        ) :> $eq_ty)) in
+        let ind_body := eval cbv beta zeta in $ind_body in
+        Constr.Unsafe.substnl [scrutinee] 0 ind_body in
+      match Control.case_bt (fun () => let result := result_of_ind_head (preind ()) in unify $result $c; result) with
+      | Val_bt (result, _) => result
+      | Err_bt (SchemeRegistrationError _ as err) info => Control.zero_bt err info
+      | Err_bt err1 _info1 =>
+        match Control.case_bt (fun () =>
+          let ind_head := get_case_scheme ind_fam sort in
+          let result := result_of_ind_head ind_head in
+          result
+        ) with
+        | Val_bt (result, _) =>
+            match Control.case (fun () => unify $result $c) with
+            | Val _ => result
+            | Err err => Control.throw (Tactic_failure (Some (fprintf "fold_match: Could not unify %t with %t: %a" result c (fun () => Message.of_exn_pretty) err)))
+            end
+        | Err_bt (SchemeRegistrationError _ as err) bt => Control.zero_bt err bt
+        | Err_bt err bt =>
+            printf "fold_match: throw: %a then %a" (fun () => Message.of_exn_pretty) err1 (fun () => Message.of_exn_pretty) err;
+            Control.throw_bt err bt
+        end
+      end
+  | _ => fail "fold_match: expected a case expression, not %t" c
+  end.
+
+Ltac2 rec fold_matches (c : constr) :=
+  if Constr.is_case c
+  then fold_matches (fold_match c)
+  else Constr.Unsafe.map fold_matches c.
 
 (* Consider [nat_rect
      : forall P : nat -> Type,
@@ -2011,6 +2141,38 @@ Ltac2 rec last_forall_domain (ty : constr) : constr :=
   | _ => throw "last_forall_domain: expected a product, not %t" ty
   end.
 
+(** [is_case_scheme t] returns [true] if [t] is a case analysis scheme,
+    i.e., if [Scheme.lookup] finds it as a registered case scheme for the
+    inductive type it eliminates. Falls back to [IsCaseScheme] typeclass. *)
+Ltac2 is_case_scheme (t : constr) : bool :=
+  let ty := Constr.type t in
+  let n := Constr.count_prod ty in
+  if Int.gt n 0 then
+    let (ind_ty, _) := Constr.decompose_app_nocast (last_forall_domain ty) in
+    match Reference.of_constr_opt ind_ty with
+    | Some ind_ref =>
+        if List.exist (fun kind =>
+          match Scheme.lookup kind ind_ref with
+          | Some sref =>
+              let scheme := Env.instantiate sref in
+              Control.succeeds (fun () => unify $scheme $t)
+          | None => false
+          end
+        ) (all_case_scheme_kinds ())
+        then true
+        else
+          (* Fall back to IsCaseScheme typeclass for schemes not in the Scheme table *)
+          match Control.case (fun () => constr:(_ : IsCaseScheme $t)) with
+          | Val _ => true
+          | Err _ => false
+          end
+    | None =>
+        match Control.case (fun () => constr:(_ : IsCaseScheme $t)) with
+        | Val _ => true
+        | Err _ => false
+        end
+    end
+  else false.
 
 (** [is_induction_scheme t] returns [true] if [t] is a registered induction/recursion
     scheme for the inductive type it eliminates (via [Scheme.lookup]). *)
@@ -2847,6 +3009,20 @@ Ltac2 fix_to_ind (c : constr) : constr * constr :=
       end))
   ) :> $eq_ty) in
   (c', eq_proof).
+
+Ltac2 fold_fix (c : constr) :=
+  let (c', _pf) := fix_to_ind_funext c in
+  c'.
+
+Ltac2 rec fold_fixes (c : constr) :=
+  if Constr.is_fix c
+  then fold_fixes (fold_fix c)
+  else Constr.Unsafe.map fold_fixes c.
+
+(* first fix, then match, because induction scheme uses both *)
+Ltac2 fold_fixes_and_matches (c : constr) :=
+  let c := fold_matches (fold_fixes c) in
+  eval cbv beta in $c.
 
 Module Import Tags.
   Ltac2 Type 'a t := { open : message ; close_success : 'a -> message ; close_failure : exn -> exninfo -> message ; reenter : exn -> exninfo -> message }.
