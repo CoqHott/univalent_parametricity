@@ -3,6 +3,18 @@ From Ltac2 Require Import Ltac2.
 From Ltac2 Require Import TransparentState.
 From Ltac2 Require Import Scheme.
 
+Module Export CaseSchemeDefinitions.
+  #[local] Set Universe Polymorphism.
+  #[local] Set Implicit Arguments.
+  #[local] Set Polymorphic Inductive Cumulativity.
+
+  Class CaseScheme@{s s';u u' u''|} {T : Type@{s;u}} (A : T) (sort : Type@{u''}) {S : Type@{s';u'}} (scheme : S) := {}.
+  Class IsCaseScheme@{s;u|} {S : Type@{s;u}} (scheme : S) := {}.
+  #[global] Hint Mode CaseScheme - + + - - : typeclass_instances.
+  #[global] Arguments Build_CaseScheme {T A sort S} scheme, {T A sort S scheme}.
+  #[global] Arguments Build_IsCaseScheme {S} scheme, {S scheme}.
+End CaseSchemeDefinitions.
+
 Ltac2 Notation "refine" c(open_constr) := Control.refine (fun _ => c).
 
 Module Bool.
