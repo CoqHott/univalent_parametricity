@@ -3076,7 +3076,7 @@ Ltac2 wrap_check tac :=
     '(ltac2:(tac ()) :> $g)).
 
 Ltac2 check_appvect (t : constr) (args: constr array) : constr result :=
-  Constr.Unsafe.check (Constr.Unsafe.make (Constr.Unsafe.App t args)).
+  Constr.Unsafe.check (Constr.mkApp t args).
 
 (** Reduce a term to head normal form, stripping casts. *)
 Ltac2 whnf (c : constr) : constr :=
