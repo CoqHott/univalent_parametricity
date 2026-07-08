@@ -3140,7 +3140,7 @@ Ltac2 first_failing_arg (t : constr) (args : constr list) : (int*constr) option 
                 | _ => None
               end
             else
-              Some (Int.sub len (List.length tl),a) (* [a] is the first failing argument *)
+              Some (Int.sub len (List.length tl), a) (* [a] is the first failing argument *)
         end
     end
   in
