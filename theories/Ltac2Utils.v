@@ -473,10 +473,10 @@ Module Constr.
     end).
 
   Ltac2 compare_sort (s : sort) (s' : sort) :=
-    let is_prop := Constr.equal (Unsafe.make (Unsafe.Sort s)) 'Prop in
-    let is_prop' := Constr.equal (Unsafe.make (Unsafe.Sort s')) 'Prop in
-    let is_sprop := Constr.equal (Unsafe.make (Unsafe.Sort s)) 'SProp in
-    let is_sprop' := Constr.equal (Unsafe.make (Unsafe.Sort s')) 'SProp in
+    let is_prop := Constr.equal (mkSort s) 'Prop in
+    let is_prop' := Constr.equal (mkSort s') 'Prop in
+    let is_sprop := Constr.equal (mkSort s) 'SProp in
+    let is_sprop' := Constr.equal (mkSort s') 'SProp in
     Bool.equal is_prop is_prop' && Bool.equal is_sprop is_sprop'.
 
   Ltac2 rec equal_nocumul (c1 : constr) (c2 : constr) : bool :=
