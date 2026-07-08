@@ -2676,60 +2676,16 @@ Ltac2 wrap_check tac :=
     let g := Control.goal () in
     '(ltac2:(tac ()) :> $g)).
 
-Ltac2 norm_red_flags : Std.red_flags := {
-  Std.rStrength := Std.Norm;
-  Std.rBeta := true;
-  Std.rMatch := true;
-  Std.rFix := true;
-  Std.rCofix := true;
-  Std.rZeta := true;
-  Std.rDelta := true; (** true = delta all but rConst; false = delta only on rConst*)
-  Std.rConst := []
-}.
-
-Ltac2 beta_red_flags : Std.red_flags := {
-  Std.rStrength := Std.Head;
-  Std.rBeta := true;
-  Std.rMatch := false;
-  Std.rFix := false;
-  Std.rCofix := false;
-  Std.rZeta := false;
-  Std.rDelta := false; (** true = delta all but rConst; false = delta only on rConst*)
-  Std.rConst := []
-}.
-
-Ltac2 iota_red_flags : Std.red_flags := {
-  Std.rStrength := Std.Head;
-  Std.rBeta := false;
-  Std.rMatch := true;
-  Std.rFix := false;
-  Std.rCofix := false;
-  Std.rZeta := false;
-  Std.rDelta := false; (** true = delta all but rConst; false = delta only on rConst*)
-  Std.rConst := []
-}.
-
-Ltac2 zeta_red_flags : Std.red_flags := {
-  Std.rStrength := Std.Head;
-  Std.rBeta := false;
-  Std.rMatch := false;
-  Std.rFix := false;
-  Std.rCofix := false;
-  Std.rZeta := true;
-  Std.rDelta := false; (** true = delta all but rConst; false = delta only on rConst*)
-  Std.rConst := []
-}.
-
 Ltac2 check_appvect (t : constr) (args: constr array) : constr result :=
   Constr.Unsafe.check (Constr.Unsafe.make (Constr.Unsafe.App t args)).
 
 (** Reduce a term to head normal form, stripping casts. *)
 Ltac2 whnf (c : constr) : constr :=
-  Std.eval_lazy norm_red_flags c.
+  eval lazy in $c.
 
   (** Reduce a term to head normal form, stripping casts. *)
 Ltac2 beta_red (c : constr) : constr :=
-  Std.eval_lazy beta_red_flags c.
+  eval lazy head beta in $c.
 
 (** [type_of c] returns the type of [c] via the current goal's
     environment.  We open a local goal to call [Constr.type]. *)
@@ -2949,11 +2905,13 @@ Ltac2 adjust_type (a : constr) (goal_lhs : constr) : constr :=
   else a.
   
 Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : constr list ) (goal_lhs : constr) :=
-  let tac goal := 
-     let compare_lemmas lem1 lem2 := 
-        let h := Std.eval_cbn iota_red_flags (type_of_refresh lem2) in
+  let tac goal :=
+     let compare_lemmas lem1 lem2 :=
+        let h := type_of_refresh lem2 in
+        let h := eval cbn head match in $h in
         let (_,arg) := Constr.decompose_app h in
-        let a := Std.eval_cbn iota_red_flags (type_of_refresh (Array.get arg 0)) in
+        let a := type_of_refresh (Array.get arg 0) in
+        let a := eval cbn head match in $a in
         Constr.equal_nocumul lem1 a
      in
      let selected_lemma := match goal with 

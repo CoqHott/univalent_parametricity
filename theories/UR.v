@@ -105,7 +105,7 @@ Ltac2 apply_PR_Type_gen () :=
 (* This hint is to remove let in declaration *)
 
 #[export] Hint Extern 0 (_ ≈[ _ ] _) => 
-  progress (Std.cbn zeta_red_flags {Std.on_hyps := None; Std.on_concl := Std.AllOccurrences}) : typeclass_instances ur_typeclass_instances.
+  progress (cbn head zeta) : typeclass_instances ur_typeclass_instances.
 
 Definition PR_Type_plain_univ {A B : Type} (H: A ≈u B) : PR plain A B := Ur H.
 
