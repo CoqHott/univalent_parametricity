@@ -3114,8 +3114,10 @@ Ltac2 get_body (t : constr) : constr :=
   end.
 
 Ltac2 types_match (dom : constr) (arg : constr) : bool :=
-  let arg_ty := type_of arg in
-  Constr.equal_nocumul (whnf arg_ty) (whnf dom).
+  let arg_ty := Constr.type arg in
+  let arg_ty := eval lazy in $arg_ty in
+  let dom := eval lazy in $dom in
+  Constr.equal_nocumul arg_ty dom.
 
 Ltac2 first_failing_arg (t : constr) (args : constr list) : (int*constr) option :=
   let len := List.length args in
