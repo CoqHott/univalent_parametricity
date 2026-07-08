@@ -3230,6 +3230,132 @@ Ltac2 check_if_cumul (m:constr * constr * constr * bool list)  :=
         Control.zero Match_failure
   end.
 
+
+Ltac2 orelse_fatal t f :=
+  match Control.case t with
+  | Err (Fatal _ as e) => Control.throw e
+  | Err e => f e
+  | Val ans =>
+    let (x, k) := ans in
+    Control.plus (fun _ => x) k
+  end.
+
+Ltac2 rec first_fatal0 tacs :=
+  match tacs with
+  | [] => Control.zero Match_failure
+  | tac :: tacs => Control.enter (fun _ => orelse_fatal tac (fun _ => first_fatal0 tacs))
+  end.
+
+Ltac2 Notation "first_fatal" "[" tacs(list0(thunk(tactic(6)), "|")) "]" := first_fatal0 tacs.
+
+Ltac2 is_alias_of (x : constr) (y : constr) :=
+  match Std.is_forcibly_unfoldable_constant x,
+        Std.is_forcibly_unfoldable_constant y,
+        Reference.of_constr_opt x,
+        Reference.of_constr_opt y with
+  | false, false, Some (Std.IndRef _), Some (Std.IndRef _) => true
+  | false, false, Some (Std.ConstructRef _), Some (Std.ConstructRef _) => true
+  | _, _, _, _ => false
+  end.
+
+Ltac2 nat_of_int (n : int) : constr :=
+  let rec go (n : int) :=
+    if Int.equal n 0 then preterm:(O)
+    else
+      let p := go (Int.sub n 1) in
+      preterm:(S $preterm:p) in
+  let p := go n in
+  constr:($preterm:p).
+
+Ltac2 n_of_int (n : int) : constr :=
+  let n_term := nat_of_int n in
+  let n_Z_term := eval cbv in (N.of_nat $n_term) in
+  n_Z_term.
+
+Ltac2 z_of_int (n : int) : constr :=
+  let n_nat_abs := nat_of_int (Int.abs n) in
+  let n_Z_abs := constr:(Z.of_nat $n_nat_abs) in
+  let n_Z := if Int.lt n 0 then n_Z_abs else constr:(Z.opp $n_Z_abs) in
+  eval cbv in $n_Z.
+
+Ltac2 count_strip_matching_app1 (f : constr) (x : constr) :=
+  let rec go (c : constr) (acc : int) :=
+    match Constr.decompose_app1_nocast_opt c with
+    | None => (acc, c)
+    | Some (f', x') =>
+        if Constr.equal f f' then
+          go x' (Int.add 1 acc)
+        else
+          (acc, c)
+    end in
+  go x 0.
+
+Ltac2 compress_ctor_chain_gen (filter : constr -> bool) (min_chain_size : int) (c : constr) :=
+  match Constr.decompose_app1_nocast_opt c with
+  | None => None
+  | Some (f, x) =>
+      if filter f then
+        let (n', base) := count_strip_matching_app1 f x in
+        let n := Int.add n' 1 in
+        if Int.ge n min_chain_size then
+          Some (n, f, n_of_int n, base)
+        else
+          None
+      else
+        None
+  end.
+
+(* unfolds constants that match [filter], refolds [fix] and [match], errors on bare [fix]/[match] *)
+Ltac2 unfold_while_refold_gen (filter : constr -> bool) (keep_bare_fix : constr -> bool) (c : constr) :=
+  let post c :=
+    let c := fold_matches (fold_fixes c) in
+    if Constr.has_fix_or_cofix_or_case c
+    then
+      if keep_bare_fix c
+      then Some c
+      else None
+    else
+      Some c
+  in
+  Std.unfold_if_then_while filter post true c.
+
+Ltac2 unfold_and_refold (should_unfold : constr -> bool) (c : constr) :=
+  unfold_while_refold_gen should_unfold (fun bad =>
+    throw "unable to fold fix or match in %t" bad
+  ) c.
+
+(** 1-based index of the last [true] in [l], or 0 if none.  Used both as the
+    eta-expansion depth and as the inverse hint priority for cumulativity
+    repair variants. *)
+Ltac2 last_true_index (l : bool list) : int :=
+  match List.find_rev_index (fun b => b) l with
+  | Some i => Int.add i 1
+  | None => 0
+  end.
+
+(** [prod_prefix_binders expected n] returns the binders of the first [n]
+    product domains of [expected], in order.  Binders are reused verbatim so
+    dependent domains stay correct (later domains may contain [Rel]s into
+    earlier binders). *)
+Ltac2 prod_prefix_binders (expected : constr) (n : int) : binder list :=
+  let rec collect i ty acc :=
+    if Int.gt i n then List.rev acc
+    else match Constr.Unsafe.kind ty with
+         | Constr.Unsafe.Prod b body => collect (Int.add i 1) body (b :: acc)
+         | _ => throw "prod_prefix_binders: %t has fewer than %i products (stuck at %t)" expected n ty
+         end in
+  collect 1 expected [].
+
+(** [eta_expand_prefix key binders] builds
+    [fun (x1 : E1) ... (xn : En) => key x1 ... xn] where [E1 .. En] are the
+    types of [binders] (as returned by [prod_prefix_binders]). *)
+Ltac2 eta_expand_prefix (key : constr) (binders : binder list) : constr :=
+  let n := List.length binders in
+  if Int.le n 0 then key else
+  let args := List.init n (fun i => Constr.mkRel (Int.sub n i)) in
+  let body := Constr.mkApp_list key args in
+  List.fold_right Constr.mkLambda binders body.
+
 Definition id {A B : Type} (P: B -> Type) (x : A) (e:P=P) := x.
 
 Goal forall (x :nat), x = x.
