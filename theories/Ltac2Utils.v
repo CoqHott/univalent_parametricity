@@ -1,4 +1,4 @@
-From Stdlib Require Import FunctionalExtensionality.
+From Stdlib Require Import ZArith NArith FunctionalExtensionality.
 From Ltac2 Require Import Ltac2.
 From Ltac2 Require Import TransparentState.
 From Ltac2 Require Import Scheme.
