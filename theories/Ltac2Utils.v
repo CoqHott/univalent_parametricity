@@ -3127,7 +3127,7 @@ Ltac2 first_failing_arg (t : constr) (args : constr list) : (int*constr) option 
     | a :: tl =>
         let acc_ty := type_of acc in
         match get_prod acc_ty with
-        | None => Control.throw (Tactic_failure (Some (Message.concat (Message.of_string "Not a product") (Message.of_constr acc_ty))))
+        | None => Control.throw (Tactic_failure (Some (fprintf "Not a product: %t" acc_ty)))
         (* acc expects an argument of type [dom] *)
         | Some (_ , dom, _) =>
             if types_match dom a
@@ -3135,7 +3135,7 @@ Ltac2 first_failing_arg (t : constr) (args : constr list) : (int*constr) option 
               (* Types agree: build the application and continue.
                  We also instantiate [body] with [a] so that
                  dependent types are handled correctly. *)
-              match check_appvect acc [| a |]  with
+              match check_appvect acc [| a |] with
                 | Val t => go t tl
                 | _ => None
               end
