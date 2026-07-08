@@ -739,6 +739,81 @@ Module Constr.
     Ltac2 head_nocast_under_lambda t := head_nocast_under_lambda_prod_gen true false t.
     Ltac2 head_nocast_under_prod t := head_nocast_under_lambda_prod_gen false true t.
 
+    (* Compatibility reimplementation of the [Constr.Unsafe.map_in_context]
+       primitive from the theorem-labs Rocq fork, over the upstream
+       [Constr.in_context] external: map [f] on the immediate subterms of
+       [c], entering a goal extended with a hypothesis for each binder so
+       that [f] only ever sees closed terms.  Unlike the fork primitive,
+       let-in bodies are opened as plain hypotheses, so the local definition
+       is not visible to [f]. *)
+    Ltac2 in_context_open (id : ident) (ty : constr) (tac : unit -> unit) : binder * constr :=
+      match Constr.Unsafe.kind (Constr.in_context id ty tac) with
+      | Constr.Unsafe.Lambda b body => (b, body)
+      | _ =>
+          Control.throw
+            (Tactic_failure
+              (Some (Message.of_string "in_context_open: Constr.in_context did not return a lambda")))
+      end.
+
+    Ltac2 map_in_context (f : constr -> constr) (c : constr) : constr :=
+      let name_of (b : binder) : ident :=
+        match Constr.Binder.name b with
+        | Some id => id
+        | None => @x
+        end
+      in
+      let fresh_name (b : binder) : ident :=
+        Fresh.in_goal (name_of b)
+      in
+      let map_under (b : binder) (body : constr) : binder * constr :=
+        let bty' := f (Constr.Binder.type b) in
+        let id := fresh_name b in
+        in_context_open id bty' (fun () =>
+          let h := Control.hyp id in
+          Control.refine (fun () => f (Constr.Unsafe.substnl [h] 0 body)))
+      in
+      let map_under_fix_body (binders : binder array) (body : constr) : constr :=
+        let nbinders := Array.length binders in
+        let rec open_binders (i : int) (ids : ident list) : constr :=
+          if Int.ge i nbinders then
+            let hyps := List.map Control.hyp ids in
+            f (Constr.Unsafe.substnl hyps 0 body)
+          else
+            let b := Array.get binders i in
+            let id := fresh_name b in
+            let (_, result) := in_context_open id (Constr.Binder.type b) (fun () =>
+              Control.refine (fun () =>
+                open_binders (Int.add i 1) (id :: ids))) in
+            result
+        in
+        open_binders 0 []
+      in
+      match Constr.Unsafe.kind c with
+      | Constr.Unsafe.Lambda b body =>
+          let (b', body') := map_under b body in
+          Constr.Unsafe.make (Constr.Unsafe.Lambda b' body')
+      | Constr.Unsafe.Prod b body =>
+          let (b', body') := map_under b body in
+          Constr.Unsafe.make (Constr.Unsafe.Prod b' body')
+      | Constr.Unsafe.LetIn b value body =>
+          let v' := f value in
+          let (b', body') := map_under b body in
+          Constr.Unsafe.make (Constr.Unsafe.LetIn b' v' body')
+      | Constr.Unsafe.Fix structs which types bodies =>
+          let types' := Array.map (fun b =>
+            Constr.Binder.make (Constr.Binder.name b) (f (Constr.Binder.type b))) types in
+          let bodies' := Array.init (Array.length bodies) (fun i =>
+            map_under_fix_body types' (Array.get bodies i)) in
+          Constr.Unsafe.make (Constr.Unsafe.Fix structs which types' bodies')
+      | Constr.Unsafe.CoFix which types bodies =>
+          let types' := Array.map (fun b =>
+            Constr.Binder.make (Constr.Binder.name b) (f (Constr.Binder.type b))) types in
+          let bodies' := Array.init (Array.length bodies) (fun i =>
+            map_under_fix_body types' (Array.get bodies i)) in
+          Constr.Unsafe.make (Constr.Unsafe.CoFix which types' bodies')
+      | _ => Constr.Unsafe.map f c
+      end.
+
     Ltac2 kind_to_message (k : kind) :=
       match Control.case (fun () => make k) with
       | Val (c, _) => Message.of_constr c
