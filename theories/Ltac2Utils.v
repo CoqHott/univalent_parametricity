@@ -2787,7 +2787,7 @@ Ltac2 get_sub_type (t : constr) (args : constr list) : bool list * constr :=
     | [] => acc_ty
     | a :: tl =>
       match get_prod acc_ty with
-      (* when not a product, this means that the list of arguments is bigger that the original arity 
+      (* when not a product, this means that the list of arguments is bigger that the original arity
         and no commulativity needs to be computed *)
       | None => acc_ty
       | Some (bopt , dom, codom) =>
@@ -2841,11 +2841,11 @@ Ltac2 check_if_cumul_decompose (t:constr) : (constr * constr * constr * bool lis
 
 Ltac2 check_if_cumul (m:constr * constr * constr * bool list)  :=
   match m with
-    | (c_head, c_type, a, l) =>  
+    | (c_head, c_type, a, l) =>
       if List.exist (fun b => Bool.equal b true) l
-      then  
+      then
         Control.throw (Fatal (check_if_cumul_message c_head c_type a l))
-      else 
+      else
         Control.zero Match_failure
   end.
 
@@ -2856,9 +2856,9 @@ Proof.
 Fail check_if_cumul (check_if_cumul_decompose '(option True)).
 Fail check_if_cumul (check_if_cumul_decompose '(prod True True)).
 Fail check_if_cumul (check_if_cumul_decompose '(@eq True I I)).
-intros x. 
+intros x.
 Fail check_if_cumul (check_if_cumul_decompose '(@id True bool (fun x => True) I)).
-Fail check_if_cumul (check_if_cumul_decompose '(@eq True I I)). 
+Fail check_if_cumul (check_if_cumul_decompose '(@eq True I I)).
 Abort.
 
 Ltac2 mutable compute_triple (_:constr) (_:ident) (_:ident) : unit := ().
@@ -2899,11 +2899,11 @@ Ltac2 mutable shelve_and_tc () := ().
 
 Ltac2 adjust_type (a : constr) (goal_lhs : constr) : constr :=
   let goal_type := type_of_refresh goal_lhs in
-  if Constr.is_sort goal_type then 
+  if Constr.is_sort goal_type then
    let s := Option.get (get_arity goal_type) in
    replace_sort_in_arity a s
   else a.
-  
+
 Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : constr list ) (goal_lhs : constr) :=
   let tac goal :=
      let compare_lemmas lem1 lem2 :=
@@ -2914,7 +2914,7 @@ Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : const
         let a := eval cbn head match in $a in
         Constr.equal_nocumul lem1 a
      in
-     let selected_lemma := match goal with 
+     let selected_lemma := match goal with
       | None => List.hd lems
       | Some goal_lhs =>
         let (c_head, c_args) := Constr.decompose_app_list_nocast goal_lhs in
@@ -2922,11 +2922,11 @@ Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : const
           (c_head, c_type, a, l) =>
           let a := adjust_type a goal_lhs in
           let lems := List.filter (compare_lemmas a) lems in
-          if List.is_empty lems 
+          if List.is_empty lems
           then check_if_cumul (c_head, c_type, a, l)
-          else 
+          else
             let selected_lemma := List.hd lems in selected_lemma
-        end 
+        end
       end
       in
         first
@@ -2934,7 +2934,7 @@ Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : const
              unshelve (eapply $selected_lemma); shelve_and_tc ()|
              pre_tc_hint_hook (); unshelve (eapply $selected_lemma); shelve_and_tc () |
              forward_apply selected_lemma goal_lhs |
-             pre_tc_hint_hook () ; forward_apply selected_lemma goal_lhs 
+             pre_tc_hint_hook () ; forward_apply selected_lemma goal_lhs
             ] in
   let (goal_head, goal_args) := Constr.decompose_app goal_lhs in
   if Constr.is_proj goal_head && Constr.is_const key then
