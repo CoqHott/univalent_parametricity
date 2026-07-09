@@ -550,6 +550,7 @@ Ltac2 postreduce (c : constr) :=
   ] in $c.
 
 Ltac2 iso_statement (k:constr) (f : constr) (g : constr) (fty : constr option) :=
+  let f := Constr.eta_long_with_names f in
   let ty := match fty with Some ty => ty | None => univparamtc_statement_type f end in
   let c := constr:(@pr $k $ty _ _ $f $g) in
   c.
@@ -567,6 +568,7 @@ Ltac2 import_of_with_sorts (k:constr) (f : constr) (sorts : constr list) (fty : 
           (Message.of_string
             "import_of should be called on a reference, not an application")))
   else
+    let f := Constr.eta_long_with_names f in
     let fty := match fty with Some ty => Some ty | None => Some (univparamtc_statement_type f) end in
     let t := '_ in
     let f2 := Fresh.in_goal @f2 in

@@ -3489,6 +3489,9 @@ Ltac2 adjust_type (a : constr) (goal_lhs : constr) : constr :=
   else a.
 
 Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : constr list ) (goal_lhs : constr) :=
+  let eta := Constr.eta_long_with_names in
+  let key := eta key in
+  let lems := List.map eta lems in
   let tac goal :=
      let compare_lemmas lem1 lem2 :=
         let h := type_of_refresh lem2 in
