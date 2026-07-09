@@ -1,7 +1,19 @@
-From Stdlib Require Import FunctionalExtensionality.
+From Stdlib Require Import ZArith NArith FunctionalExtensionality.
 From Ltac2 Require Import Ltac2.
 From Ltac2 Require Import TransparentState.
 From Ltac2 Require Import Scheme.
+
+Module Export CaseSchemeDefinitions.
+  #[local] Set Universe Polymorphism.
+  #[local] Set Implicit Arguments.
+  #[local] Set Polymorphic Inductive Cumulativity.
+
+  Class CaseScheme@{s s';u u' u''|} {T : Type@{s;u}} (A : T) (sort : Type@{u''}) {S : Type@{s';u'}} (scheme : S) := {}.
+  Class IsCaseScheme@{s;u|} {S : Type@{s;u}} (scheme : S) := {}.
+  #[global] Hint Mode CaseScheme - + + - - : typeclass_instances.
+  #[global] Arguments Build_CaseScheme {T A sort S} scheme, {T A sort S scheme}.
+  #[global] Arguments Build_IsCaseScheme {S} scheme, {S scheme}.
+End CaseSchemeDefinitions.
 
 Ltac2 Notation "refine" c(open_constr) := Control.refine (fun _ => c).
 
@@ -24,6 +36,20 @@ Module List.
         match f x with
         | Some fx => fx :: filter_map f xs
         | None => filter_map f xs
+        end
+    end.
+
+  Ltac2 rec map_opt (f : 'a -> 'b option) (ls : 'a list) :=
+    match ls with
+    | [] => Some []
+    | x :: xs =>
+        match f x with
+        | Some fx =>
+            match map_opt f xs with
+            | Some fxs => Some (fx :: fxs)
+            | None => None
+            end
+        | None => None
         end
     end.
 
@@ -93,6 +119,11 @@ Module List.
                   end
       end in
     aux 0 xs.
+
+  (** [find_rev_index f xs] returns the index of the _last_ element of the list [xs] satisfying [f].
+    Returns [None] if no element is found. *)
+  Ltac2 find_rev_index (f : 'a -> bool) (xs : 'a list) : int option :=
+    fold_lefti (fun i acc x => if f x then Some i else acc) None xs.
 
   Ltac2 take_drop_while (f : 'a -> bool) (ls : 'a list) :=
     let rec aux acc ls :=
@@ -185,6 +216,65 @@ Ltac2 rec pr_list_with_sep (sep : message) (pr : 'a -> message) (ls : 'a list) :
   | [x] => pr x
   | x :: xs => Message.concat (pr x) (Message.concat sep (pr_list_with_sep sep pr xs))
   end.
+
+Module Ltac1.
+  Ltac2 of_constr_list (ls : constr list) := Ltac1.of_list (List.map Ltac1.of_constr ls).
+  Ltac2 to_constr_list (ls : Ltac1.t) :=
+    match Ltac1.to_list ls with
+    | Some ls => List.map_opt Ltac1.to_constr ls
+    | None => None
+    end.
+
+  Ltac2 run_extract_cps_value_opt tac :=
+    let r := Ref.ref None in
+    let k v :=
+      r.(contents) := Some v;
+      (* dummy return value *)
+      ltac1val:(idtac)
+    in
+    let () := Ltac1.apply tac [Ltac1.lambda k] (fun _ => ()) in
+    r.(contents).
+
+  Ltac2 run_extract_cps_value tac := Option.get (run_extract_cps_value_opt tac).
+End Ltac1.
+
+Ltac2 type_of_refresh c :=
+  let c := Ltac1.of_constr c in
+  let tac := ltac1val:(c |- fun k => let t := type of c in k t) c in
+  let val := Ltac1.run_extract_cps_value tac in
+  Option.get (Ltac1.to_constr val).
+
+(** Replace [Type@{u}] sorts with a fresh flexible [Type] so stale or
+    algebraic universe levels do not leak into reconstructed terms.
+    [Prop] and [SProp] are preserved.  [Set] is relaxed to a fresh
+    [Type] only in covariant positions (the codomain spine of [Prod]s):
+    cumulativity then guarantees the refreshed type is a supertype, so
+    any term inhabiting the original type still inhabits the result.
+    Relaxing [Set] in a contravariant position (a binder domain, e.g.
+    the [Set]-valued motive of [sumbool_rec]) would instead produce a
+    type the original term no longer inhabits: the fresh level ends up
+    a global universe with [Set < u], so the needed [u <= Set]
+    constraint is unsatisfiable. *)
+Ltac2 rec refresh_universes_gen (relax_set : bool) (c : constr) :=
+  match Constr.Unsafe.kind c with
+  | Constr.Unsafe.Sort _ =>
+      if Constr.equal c 'Prop then c
+      else if Constr.equal c 'SProp then c
+      else if Constr.equal c 'Set then (if relax_set then 'Type else c)
+      else 'Type
+  | Constr.Unsafe.Prod b body =>
+      let b' :=
+        Constr.Binder.unsafe_make
+          (Constr.Binder.name b)
+          (Constr.Binder.relevance b)
+          (refresh_universes_gen false (Constr.Binder.type b)) in
+      Constr.Unsafe.make
+        (Constr.Unsafe.Prod b' (refresh_universes_gen relax_set body))
+  | _ => Constr.Unsafe.map (refresh_universes_gen false) c
+  end.
+
+Ltac2 refresh_universes (c : constr) := refresh_universes_gen true c.
+
 Module Preterm.
   Ltac2 specialize_n_gen (n : int) (t : preterm) (mk_hole : int -> preterm) :=
     let rec aux i t :=
@@ -228,6 +318,7 @@ Module Constr.
     | Unsafe.Sort _ => true
     | _ => false
     end.
+  Ltac2 mkSort (s : sort) : constr := Unsafe.make (Unsafe.Sort s).
   Ltac2 is_type (c : constr) :=
     match Unsafe.kind c with
     | Unsafe.Sort _ => lazy_match! c with Type => true | _ => false end
@@ -394,10 +485,10 @@ Module Constr.
     end).
 
   Ltac2 compare_sort (s : sort) (s' : sort) :=
-    let is_prop := Constr.equal (Unsafe.make (Unsafe.Sort s)) 'Prop in
-    let is_prop' := Constr.equal (Unsafe.make (Unsafe.Sort s')) 'Prop in
-    let is_sprop := Constr.equal (Unsafe.make (Unsafe.Sort s)) 'SProp in
-    let is_sprop' := Constr.equal (Unsafe.make (Unsafe.Sort s')) 'SProp in
+    let is_prop := Constr.equal (mkSort s) 'Prop in
+    let is_prop' := Constr.equal (mkSort s') 'Prop in
+    let is_sprop := Constr.equal (mkSort s) 'SProp in
+    let is_sprop' := Constr.equal (mkSort s') 'SProp in
     Bool.equal is_prop is_prop' && Bool.equal is_sprop is_sprop'.
 
   Ltac2 rec equal_nocumul (c1 : constr) (c2 : constr) : bool :=
@@ -569,6 +660,28 @@ Module Constr.
     | _ => 0
     end.
 
+  Ltac2 decompose_app1_opt (c : constr) :=
+    match Unsafe.kind c with
+      | Unsafe.App f cl =>
+          let len := Array.length cl in
+          let last := Int.sub len 1 in
+          Some (mkApp f (Array.sub cl 0 last), Array.get cl last)
+      | _ => None
+    end.
+
+  Ltac2 decompose_app1 c := Option.get (decompose_app1_opt c).
+
+  Ltac2 decompose_app1_nocast_opt (c : constr) :=
+    match Unsafe.kind_nocast c with
+      | Unsafe.App f cl =>
+          let len := Array.length cl in
+          let last := Int.sub len 1 in
+          Some (mkApp f (Array.sub cl 0 last), Array.get cl last)
+      | _ => None
+    end.
+
+  Ltac2 decompose_app1_nocast c := Option.get (decompose_app1_nocast_opt c).
+
   Ltac2 to_string t := Message.to_string (Message.of_constr t).
 
   Module Unsafe.
@@ -626,6 +739,81 @@ Module Constr.
     Ltac2 head_nocast_under_lambda t := head_nocast_under_lambda_prod_gen true false t.
     Ltac2 head_nocast_under_prod t := head_nocast_under_lambda_prod_gen false true t.
 
+    (* Compatibility reimplementation of the [Constr.Unsafe.map_in_context]
+       primitive from the theorem-labs Rocq fork, over the upstream
+       [Constr.in_context] external: map [f] on the immediate subterms of
+       [c], entering a goal extended with a hypothesis for each binder so
+       that [f] only ever sees closed terms.  Unlike the fork primitive,
+       let-in bodies are opened as plain hypotheses, so the local definition
+       is not visible to [f]. *)
+    Ltac2 in_context_open (id : ident) (ty : constr) (tac : unit -> unit) : binder * constr :=
+      match Constr.Unsafe.kind (Constr.in_context id ty tac) with
+      | Constr.Unsafe.Lambda b body => (b, body)
+      | _ =>
+          Control.throw
+            (Tactic_failure
+              (Some (Message.of_string "in_context_open: Constr.in_context did not return a lambda")))
+      end.
+
+    Ltac2 map_in_context (f : constr -> constr) (c : constr) : constr :=
+      let name_of (b : binder) : ident :=
+        match Constr.Binder.name b with
+        | Some id => id
+        | None => @x
+        end
+      in
+      let fresh_name (b : binder) : ident :=
+        Fresh.in_goal (name_of b)
+      in
+      let map_under (b : binder) (body : constr) : binder * constr :=
+        let bty' := f (Constr.Binder.type b) in
+        let id := fresh_name b in
+        in_context_open id bty' (fun () =>
+          let h := Control.hyp id in
+          Control.refine (fun () => f (Constr.Unsafe.substnl [h] 0 body)))
+      in
+      let map_under_fix_body (binders : binder array) (body : constr) : constr :=
+        let nbinders := Array.length binders in
+        let rec open_binders (i : int) (ids : ident list) : constr :=
+          if Int.ge i nbinders then
+            let hyps := List.map Control.hyp ids in
+            f (Constr.Unsafe.substnl hyps 0 body)
+          else
+            let b := Array.get binders i in
+            let id := fresh_name b in
+            let (_, result) := in_context_open id (Constr.Binder.type b) (fun () =>
+              Control.refine (fun () =>
+                open_binders (Int.add i 1) (id :: ids))) in
+            result
+        in
+        open_binders 0 []
+      in
+      match Constr.Unsafe.kind c with
+      | Constr.Unsafe.Lambda b body =>
+          let (b', body') := map_under b body in
+          Constr.Unsafe.make (Constr.Unsafe.Lambda b' body')
+      | Constr.Unsafe.Prod b body =>
+          let (b', body') := map_under b body in
+          Constr.Unsafe.make (Constr.Unsafe.Prod b' body')
+      | Constr.Unsafe.LetIn b value body =>
+          let v' := f value in
+          let (b', body') := map_under b body in
+          Constr.Unsafe.make (Constr.Unsafe.LetIn b' v' body')
+      | Constr.Unsafe.Fix structs which types bodies =>
+          let types' := Array.map (fun b =>
+            Constr.Binder.make (Constr.Binder.name b) (f (Constr.Binder.type b))) types in
+          let bodies' := Array.init (Array.length bodies) (fun i =>
+            map_under_fix_body types' (Array.get bodies i)) in
+          Constr.Unsafe.make (Constr.Unsafe.Fix structs which types' bodies')
+      | Constr.Unsafe.CoFix which types bodies =>
+          let types' := Array.map (fun b =>
+            Constr.Binder.make (Constr.Binder.name b) (f (Constr.Binder.type b))) types in
+          let bodies' := Array.init (Array.length bodies) (fun i =>
+            map_under_fix_body types' (Array.get bodies i)) in
+          Constr.Unsafe.make (Constr.Unsafe.CoFix which types' bodies')
+      | _ => Constr.Unsafe.map f c
+      end.
+
     Ltac2 kind_to_message (k : kind) :=
       match Control.case (fun () => make k) with
       | Val (c, _) => Message.of_constr c
@@ -635,6 +823,13 @@ Module Constr.
     Ltac2 iter_with_binders (lift : 'a -> binder -> 'a) (f : 'a -> constr -> unit) (n : 'a) (c : constr) :=
       let __ := Constr.Unsafe.map_with_binders lift (fun v c => let __ := f v c in c) n c in
       ().
+
+    (* (f (Rel n) ... (Rel 1)), but as a *preterm-level* application spine *)
+    Ltac2 apply_rels_preterm (f : constr) (n : int) : preterm :=
+      let rec go acc i :=
+        if Int.le i 0 then acc
+        else let r := mkRel i in go preterm:($preterm:acc $r) (Int.sub i 1)
+      in go preterm:($f) n.
   End Unsafe.
   (*Module Preterm.
   Module Pretype.
@@ -642,6 +837,53 @@ Module Constr.
 
     TODO: rapply version
   Ltac2 rec specialize_pretype *)
+
+  Ltac2 rec prod_names (t : constr) : ident option list :=
+    match Constr.Unsafe.kind_nocast t with
+    | Constr.Unsafe.Prod b t' => Constr.Binder.name b :: prod_names t'
+    | _ => []
+    end.
+
+  Ltac2 rec eta_expand_names (ns : ident option list) (f : constr) (acc : constr list) : constr :=
+    match ns with
+    | [] =>
+        let args := List.rev acc in
+        Control.once_plus (fun () =>
+          mkApp_list f args) (fun _err =>
+          let fty := Constr.type f in
+          let fty := refresh_universes_gen false fty in
+          mkApp_list '($f : $fty) args)
+    | n :: rest =>
+        let id := Fresh.in_goal (Option.default @x n) in
+        Constr.in_context id open_constr:(_) (fun () =>
+          let x := Control.hyp id in
+          Control.refine (fun () => eta_expand_names rest f (x :: acc)))
+    end.
+
+  Ltac2 eta_expand_with_names (f : constr) : constr :=
+    eta_expand_names (prod_names (Constr.type f)) f [].
+
+  Ltac2 eta_long_with_names (f : constr) : constr :=
+    let f := eta_expand_with_names f in
+    eval cbv beta in $f.
+
+  Ltac2 rec add_anon_lambdas (n : int) (body : preterm) : preterm :=
+    if Int.le n 0 then body
+    else add_anon_lambdas (Int.sub n 1) preterm:(fun _ => $preterm:body).
+
+  (* python3 -c 'import sys; n=int(sys.argv[1]); ind=sys.argv[2]; xs=lambda k: " ".join(f"x{i}" for i in range(k)); print(("\n"+ind+"  ").join([ind+"Ltac2 eta_expand_n (f : constr) (n : int) (fallback : unit -> constr) : constr :=", "match n with", "| 0 => f"] + [f"| {k} => constr:(fun {xs(k)} => $f {xs(k)})" for k in range(1, n+1)] + ["| _ => fallback ()", "end."]))' 50 '  ' *)
+
+  Ltac2 eta_expand (f : constr) : constr :=
+    let n := count_prod (Constr.type f) in
+    (* eta_expand_n f n
+      (fun () =>
+        Control.throw (Tactic_failure (Some (fprintf "Add cases up to %i in eta_expand_n for %t" n f)))). *)
+    Constr.pretype (add_anon_lambdas n (Unsafe.apply_rels_preterm f n)).
+
+  Ltac2 eta_long (f : constr) : constr :=
+    let f := eta_expand f in
+    eval cbv beta in $f.
+
   Ltac2 fast_type (t : constr) :=
     match Constr.Unsafe.kind t with
     | Constr.Unsafe.Cast _ _ ty => ty
@@ -681,6 +923,12 @@ Module Constr.
     end.
   Ltac2 has_var_or_evar_or_meta (t : constr) := has_of_is is_var_or_evar_or_meta t.
 
+  Ltac2 is_fix_or_cofix (t : constr) := Constr.is_fix t || Constr.is_cofix t.
+  Ltac2 has_fix_or_cofix (t : constr) := has_of_is Constr.is_fix_or_cofix t.
+
+  Ltac2 is_fix_or_cofix_or_case (t : constr) := Constr.is_fix t || Constr.is_cofix t || Constr.is_case t.
+  Ltac2 has_fix_or_cofix_or_case (t : constr) := has_of_is Constr.is_fix_or_cofix_or_case t.
+
   Ltac2 rec is_only_constructors (t : constr) :=
     match Constr.Unsafe.kind_nocast t with
     | Constr.Unsafe.App f args =>
@@ -692,6 +940,17 @@ Module Constr.
     | Constr.Unsafe.Sort _ => true
     | _ => false
     end.
+
+  Ltac2 evars_of_acc (acc : constr list) (c : constr) :=
+    Constr.fold_left
+      (fun acc c => if Constr.is_evar c && Bool.neg (List.mem Constr.equal c acc) then c :: acc else acc)
+      acc
+      c.
+
+  Ltac2 evars_of_list (c : constr list) :=
+    List.fold_left evars_of_acc [] c.
+
+  Ltac2 evars_of (c : constr) := evars_of_acc [] c.
 
   (** [map2_with_binders lift f mismatch align_app n c1 c2] iterates [f n]
       over pairs of immediate subterms of [c1] and [c2] when they have the
@@ -1078,11 +1337,38 @@ Module Control.
   Ltac2 in_evar (ev : evar) f :=
     Control.new_goal ev > [ .. | f (); shelve () ].
   Ltac2 in_evar_constr (ev : constr) f := in_evar (Constr.destEvar ev) f.
-  Ltac2 goal_evars () :=
-    Constr.fold_left
-      (fun acc c => if Constr.is_evar c && Bool.neg (List.mem Constr.equal c acc) then c :: acc else acc)
-      []
-      (Control.goal ()).
+  Ltac2 goal_evars () := Constr.evars_of (Control.goal ()).
+  Ltac2 context_evars_acc acc :=
+    List.fold_left (fun acc (_h, body_opt, typ) =>
+      let acc := Constr.evars_of_acc acc typ in
+      let acc := match body_opt with | Some body => Constr.evars_of_acc acc body | None => acc end in
+      acc) acc (Control.hyps ()).
+  Ltac2 context_evars () := context_evars_acc [].
+  Ltac2 context_and_goal_evars () :=
+    let acc := [] in
+    let acc := context_evars_acc acc in
+    let acc := Constr.evars_of_acc acc (Control.goal ()) in
+    acc.
+  Ltac2 goal_and_context_evars () :=
+    let acc := [] in
+    let acc := Constr.evars_of_acc acc (Control.goal ()) in
+    let acc := context_evars_acc acc in
+    acc.
+
+  Ltac2 rec in_evars_of (c : constr) f :=
+    match Constr.Unsafe.kind c with
+    | Constr.Unsafe.Evar ev _inst => in_evar ev f
+    | _ => Constr.Unsafe.iter (fun c => in_evars_of c f) c
+    end.
+  (** iterates through evar instances before working in the evar itself, to avoid dropping arguments *)
+  Ltac2 rec in_all_evars_of (c : constr) f :=
+    Constr.Unsafe.iter (fun c => in_all_evars_of c f) c;
+    match Constr.Unsafe.kind c with
+    | Constr.Unsafe.Evar ev _inst => in_evar ev f
+    | _ => ()
+    end.
+  Ltac2 in_goal_evars f := in_evars_of (Control.goal ()) f.
+  Ltac2 in_all_goal_evars f := in_all_evars_of (Control.goal ()) f.
 
   (* TODO: remove when we upgrade Coq *)
   Ltac2 solve_constraints () := ltac1:(solve_constraints).
@@ -1390,6 +1676,7 @@ Module Std.
     apply_via_preterm_gen ev tc eager_tc f (fun _i => preterm:(_)).
   Ltac2 unfold_constant_in (force: bool) (c_unfold: constr) (c_in: constr) :=
     match Reference.of_constr_opt c_unfold with
+    | Some (Std.IndRef _ | Std.ConstructRef _) => None (* uncatchable error on with_strategy *)
     | Some r =>
         let do_eval () := eval cbv delta [ $r ] in $c_in in
         match Control.case (fun () => if force then with_strategy Expand [r] do_eval else do_eval ()) with
@@ -1424,6 +1711,26 @@ Module Std.
   Ltac2 is_forcibly_unfoldable_head_under_lambda_prod (c: constr) :=
     let h := Constr.Unsafe.head_under_lambda_prod c in
     is_forcibly_unfoldable_constant h.
+
+  Ltac2 rec cbv_delta_if_then_while (in_context : bool) (should_unfold_pre : constr -> bool) (should_unfold_post : constr -> constr option) (force_unfold : constr -> bool) (c : constr) :=
+    let cbv_delta_if_then_while := cbv_delta_if_then_while in_context should_unfold_pre should_unfold_post force_unfold in
+    let cmap := if in_context then Constr.Unsafe.map_in_context else Constr.Unsafe.map in
+    let default () := cmap cbv_delta_if_then_while c in
+    match Reference.of_constr_opt c with
+    | None | Some (Std.IndRef _ | Std.ConstructRef _ | Std.VarRef _) => default ()
+    | Some _ =>
+      if should_unfold_pre c then
+        match Option.map should_unfold_post (progress_unfold_constant_in (force_unfold c) c c) with
+        | Some (Some c) => cbv_delta_if_then_while c
+        | None | Some None => default ()
+        end
+      else
+        default ()
+    end.
+
+  Ltac2 unfold_if_then_while (filter : constr -> bool) (post : constr -> constr option) (force : bool) (c : constr) :=
+    let c := cbv_delta_if_then_while true filter post (fun _ => force) c in
+    eval cbv beta in $c.
 
   (* Work around COQBUG(https://github.com/rocq-prover/rocq/issues/14286) *)
   Ltac2 eval_red_safe (c : constr) :=
@@ -1461,6 +1768,7 @@ Module Constant.
   Ltac2 pr_qualified (c : constant) := Reference.pr_qualified (Std.ConstRef c).
   Ltac2 to_qualified_string (c : constant) := Reference.to_qualified_string (Std.ConstRef c).
 End Constant.
+
 Ltac2 better_apply0 adv ev cb cl :=
 enter_h ev (fun _ () => Std.apply adv true cb cl) (fun () => ()).
 
@@ -1719,6 +2027,58 @@ Ltac2 all_ind_dep_scheme_kinds () : Scheme.kind list :=
 Ltac2 all_case_scheme_kinds () : Scheme.kind list :=
   [Scheme.case_dep; Scheme.case_nodep; Scheme.casep_dep; Scheme.casep_nodep; Scheme.scase_dep; Scheme.scase_nodep].
 
+Ltac2 get_case_scheme (c : constr) (sort : constr) :=
+  let (c_head, _) := Constr.decompose_app_nocast c in
+  let c_ref := Reference.of_constr c_head in
+  let sort := eval cbv beta in $sort in
+  let kind := sort_to_case_dep_scheme_kind sort in
+  match Scheme.lookup kind c_ref with
+  | Some ref => Env.instantiate ref
+  | None =>
+      (* Fall back to typeclass resolution for sorts where Scheme.lookup
+         may not have the right kind (e.g., Set, SProp) *)
+      let rec get_case_scheme_internal (sort : constr) (allow_generalization_on_failure : bool) :=
+        let (is_generalizable, ndep_name, sort) :=
+          lazy_match! sort with
+          | Set => (false, "_case", sort)
+          | Prop => (false, "_casep", sort)
+          | SProp => (false, "_casesp", sort)
+          | Type => (true, "_caset", 'Type)
+          | _ =>
+            printf "Warning: get_case_scheme: unexpected sort %t, using Type" sort;
+            (true, "_caset", sort)
+          end in
+        match Control.case (fun () => constr:(_ : CaseScheme $c $sort _)) with
+        | Val (v, _) =>
+            match Control.case (fun () => Constr.type v) with
+            | Val (vt, _) =>
+              lazy_match! vt with
+              | CaseScheme _ _ ?scheme => scheme
+              | ?ty => Control.throw (Tactic_failure (Some (fprintf "get_case_scheme: expected a CaseScheme, got %t" ty)))
+              end
+            | Err err => Control.throw (Tactic_failure (Some (fprintf "get_case_scheme: error on Control.type %t: %a" v (fun () => Message.of_exn_pretty) err)))
+            end
+        | Err _err =>
+            match Control.case (fun () => '(CaseScheme $c $sort)) with
+            | Val (caseSchemeTy, _) =>
+                let c_str := Constr.to_string c in
+                let c_str := String.strip_prefix "@" (String.strip_brackets "(" ")" c_str) in
+                let qualified_flattened_c_str := String.replace_char (String.get "." 0) "_" c_str in
+                let build_CaseScheme_str := Constr.to_string '(@Build_CaseScheme) in
+                let build_CaseScheme_str := String.strip_prefix "@" (String.strip_brackets "(" ")" build_CaseScheme_str) in
+                let isCaseScheme_str := Constr.to_string '(@IsCaseScheme) in
+                let isCaseScheme_str := String.strip_prefix "@" (String.strip_brackets "(" ")" isCaseScheme_str) in
+                let msg := fprintf "Register a scheme for `Scheme %s%s := Elimination for %s Sort %t.%a#[global] Hint Extern 0 (%t ?scheme) => unify scheme %s%s; exact %s : typeclass_instances.%a#[global] Instance: %s %s%s := {}.`"
+                  qualified_flattened_c_str ndep_name c_str sort (fun () a => a) Message.force_new_line caseSchemeTy qualified_flattened_c_str ndep_name build_CaseScheme_str (fun () a => a) Message.force_new_line isCaseScheme_str qualified_flattened_c_str ndep_name in
+                Control.zero (SchemeRegistrationError msg)
+            | Err err =>
+                if allow_generalization_on_failure && is_generalizable
+                then get_case_scheme_internal 'Type false
+                else Control.throw (Tactic_failure (Some (fprintf "get_case_scheme: Could not construct case scheme type CaseScheme %t %t _: %a" c sort (fun () => Message.of_exn_pretty) err)))
+            end
+        end in
+      get_case_scheme_internal sort true
+  end.
 
 Ltac2 fold_match_maybe_force_nondep_around (nondep : bool) f :=
   if nondep
@@ -1758,6 +2118,84 @@ Ltac2 get_induction_scheme_for (c : constr) :=
         (fprintf "Register a scheme for `Scheme Induction for %t Sort %t.`" c sort))
   end.
 
+Ltac2 fold_match (c : constr) :=
+  match Constr.Unsafe.kind_nocast c with
+  | Constr.Unsafe.Case case_info (retclause, relevance) ci scrutinee branches =>
+      let rec aux f :=
+        let ty := Constr.type f in
+        lazy_match! ty with
+        | forall _ _, _ => aux '($f _)
+        | _ => '($f $scrutinee)
+        end in
+      let retty := aux retclause in
+      let retty' :=
+        lazy_match! retty with
+        | ?f _ => f
+        end in
+      let scrutinee_ty := Constr.type scrutinee in
+      let scrutinee_ty_hnf := eval hnf in $scrutinee_ty in
+      let (ind_fam, _) := Constr.decompose_app_nocast scrutinee_ty_hnf in
+      let ind_ref := Reference.of_constr ind_fam in
+      let retty_ty := Constr.type retty' in
+      let (_b, sort) := Constr.destProd retty_ty in
+      let lookup_scheme (kind : Scheme.kind) :=
+        match Scheme.lookup kind ind_ref with
+        | Some ref => Env.instantiate ref
+        | None => Control.zero Match_failure
+        end in
+      let preind () :=
+        let kind := sort_to_ind_dep_scheme_kind sort in
+        lookup_scheme kind in
+      let result_of_ind_head ind_head :=
+        let ind := '(ltac2:(let x := Fresh.in_goal @x in intro $x; unshelve (eapply $ind_head); try (clear $x); intros) :> forall x, $retty' x) in
+        let (_, ind_body) := Constr.destLambda ind in
+        let b := Constr.Binder.make None scrutinee_ty in
+        let new_case := Constr.Unsafe.make (Constr.Unsafe.Case case_info (retclause, relevance) ci (Constr.mkRel 1) branches) in
+        let (_, ind_names) := unfold_head_under_lambda_rec ind_head in
+        let ind_refs := List.map (fun n => Std.ConstRef n) ind_names in
+        let (s, _cl) := strategy_clause:([id]) in
+        let s := { s with Std.rConst := ind_refs } in
+        (* we need to keep the folded ind_body around for the term we are returning, but we want to unfold it to allow reduction past case *)
+        let ind_body_red := Std.eval_cbv s ind_body in
+        let eq_ty := Constr.mkProd b (Constr.mkApp_list '(fun a => @sort_poly_eq ($retty' a)) [Constr.mkRel 1; new_case; ind_body_red]) in
+        let _eq_pf := once ('(ltac2:(
+          let x := Fresh.in_goal @x in
+          intro $x;
+          let x := Control.hyp x in
+          cbv beta iota;
+          Control.plus (fun () => ()) (fun _err => destruct $x);
+          cbv beta iota;
+          exact (@sort_poly_eq_refl _ _)
+        ) :> $eq_ty)) in
+        let ind_body := eval cbv beta zeta in $ind_body in
+        Constr.Unsafe.substnl [scrutinee] 0 ind_body in
+      match Control.case_bt (fun () => let result := result_of_ind_head (preind ()) in unify $result $c; result) with
+      | Val_bt (result, _) => result
+      | Err_bt (SchemeRegistrationError _ as err) info => Control.zero_bt err info
+      | Err_bt err1 _info1 =>
+        match Control.case_bt (fun () =>
+          let ind_head := get_case_scheme ind_fam sort in
+          let result := result_of_ind_head ind_head in
+          result
+        ) with
+        | Val_bt (result, _) =>
+            match Control.case (fun () => unify $result $c) with
+            | Val _ => result
+            | Err err => Control.throw (Tactic_failure (Some (fprintf "fold_match: Could not unify %t with %t: %a" result c (fun () => Message.of_exn_pretty) err)))
+            end
+        | Err_bt (SchemeRegistrationError _ as err) bt => Control.zero_bt err bt
+        | Err_bt err bt =>
+            printf "fold_match: throw: %a then %a" (fun () => Message.of_exn_pretty) err1 (fun () => Message.of_exn_pretty) err;
+            Control.throw_bt err bt
+        end
+      end
+  | _ => fail "fold_match: expected a case expression, not %t" c
+  end.
+
+Ltac2 rec fold_matches (c : constr) :=
+  if Constr.is_case c
+  then fold_matches (fold_match c)
+  else Constr.Unsafe.map fold_matches c.
 
 (* Consider [nat_rect
      : forall P : nat -> Type,
@@ -1778,6 +2216,38 @@ Ltac2 rec last_forall_domain (ty : constr) : constr :=
   | _ => throw "last_forall_domain: expected a product, not %t" ty
   end.
 
+(** [is_case_scheme t] returns [true] if [t] is a case analysis scheme,
+    i.e., if [Scheme.lookup] finds it as a registered case scheme for the
+    inductive type it eliminates. Falls back to [IsCaseScheme] typeclass. *)
+Ltac2 is_case_scheme (t : constr) : bool :=
+  let ty := Constr.type t in
+  let n := Constr.count_prod ty in
+  if Int.gt n 0 then
+    let (ind_ty, _) := Constr.decompose_app_nocast (last_forall_domain ty) in
+    match Reference.of_constr_opt ind_ty with
+    | Some ind_ref =>
+        if List.exist (fun kind =>
+          match Scheme.lookup kind ind_ref with
+          | Some sref =>
+              let scheme := Env.instantiate sref in
+              Control.succeeds (fun () => unify $scheme $t)
+          | None => false
+          end
+        ) (all_case_scheme_kinds ())
+        then true
+        else
+          (* Fall back to IsCaseScheme typeclass for schemes not in the Scheme table *)
+          match Control.case (fun () => constr:(_ : IsCaseScheme $t)) with
+          | Val _ => true
+          | Err _ => false
+          end
+    | None =>
+        match Control.case (fun () => constr:(_ : IsCaseScheme $t)) with
+        | Val _ => true
+        | Err _ => false
+        end
+    end
+  else false.
 
 (** [is_induction_scheme t] returns [true] if [t] is a registered induction/recursion
     scheme for the inductive type it eliminates (via [Scheme.lookup]). *)
@@ -2022,16 +2492,6 @@ Ltac2 rec map_err f f_err :=
   match Control.case_bt f with
   | Val_bt (v, alt) => Control.plus_bt (fun () => v) (fun err info => map_err (fun () => alt err info) f_err)
   | Err_bt err bt => Control.zero_bt (f_err err) bt
-  end.
-
-Ltac2 rec refresh_universes (c : constr) :=
-  match Constr.Unsafe.kind c with
-  | Constr.Unsafe.Sort _ =>
-      if Constr.equal c 'Set then c
-      else if Constr.equal c 'Prop then c
-      else if Constr.equal c 'SProp then c
-      else 'Type
-  | _ => Constr.Unsafe.map refresh_universes c
   end.
 
 Ltac2 collect_evars (t : constr) :=
@@ -2625,6 +3085,20 @@ Ltac2 fix_to_ind (c : constr) : constr * constr :=
   ) :> $eq_ty) in
   (c', eq_proof).
 
+Ltac2 fold_fix (c : constr) :=
+  let (c', _pf) := fix_to_ind_funext c in
+  c'.
+
+Ltac2 rec fold_fixes (c : constr) :=
+  if Constr.is_fix c
+  then fold_fixes (fold_fix c)
+  else Constr.Unsafe.map fold_fixes c.
+
+(* first fix, then match, because induction scheme uses both *)
+Ltac2 fold_fixes_and_matches (c : constr) :=
+  let c := fold_matches (fold_fixes c) in
+  eval cbv beta in $c.
+
 Module Import Tags.
   Ltac2 Type 'a t := { open : message ; close_success : 'a -> message ; close_failure : exn -> exninfo -> message ; reenter : exn -> exninfo -> message }.
 End Tags.
@@ -2677,7 +3151,7 @@ Ltac2 wrap_check tac :=
     '(ltac2:(tac ()) :> $g)).
 
 Ltac2 check_appvect (t : constr) (args: constr array) : constr result :=
-  Constr.Unsafe.check (Constr.Unsafe.make (Constr.Unsafe.App t args)).
+  Constr.Unsafe.check (Constr.mkApp t args).
 
 (** Reduce a term to head normal form, stripping casts. *)
 Ltac2 whnf (c : constr) : constr :=
@@ -2715,8 +3189,10 @@ Ltac2 get_body (t : constr) : constr :=
   end.
 
 Ltac2 types_match (dom : constr) (arg : constr) : bool :=
-  let arg_ty := type_of arg in
-  Constr.equal_nocumul (whnf arg_ty) (whnf dom).
+  let arg_ty := Constr.type arg in
+  let arg_ty := eval lazy in $arg_ty in
+  let dom := eval lazy in $dom in
+  Constr.equal_nocumul arg_ty dom.
 
 Ltac2 first_failing_arg (t : constr) (args : constr list) : (int*constr) option :=
   let len := List.length args in
@@ -2726,7 +3202,7 @@ Ltac2 first_failing_arg (t : constr) (args : constr list) : (int*constr) option 
     | a :: tl =>
         let acc_ty := type_of acc in
         match get_prod acc_ty with
-        | None => Control.throw (Tactic_failure (Some (Message.concat (Message.of_string "Not a product") (Message.of_constr acc_ty))))
+        | None => Control.throw (Tactic_failure (Some (fprintf "Not a product: %t" acc_ty)))
         (* acc expects an argument of type [dom] *)
         | Some (_ , dom, _) =>
             if types_match dom a
@@ -2734,12 +3210,12 @@ Ltac2 first_failing_arg (t : constr) (args : constr list) : (int*constr) option 
               (* Types agree: build the application and continue.
                  We also instantiate [body] with [a] so that
                  dependent types are handled correctly. *)
-              match check_appvect acc [| a |]  with
+              match check_appvect acc [| a |] with
                 | Val t => go t tl
                 | _ => None
               end
             else
-              Some (Int.sub len (List.length tl),a) (* [a] is the first failing argument *)
+              Some (Int.sub len (List.length tl), a) (* [a] is the first failing argument *)
         end
     end
   in
@@ -2760,24 +3236,6 @@ Ltac2 get_ident (i: ident option) (x:ident) : ident :=
   | None => x
   end.
 
-Ltac2 type_of_refresh c :=
-  let c := Ltac1.of_constr c in
-  let r := Ref.ref None in
-  let k c :=
-    let () := match Ltac1.to_constr c with
-    | None => ()
-    | Some c => r.(contents) := Some c
-    end in
-    (* dummy return value *)
-    ltac1val:(idtac)
-  in
-  let tac := ltac1val:(c |- fun k => let t := type of c in k t) c in
-  let () := Ltac1.apply tac [Ltac1.lambda k] (fun _ => ()) in
-  match r.(contents) with
-  | None => Control.throw Not_found
-  | Some c => c
-  end.
-
 
 Ltac2 get_sub_type (t : constr) (args : constr list) : bool list * constr :=
   let use_cumul := Ref.ref [] in
@@ -2787,7 +3245,7 @@ Ltac2 get_sub_type (t : constr) (args : constr list) : bool list * constr :=
     | [] => acc_ty
     | a :: tl =>
       match get_prod acc_ty with
-      (* when not a product, this means that the list of arguments is bigger that the original arity 
+      (* when not a product, this means that the list of arguments is bigger that the original arity
         and no commulativity needs to be computed *)
       | None => acc_ty
       | Some (bopt , dom, codom) =>
@@ -2841,13 +3299,139 @@ Ltac2 check_if_cumul_decompose (t:constr) : (constr * constr * constr * bool lis
 
 Ltac2 check_if_cumul (m:constr * constr * constr * bool list)  :=
   match m with
-    | (c_head, c_type, a, l) =>  
+    | (c_head, c_type, a, l) =>
       if List.exist (fun b => Bool.equal b true) l
-      then  
+      then
         Control.throw (Fatal (check_if_cumul_message c_head c_type a l))
-      else 
+      else
         Control.zero Match_failure
   end.
+
+
+Ltac2 orelse_fatal t f :=
+  match Control.case t with
+  | Err (Fatal _ as e) => Control.throw e
+  | Err e => f e
+  | Val ans =>
+    let (x, k) := ans in
+    Control.plus (fun _ => x) k
+  end.
+
+Ltac2 rec first_fatal0 tacs :=
+  match tacs with
+  | [] => Control.zero Match_failure
+  | tac :: tacs => Control.enter (fun _ => orelse_fatal tac (fun _ => first_fatal0 tacs))
+  end.
+
+Ltac2 Notation "first_fatal" "[" tacs(list0(thunk(tactic(6)), "|")) "]" := first_fatal0 tacs.
+
+Ltac2 is_alias_of (x : constr) (y : constr) :=
+  match Std.is_forcibly_unfoldable_constant x,
+        Std.is_forcibly_unfoldable_constant y,
+        Reference.of_constr_opt x,
+        Reference.of_constr_opt y with
+  | false, false, Some (Std.IndRef _), Some (Std.IndRef _) => true
+  | false, false, Some (Std.ConstructRef _), Some (Std.ConstructRef _) => true
+  | _, _, _, _ => false
+  end.
+
+Ltac2 nat_of_int (n : int) : constr :=
+  let rec go (n : int) :=
+    if Int.equal n 0 then preterm:(O)
+    else
+      let p := go (Int.sub n 1) in
+      preterm:(S $preterm:p) in
+  let p := go n in
+  constr:($preterm:p).
+
+Ltac2 n_of_int (n : int) : constr :=
+  let n_term := nat_of_int n in
+  let n_Z_term := eval cbv in (N.of_nat $n_term) in
+  n_Z_term.
+
+Ltac2 z_of_int (n : int) : constr :=
+  let n_nat_abs := nat_of_int (Int.abs n) in
+  let n_Z_abs := constr:(Z.of_nat $n_nat_abs) in
+  let n_Z := if Int.lt n 0 then n_Z_abs else constr:(Z.opp $n_Z_abs) in
+  eval cbv in $n_Z.
+
+Ltac2 count_strip_matching_app1 (f : constr) (x : constr) :=
+  let rec go (c : constr) (acc : int) :=
+    match Constr.decompose_app1_nocast_opt c with
+    | None => (acc, c)
+    | Some (f', x') =>
+        if Constr.equal f f' then
+          go x' (Int.add 1 acc)
+        else
+          (acc, c)
+    end in
+  go x 0.
+
+Ltac2 compress_ctor_chain_gen (filter : constr -> bool) (min_chain_size : int) (c : constr) :=
+  match Constr.decompose_app1_nocast_opt c with
+  | None => None
+  | Some (f, x) =>
+      if filter f then
+        let (n', base) := count_strip_matching_app1 f x in
+        let n := Int.add n' 1 in
+        if Int.ge n min_chain_size then
+          Some (n, f, n_of_int n, base)
+        else
+          None
+      else
+        None
+  end.
+
+(* unfolds constants that match [filter], refolds [fix] and [match], errors on bare [fix]/[match] *)
+Ltac2 unfold_while_refold_gen (filter : constr -> bool) (keep_bare_fix : constr -> bool) (c : constr) :=
+  let post c :=
+    let c := fold_matches (fold_fixes c) in
+    if Constr.has_fix_or_cofix_or_case c
+    then
+      if keep_bare_fix c
+      then Some c
+      else None
+    else
+      Some c
+  in
+  Std.unfold_if_then_while filter post true c.
+
+Ltac2 unfold_and_refold (should_unfold : constr -> bool) (c : constr) :=
+  unfold_while_refold_gen should_unfold (fun bad =>
+    throw "unable to fold fix or match in %t" bad
+  ) c.
+
+(** 1-based index of the last [true] in [l], or 0 if none.  Used both as the
+    eta-expansion depth and as the inverse hint priority for cumulativity
+    repair variants. *)
+Ltac2 last_true_index (l : bool list) : int :=
+  match List.find_rev_index (fun b => b) l with
+  | Some i => Int.add i 1
+  | None => 0
+  end.
+
+(** [prod_prefix_binders expected n] returns the binders of the first [n]
+    product domains of [expected], in order.  Binders are reused verbatim so
+    dependent domains stay correct (later domains may contain [Rel]s into
+    earlier binders). *)
+Ltac2 prod_prefix_binders (expected : constr) (n : int) : binder list :=
+  let rec collect i ty acc :=
+    if Int.gt i n then List.rev acc
+    else match Constr.Unsafe.kind ty with
+         | Constr.Unsafe.Prod b body => collect (Int.add i 1) body (b :: acc)
+         | _ => throw "prod_prefix_binders: %t has fewer than %i products (stuck at %t)" expected n ty
+         end in
+  collect 1 expected [].
+
+(** [eta_expand_prefix key binders] builds
+    [fun (x1 : E1) ... (xn : En) => key x1 ... xn] where [E1 .. En] are the
+    types of [binders] (as returned by [prod_prefix_binders]). *)
+Ltac2 eta_expand_prefix (key : constr) (binders : binder list) : constr :=
+  let n := List.length binders in
+  if Int.le n 0 then key else
+  let args := List.init n (fun i => Constr.mkRel (Int.sub n i)) in
+  let body := Constr.mkApp_list key args in
+  List.fold_right Constr.mkLambda binders body.
 
 Definition id {A B : Type} (P: B -> Type) (x : A) (e:P=P) := x.
 
@@ -2856,9 +3440,9 @@ Proof.
 Fail check_if_cumul (check_if_cumul_decompose '(option True)).
 Fail check_if_cumul (check_if_cumul_decompose '(prod True True)).
 Fail check_if_cumul (check_if_cumul_decompose '(@eq True I I)).
-intros x. 
+intros x.
 Fail check_if_cumul (check_if_cumul_decompose '(@id True bool (fun x => True) I)).
-Fail check_if_cumul (check_if_cumul_decompose '(@eq True I I)). 
+Fail check_if_cumul (check_if_cumul_decompose '(@eq True I I)).
 Abort.
 
 Ltac2 mutable compute_triple (_:constr) (_:ident) (_:ident) : unit := ().
@@ -2899,11 +3483,11 @@ Ltac2 mutable shelve_and_tc () := ().
 
 Ltac2 adjust_type (a : constr) (goal_lhs : constr) : constr :=
   let goal_type := type_of_refresh goal_lhs in
-  if Constr.is_sort goal_type then 
+  if Constr.is_sort goal_type then
    let s := Option.get (get_arity goal_type) in
    replace_sort_in_arity a s
   else a.
-  
+
 Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : constr list ) (goal_lhs : constr) :=
   let tac goal :=
      let compare_lemmas lem1 lem2 :=
@@ -2914,7 +3498,7 @@ Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : const
         let a := eval cbn head match in $a in
         Constr.equal_nocumul lem1 a
      in
-     let selected_lemma := match goal with 
+     let selected_lemma := match goal with
       | None => List.hd lems
       | Some goal_lhs =>
         let (c_head, c_args) := Constr.decompose_app_list_nocast goal_lhs in
@@ -2922,11 +3506,11 @@ Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : const
           (c_head, c_type, a, l) =>
           let a := adjust_type a goal_lhs in
           let lems := List.filter (compare_lemmas a) lems in
-          if List.is_empty lems 
+          if List.is_empty lems
           then check_if_cumul (c_head, c_type, a, l)
-          else 
+          else
             let selected_lemma := List.hd lems in selected_lemma
-        end 
+        end
       end
       in
         first
@@ -2934,7 +3518,7 @@ Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : const
              unshelve (eapply $selected_lemma); shelve_and_tc ()|
              pre_tc_hint_hook (); unshelve (eapply $selected_lemma); shelve_and_tc () |
              forward_apply selected_lemma goal_lhs |
-             pre_tc_hint_hook () ; forward_apply selected_lemma goal_lhs 
+             pre_tc_hint_hook () ; forward_apply selected_lemma goal_lhs
             ] in
   let (goal_head, goal_args) := Constr.decompose_app goal_lhs in
   if Constr.is_proj goal_head && Constr.is_const key then
