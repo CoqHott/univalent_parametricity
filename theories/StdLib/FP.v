@@ -68,7 +68,7 @@ End Interface10.
 (*! FP for Sigma !*)
 
 #[universes(collapse_sort_variables=no)]
-Definition exist_eq {A P} (a a': A) (l : P a) (l' : P a') (e : a = a') :
+Definition exist_eq {A P} (a a':A) (l : P a) (l' : P a') (e : a = a') :
   e ## l = l' -> (a ; l) = (a'; l').
 Proof. intros e'; destruct e, e'; reflexivity. Defined.
 
@@ -381,110 +381,6 @@ Proof.
 Defined.
 
 (*! FP for the identity type !*)
-
-(*
-Definition eq_map (A B:Type) (e: A ≈ B) (HB : Canonical_eq B)
-           (x :A) (y : B) (e1 : x ≈ y)
-           (x' : A) (y' : B) (e2 : x' ≈ y'): (x = x') -> (y = y').
-Proof.
-  pose (e_i := Equiv_inverse (equiv e)).
-  pose (e_fun (alt_ur_coh _ _ _ _) e1).
-  pose (e_fun (alt_ur_coh _ _ _ _ _) e2).
-  intro ex.
-  exact (HB.(can_eq) _ _ ((e_retr _ y)^ @ ap _ (e0^ @ ex  @ e3) @ e_retr _ y')).
-Defined.
-
-Definition eq_map_inv (A B:Type) (e: A ≈ B) (HA : Canonical_eq A)
-           (x :A) (y : B) (e1 : x ≈ y)
-           (x' : A) (y' : B) (e2 : x' ≈ y'): (y = y') -> (x = x').
-Proof.
-  unfold univalent_transport in *.
-  pose (e_i := Equiv_inverse (equiv e)).
-  pose (e_fun (alt_ur_coh _ _ _ _ _) e1).
-  pose (e_fun (alt_ur_coh _ _ _ _ _) e2).
-  intro ey.
-  exact (HA.(can_eq) _ _ (e0 @ ap _ ey @ e3^)).
-Defined.
-
-Definition Equiv_eq (A B:Type) (e: A ≈ B)
-           (x :A) (y : B) (e1 : x ≈ y)
-           (x' : A) (y' : B) (e2 : x' ≈ y'): (x = x') ≃ (y = y').
-Proof.
-  unfold univalent_transport in *.
-  pose (e_i := Equiv_inverse (equiv e)).
-  unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)).
-  - eapply eq_map; eauto. apply e.
-  - eapply eq_map_inv; eauto. apply e.
-  - intro E. unfold eq_map_inv, eq_map.
-    unfold univalent_transport. cbn. repeat rewrite can_eq_eq.
-    repeat rewrite ap_pp.
-    repeat rewrite <- (ap_compose (e_fun (equiv e))).
-    repeat rewrite concat_p_pp.
-    repeat rewrite ap_V.
-    rewrite <- (concat_p_pp _ ((ap (e_inv (e_fun (equiv e))) (e_retr (e_fun (equiv e)) y))^)).
-    rewrite <- concat_inv.
-    pose (e_adj' (Equiv_inverse (equiv e)) y). simpl in e0.
-    rewrite <- e0. clear e0.
-    rewrite (concat_A1p (f:=(fun x0 : A => e_inv (e_fun (equiv e)) (e_fun (equiv e) x0)))).
-    rewrite concat_inv.
-    repeat rewrite concat_p_pp.
-    rewrite inv_inv'. cbn.
-    rewrite (concat_Ap1 (f:=(fun x0 : A => e_inv (e_fun (equiv e)) (e_fun (equiv e) x0)) )).
-    repeat rewrite <- concat_p_pp.
-    pose (e_adj' (Equiv_inverse (equiv e)) y'). simpl in e0.
-    rewrite <- e0. clear e0.
-    rewrite (concat_p_pp _ (e_sect (e_fun (equiv e)) (e_inv (e_fun (equiv e)) y'))).
-    rewrite (concat_A1p (f := (fun x0 : A => e_inv (e_fun (equiv e)) (e_fun (equiv e) x0)))).
-    repeat rewrite <- concat_p_pp.
-    rewrite inv_inv'. rewrite concat_refl. rewrite inv_inv. apply concat_refl.
-  - intro E. cbn. unfold eq_map_inv, eq_map. repeat rewrite can_eq_eq.
-    repeat rewrite <- concat_p_pp. rewrite inv_inv.
-    rewrite concat_refl.
-    rewrite (concat_p_pp _ _ (ap univalent_transport E)).
-    rewrite inv_inv. cbn. repeat rewrite <- (ap_compose _ (e_fun (equiv e))).
-    rewrite (concat_A1p (f:=(fun x0 : B => e_fun (equiv e) (e_inv (e_fun (equiv e)) x0))) _ E).
-    rewrite concat_p_pp. rewrite inv_inv. reflexivity.
-Defined.
-
-#[export] Hint Extern 0 ((_ = _) ≃ (_ = _)) => erefine (Equiv_eq _ _ _ _ _ _ _ _ _) : typeclass_instances ur_typeclass_instances.
-
-Definition alt_ur_coh' {A B:Type} (H:A ⋈ B) :
-           forall (a:A) (b:B), (a ≈ b) ≃ (↑a = b).
-Proof.
-  intros a b. cbn.
-  eapply equiv_compose. apply alt_ur_coh. apply H. unfold univalent_transport.
-  eapply equiv_compose. apply isequiv_ap.
-  unshelve refine (transport_eq (fun X => (_ = X) ≃ (_ = _))
-                       (e_retr _ b)^ _). apply Equiv_id.
-Defined.
-
-Definition UR_eq_equiv (A B : Type) P
-           (x : A) (y : B) (H : P x y)
-           (x' : A) (y' : B) (H' : P x' y') (X : x = x') (Y:y=y') :
-  UR_eq A B P x y H x' y' H' X Y ≃
-        (transport_eq (P _) Y (transport_eq (fun X => P X _) X H) = H').
-Proof.
-  unshelve econstructor. intros XX.
-  destruct XX. reflexivity.
-  unshelve refine (isequiv_adjointify _ _ _ _).
-  - intros eH.
-    destruct X, Y, eH. apply UR_idpath.
-  - cbn. intros XX. destruct XX. reflexivity.
-  - cbn. intros eH; destruct X, Y, eH. reflexivity.
-Defined.
-
-Definition alt_ur_coh_transport_r A B H (x1 x2 :A) (y:B) H1 (XX:x1=x2) :
-  (alt_ur_coh _ _ _  x2 y) (transport_eq (fun X : A => X ≈ y) XX H1)
-  = XX^ @ alt_ur_coh _ _ _  x1 y H1.
-destruct XX; reflexivity.
-Defined.
-
-Definition alt_ur_coh_transport_l A B H (x :A) (y1 y2:B) H1 (XX:y1=y2) :
-  (alt_ur_coh _ _ _ x y2) (transport_eq (ur x) XX H1)
-  = alt_ur_coh _ _ _ x y1 H1 @ ap _ XX.
-destruct XX. cbn. apply inverse, concat_refl.
-Defined.
-*)
 
 #[universes(collapse_sort_variables=no)]
 Definition univ_eq : (fun A => @eq A) ≈u @path.
@@ -809,313 +705,6 @@ unshelve econstructor.
   - intros ? ? ?; reflexivity.
 Defined.
 
-(*! True !*)
-
-(*Instance DecidableEq_eq_True : DecidableEq True.
-Proof.
-  econstructor. intros [] []. exact (inl idpath).
-Defined.
-
-Instance FP_True : True ⋈ True := URType_Refl_decidable True DecidableEq_eq_True.
-*)
-(*! List !*)
-
-(* Definition inversion_cons {A a a'} {l l':list A} (X: a::l = a'::l') :
-  {p : (a = a') * (l = l') & X = ap2 cons (fst p) (snd p)}
-  := match X with
-       | idpath => ((idpath ,idpath) ; idpath) end. *)
-
-(*
-Instance Transportable_list A (P: list A -> Type)
-         (HP : forall (P:A->Type), Transportable P) : Transportable P.
-Proof.
-  unshelve econstructor.
-  - intros n m. revert P; revert m.
-    induction n; intro m; destruct m; intros P e.
-    + apply Equiv_id.
-    + inversion e.
-    + inversion e.
-    + pose (inversion_cons e).1. specialize (IHn _ (fun n => P (a :: n)) (snd p)).
-      cbn in IHn. eapply equiv_compose; try exact IHn. apply (HP (fun x => P (x :: m))).
-      exact (fst p).
-  - cbn. intro n; revert P; induction n; cbn; intro P.
-    + reflexivity.
-    + rewrite transportable_refl. rewrite (IHn (fun n => P (a :: n))).
-      apply path_Equiv. reflexivity.
-Defined.
-*)
-
-(* Instance Equiv_List A B (e:A ≃ B) : list A ≃ list B.
-Proof.
-    equiv_pind2 (@list_rect _) (@nil _) (@cons _).
-Defined. *)
-
-(* Instance Equiv_UR_list A B (R R' : A -> B -> Type)
-         (e:forall a b, R a b ≃ R' a b) : forall l l' , PR_list R l l' ≃ PR_list R' l l'.
-Proof.
-  intros.
-  equiv_pind2 (@PR_list_rect _ _ _) (@PR_list_nil _ _ _) (@PR_list_cons _ _ _).
-Defined. *)
-
-(* Definition eq_nil_refl {A} {l:list A} (e : [] = l) :
-  match l return [] = l -> Type with [] => fun e => e = idpath | _ => fun _ => False end e.
-Proof.
-  destruct e. reflexivity.
-Defined. *)
-
-(*
-Definition transport_UR_list_cons A B {equ:A ≃ B} (einv := Equiv_inverse equ)
-           (a :A) a' a'' (l l': list A ) (l'':list B) (h:a'=a) (e:l'=l)
-  (E: a = ↑ a'') (E': UR_list (fun a b => a = ↑b) l l''):
-   transport_eq
-    (fun X => UR_list  (fun a b => a = ↑b) X (a''::l''))
-    (ap2 cons h e)^ (UR_list_cons _ E E')  =
-  UR_list_cons (fun a b => a = ↑b) (transport_eq (fun X => eq A X _) h^ E)
-               (transport_eq (fun X : list A => UR_list _ X _) e^ E').
-  destruct h, e. reflexivity.
-Defined.
-
-
-Definition UR_List_is_eq A B {e:A ≃ B} (e_inv := Equiv_inverse e) :
-  forall l l' , UR_list (fun a b => a = ↑b) l l' ≃ (l = ↑ l').
-Proof.
-  intros l l'.
-  unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)).
-  induction 1; typeclasses eauto.
-  intro x. refine (transport_eq (fun X => UR_list _ X l') x^ _).
-  clear x. induction l'; typeclasses eauto.
-  cbn. intro x. induction x; cbn.
-  typeclasses eauto. etransitivity. apply transport_UR_list_cons.
-  apply ap2. rewrite transport_paths_l. rewrite concat_refl. apply inv2.
-  exact IHx.
-  cbn. intro x. generalize dependent l'.
-  induction l; cbn; intro l'; destruct l'; intro X.
-  cbn. pose (X0 := eq_nil_refl X). cbn in *. rewrite X0. reflexivity.
-  inversion X. inversion X.
-  cbn in *. pose (inversion_cons X). destruct s as [s s'].
-  rewrite s'. etransitivity. apply ap. apply transport_UR_list_cons.
-  cbn. apply (ap2 (fun e e' => ap2 cons e e')).
-  rewrite transport_paths_l. rewrite concat_refl. apply inv2.
-  apply IHl.
-Defined.
-
-
-Definition URIsUR_list {A B : Type} {H : ur A B} (l l':list A) : (l = l') ≃ (l ≈ (↑ l')).
-Proof.
-  pose (einv := Equiv_inverse (equiv H)).
-  eapply Equiv_inverse. eapply equiv_compose.
-  unshelve apply Equiv_UR_list.
-  exact (fun a b => a = ↑ b).
-  intros. cbn. apply alt_ur_coh. apply H.
-  eapply equiv_compose. eapply UR_List_is_eq.
-  refine (transport_eq (fun X => (l = X) ≃ _) (e_sect _ l')^ _). refine (Equiv_id _).
-Defined.
-*)
- (*
-Definition FP_list : list ≈u list.
-  unshelve econstructor.
-  - econstructor. intros l l'; split.
-    + destruct 1. induction l; intros; econstructor; eauto. eapply (fst (ur_coh _ _) idpath).
-    + unfold univalent_transport. pose (e_sect (Equiv_List x y (equiv H)) l').
-      set (l'' := Equiv_List _ _ _ _) in *. rewrite <- p. clear p; clearbody l''.
-      induction 1; cbn; intros.
-      * reflexivity.
-      * apply ap2; eauto. eapply (snd (alt_ur_coh _ _ _) r).
-Defined.
-
-#[export] Hint Extern 0 (UR_Type (list ?A) (list ?B)) => unshelve notypeclasses refine (@FP_list _ _ _): typeclass_instances.
-#[export] Hint Extern 0 (list ?A ≈u list ?B) => unshelve notypeclasses refine (@FP_list _ _ _): typeclass_instances.
-
-Definition FP_cons : @cons ≈u @cons.
-Proof.
-  cbn; intros. econstructor; tc.
-Defined.
-
-Definition FP_nil : @nil ≈u @nil.
-Proof.
-  cbn; intros. econstructor; tc.
-Defined.
-
-Hint Extern 0 ([] ≈u []) => eapply FP_nil : typeclass_instances ur_typeclass_instances.
-Hint Extern 0 ([] ≈p []) => eapply PR_list_nil : typeclass_instances ur_typeclass_instances.
-
-Hint Extern 0 (cons _ _ ≈u cons _ _) => apply FP_cons : typeclass_instances ur_typeclass_instances.
-Hint Extern 0 (cons _ _ ≈p cons _ _) => apply PR_list_cons : typeclass_instances ur_typeclass_instances.
-
-Definition FP_List_rect : @list_rect ≈u @list_rect.
-Proof.
-  cbn. intros A B e X X' eX P P' P_nil Q Q' Q_cons l l' el.
-  induction el; tc.
-Defined.
-
-Definition FP_List_rect' : @list_rect ≈p @list_rect : SProp.
-Proof.
-  intros A B e X X' eX P P' P_nil Q Q' Q_cons l l' el.
-  induction el; cbn; tc.
-Defined.
-
-#[export] Hint Extern 0 (list_rect _ ?X ?P ?Q ?l ≈u list_rect _ ?X' ?P' ?Q' ?l') =>
-unshelve notypeclasses refine (FP_List_rect _ _ _ X X' _ P P' _ Q Q' _ l l' _);
-shelve_non_PR; intros
- : typeclass_instances ur_typeclass_instances.
-
-
-#[universes(collapse_sort_variables=no)]
-Goal list Type ≈p list Type.
- cbn. tc.
-Defined.
-
-#[universes(collapse_sort_variables=no)]
-Goal list Type ≈u list Type.
-eapply FP_list; cbn.
-(* would require univalence *)
-Fail tc.
-Abort.
-
-#[universes(collapse_sort_variables=no)]
-Goal list (nat -> nat) ≈u list (nat -> nat).
-unshelve eapply FP_list; cbn.
-unshelve eapply FP_forall_ur; cbn; intros; tc.
-Defined.
-
-#[universes(collapse_sort_variables=no)]
-Goal list (nat -> Type) ≈u list (nat -> Type).
-unshelve eapply FP_list; cbn.
-unshelve eapply FP_forall_ur; cbn; intros; try tc.
-(* woudl require univalence *)
-Fail tc.
-Abort.
-
-Definition Equiv_Vector_not_eff A B (e:A ≃ B) n n' (en :n = n') : Vector.t A n ≃ Vector.t B n'.
-Proof.
-  equiv_pind2 (@Vector.t_rect _) (@Vector.nil _) (@Vector.cons _).
-Defined.
-
-Definition Equiv_Vector_fun A B (e:A ≃ B) n n' (en : n = n') : Vector.t A n -> Vector.t B n'.
-Proof.
-  intros v; generalize dependent n'.
-  induction v; destruct n'; intros.
-  apply_cons (@Vector.nil _).
-  destruct (zeroS _ en).
-  destruct (zeroS _ en^).
-  apply univalent_transport in h.
-  unshelve eapply (@Vector.cons _ h _ _).
-  apply IHv.
-  exact  (inversionS _ _ en).
-Defined.
-
-Instance Equiv_Vector A B (e:A ≃ B) n n' (en :n = n') : Vector.t A n ≃ Vector.t B n'.
-Proof.
-unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)).
-  apply  Equiv_Vector_fun; auto.
-  pose (Equiv_inverse e); pose en^. apply  Equiv_Vector_fun; auto.
-  intro v. destruct en. induction v; intros; cbn.  reflexivity.
-  apply (ap2 (fun a => @Vector.cons _ a _)).
-  typeclasses eauto with equiv typeclass_instances. auto.
-  intro v. destruct en. induction v; intros; cbn.  reflexivity.
-  apply (ap2 (fun a => @Vector.cons _ a _)).
-  typeclasses eauto with equiv typeclass_instances. auto.
-Defined.
-
-
-Definition length {A} (l:list A) : nat := list_rect _ (fun _ => nat) O (fun _ _ n => S n) l.
-
-Fixpoint vector_to_list A B (e: A ≃ B) (n m:nat) (en : n = m) :
-  vector A n -> {l : list B & length l = m}.
-   refine (
-  match n, m return n = m -> vector A n -> {l : list B & length l = m} with
-  | O,O => fun en _ => ([]; _)
-  | S n, S m => fun en v => let IHn :=  vector_to_list A B e n m _ (Vector.tl v) in
-           (e (Vector.hd v) :: IHn.1 ; ap S (IHn.2))
-  |  _ , _ => _ end en).
-   - destruct en. reflexivity.
-   - inversion 1.
-   - inversion 1.
-   - apply inversionS; auto.
-Defined.
-
-Fixpoint list_to_vector_ A B (e: A ≃ B) (n m:nat) (en : n = m) (l:list A) (H : length l = n) {struct n}: Vector.t B m.
-  destruct n, m.
-  - exact vnil.
-  - inversion en.
-  - inversion en.
-  - destruct l.
-    + destruct (zeroS _ H).
-    + exact (vcons (e a) (list_to_vector_ _ _ e _ _ (inversionS _ _ en) l (inversionS _ _ H))).
-Defined.
-
-Definition list_to_vector A B (e: A ≃ B) (n m:nat) (en: n = m) : {l : list A & length l = n} -> Vector.t B m
-  := fun x => list_to_vector_ A B e n m en x.1 x.2.
-
-Definition transport_vector A n a (s:vector A n) k (e : n = k):
-  ap S e # vcons a s  = vcons a (e # s).
-  destruct e. reflexivity.
-Defined.
-
-Definition tl {A} (l:list A) : list A:=
-    match l with
-      | [] => []
-      | a :: m => m
-    end.
-
-Definition S_length :
-  forall (A : Type) (l : list A) (n: nat),
-    length l = S n -> length (tl l) = n.
-  intros; induction l; inversion H; simpl; reflexivity.
-Defined.
-
-Instance IsEquiv_vector_list A B e n m en  : IsEquiv (vector_to_list A B e n m en).
-Proof.
-  unshelve refine (isequiv_adjointify _ _ _ _).
-  - exact (list_to_vector B A (Equiv_inverse e) m n en^).
-  - (* Sect (nvector_to_nlist a) (nlist_to_nvector a) *)
-    destruct en. induction n.
-    + intro v. apply Vector.case0. reflexivity.
-    + intro v. revert IHn.
-      refine (Vector.caseS (fun n v => (forall x : vector A n,
-                                      list_to_vector _ _ _ n _ _ (vector_to_list _ _ _ n _ _ x) = x)
-                                    -> list_to_vector _ _ _ (S n) _ _ (vector_to_list _ _ _ (S n) _ _ v) = v) _ _).
-      clear. intros. simpl. unfold list_to_vector. cbn.
-      apply (ap2 vcons). exact (e_sect e h). exact (H t).
-  - (* Sect (nlist_to_nvector a) (nvector_to_nlist a) *)
-    destruct en. induction n.
-    + intro rl. simpl. destruct rl as [l Hl].
-      destruct l; try inversion Hl. reflexivity.
-    + intro rl. destruct rl as [l Hl].
-      destruct l. inversion Hl. cbn.
-      eapply path_sigma_SProp. cbn. eapply ap2.
-      exact (e_retr e b). cbn in Hl. pose (X := inversionS _ _ Hl).
-      exact ((IHn (l;X))..1).
-Defined.
-
-Typeclasses Opaque vector_to_list list_to_vector.
-
-#[export] Hint Extern 0 (length _ ≈[ _] _)=> progress (unfold length)  : typeclass_instances ur_typeclass_instances.
-
-
-
-
-Instance Equiv_vector_list (A B:Type) {H: A ≃ B} (n n':nat) (en : n = n')
-  : Vector.t A n ≃ {l : list B & length l = n'}
-    := BuildEquiv _ _ _ (IsEquiv_vector_list A B H n n' en).
-
-Definition Equiv_Vector_id A n :Equiv_Vector A A (Equiv_id A) n n  idpath = Equiv_id (Vector.t A n).
-apply path_Equiv, funext. intro v.
-induction v. reflexivity. cbn. apply ap. exact IHv.
-Defined.
-
-Definition Equiv_vector_list_
-  : Vector.t ≈u (fun A n => {l : list A & length l = n}).
-  intros A B e n n' en. cbn in en. eapply (snd (alt_ur_coh FP_nat _ _)) in en.
-  unshelve econstructor.
-  - econstructor.
-    intros v l. exact ((vector_to_list A B (equiv e) n n' en v) = l).
-  - econstructor. intros v v'. cbn.
-    split; intros.
-    + now eapply ap.
-    + eapply ap_inv_equiv; tc.
-Defined.
-*)
 Require Import Ltac2Utils.
 
 #[local] Set Implicit Arguments.
@@ -1172,10 +761,11 @@ Parameter Corelib__Init__Datatypes__S_iso : iso_statement S imported_Corelib__In
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_Corelib__Init__Logic__ex : import_of (fun A => @ex A).
-Parameter Corelib__Init__Logic__ex_iso : iso_statement (fun A => @ex A) imported_Corelib__Init__Logic__ex.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.ex A) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.ex A) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_Corelib__Init__Logic__ex : import_of (@ex).
+Parameter Corelib__Init__Logic__ex_iso : iso_statement (@ex) imported_Corelib__Init__Logic__ex.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
 
 Parameter imported_Corelib__Numbers__BinNums__Z : Type.
 Parameter Corelib__Numbers__BinNums__Z_iso : iso_statement BinNums.Z imported_Corelib__Numbers__BinNums__Z.
@@ -1274,9 +864,9 @@ Module Type Interface'' (Import args : Args).
 
 
 Parameter imported_Corelib__Init__Logic__eq : forall y : Type, y -> y -> SProp.
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__eqD_rect : import_of (@Corelib.Init.Logic.eq_rect).
 Parameter Corelib__Init__Logic__eqD_rect_iso : iso_statement (@Corelib.Init.Logic.eq_rect) imported_Corelib__Init__Logic__eqD_rect.
@@ -1311,24 +901,24 @@ Parameter Corelib__Init__Logic__iff_iso : iso_statement (@Corelib.Init.Logic.iff
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_LF__IndProp__regD_exp : import_of (fun A => @reg_exp A).
-Parameter LF__IndProp__regD_exp_iso : iso_statement (fun A => @reg_exp A) imported_LF__IndProp__regD_exp.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @reg_exp A) LF__IndProp__regD_exp_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @reg_exp A) LF__IndProp__regD_exp_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_LF__IndProp__regD_exp : import_of (@reg_exp).
+Parameter LF__IndProp__regD_exp_iso : iso_statement (@reg_exp) imported_LF__IndProp__regD_exp.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@reg_exp) LF__IndProp__regD_exp_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@reg_exp) LF__IndProp__regD_exp_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Set Warnings "-bad-template-constraint".
 
 Parameter imported_LF__IndProp__EmptySet : forall y : Type, imported_LF__IndProp__regD_exp y.
-Parameter LF__IndProp__EmptySet_iso : iso_statement (fun T => @EmptySet T) imported_LF__IndProp__EmptySet.
+Parameter LF__IndProp__EmptySet_iso : iso_statement (@EmptySet) imported_LF__IndProp__EmptySet.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun T => @EmptySet T) LF__IndProp__EmptySet_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun T => @EmptySet T) LF__IndProp__EmptySet_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Set Warnings "+bad-template-constraint".
 
 Parameter imported_LF__Poly__list : Type -> Type.
-Parameter LF__Poly__list_iso : iso_statement (fun A => @list A) imported_LF__Poly__list.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @list A) LF__Poly__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @list A) LF__Poly__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter LF__Poly__list_iso : iso_statement (@list) imported_LF__Poly__list.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@list) LF__Poly__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@list) LF__Poly__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 (*
 Parameter imported_LF__IndProp__expD_match : forall y : Type, imported_LF__Poly__list y -> imported_LF__IndProp__regD_exp y -> SProp.
@@ -1356,9 +946,9 @@ End Interface''.
 Module Type Interface2 (Import args : Args).
 
 Parameter imported_Corelib__Init__Logic__eq : forall y : Type, y -> y -> SProp.
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__eqD_rect : import_of (@Corelib.Init.Logic.eq_rect).
 Parameter Corelib__Init__Logic__eqD_rect_iso : iso_statement (@Corelib.Init.Logic.eq_rect) imported_Corelib__Init__Logic__eqD_rect.
@@ -1378,14 +968,14 @@ Inductive Singleton (A : Type) : A -> Type :=
   MkSingleton : forall a, Singleton a.
 
 Parameter imported_parseque__Running__Singleton : forall y : Type, y -> Type.
-Parameter parseque__Running__Singleton_iso : iso_statement (fun A => @Singleton A) imported_parseque__Running__Singleton.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Singleton A) parseque__Running__Singleton_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Singleton A) parseque__Running__Singleton_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter parseque__Running__Singleton_iso : iso_statement (@Singleton) imported_parseque__Running__Singleton.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Singleton) parseque__Running__Singleton_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Singleton) parseque__Running__Singleton_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_parseque__Running__MkSingleton : forall (y : Type) (y0 : y), imported_parseque__Running__Singleton y0.
-Parameter parseque__Running__MkSingleton_iso : (fun A => @MkSingleton A) ≈[ _] imported_parseque__Running__MkSingleton.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @MkSingleton A) parseque__Running__MkSingleton_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @MkSingleton A) parseque__Running__MkSingleton_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter parseque__Running__MkSingleton_iso : iso_statement (@MkSingleton) imported_parseque__Running__MkSingleton.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@MkSingleton) parseque__Running__MkSingleton_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@MkSingleton) parseque__Running__MkSingleton_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_parseque__Running__SingletonD_ind : import_of (@Singleton_ind).
 Parameter parseque__Running__SingletonD_ind_iso : iso_statement (@Singleton_ind) imported_parseque__Running__SingletonD_ind.
@@ -1424,9 +1014,9 @@ Parameter Corelib__Init__Datatypes__boolD_rect_iso : iso_statement (@Corelib.Ini
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.bool_rect) Corelib__Init__Datatypes__boolD_rect_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__eq : forall y : Type, y -> y -> SProp.
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Stdlib__Bool__Bool__eqb : imported_Corelib__Init__Datatypes__bool -> imported_Corelib__Init__Datatypes__bool -> imported_Corelib__Init__Datatypes__bool.
 Parameter Stdlib__Bool__Bool__eqb_iso : Bool.eqb ≈[ _] imported_Stdlib__Bool__Bool__eqb.
@@ -1496,11 +1086,11 @@ Module Type Interface5 (Import args : Args).
     tc_hint_for (@bool_rect) bool_rect_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
   Parameter imported_eq : forall y : Type, y -> y -> SProp.
-  Parameter eq_iso : iso_statement (fun A => @eq A) imported_eq.
+  Parameter eq_iso : iso_statement (@eq) imported_eq.
   #[local] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
-    tc_hint_for (fun A => @eq A) eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+    tc_hint_for (@eq) eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
   #[local] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
-    tc_hint_for (fun A => @eq A) eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+    tc_hint_for (@eq) eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
   Parameter imported_eqb :
     imported_bool -> imported_bool -> imported_bool.
@@ -1530,14 +1120,14 @@ Parameter Corelib__Init__Datatypes__false_iso : iso_statement (@Corelib.Init.Dat
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.false) Corelib__Init__Datatypes__false_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__option : Type -> Type.
-Parameter Corelib__Init__Datatypes__option_iso : iso_statement (fun A => @Corelib.Init.Datatypes.option A) imported_Corelib__Init__Datatypes__option.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Datatypes.option A) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Datatypes.option A) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter Corelib__Init__Datatypes__option_iso : iso_statement (@Corelib.Init.Datatypes.option) imported_Corelib__Init__Datatypes__option.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__Some : forall y : Type, y -> imported_Corelib__Init__Datatypes__option y.
-Parameter Corelib__Init__Datatypes__Some_iso : iso_statement (fun A => @Corelib.Init.Datatypes.Some A ) imported_Corelib__Init__Datatypes__Some.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Datatypes.Some A ) Corelib__Init__Datatypes__Some_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Datatypes.Some A ) Corelib__Init__Datatypes__Some_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter Corelib__Init__Datatypes__Some_iso : iso_statement (@Corelib.Init.Datatypes.Some) imported_Corelib__Init__Datatypes__Some.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.Some) Corelib__Init__Datatypes__Some_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.Some) Corelib__Init__Datatypes__Some_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__true : imported_Corelib__Init__Datatypes__bool.
 Parameter Corelib__Init__Datatypes__true_iso : true ≈[ _] imported_Corelib__Init__Datatypes__true.
@@ -1556,9 +1146,9 @@ Parameter Corelib__Init__Logic__False_iso : iso_statement (@Corelib.Init.Logic.F
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.False) Corelib__Init__Logic__False_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__eq : forall y : Type, y -> y -> SProp.
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__not : import_of (@Corelib.Init.Logic.not).
 Parameter Corelib__Init__Logic__not_iso : iso_statement (@Corelib.Init.Logic.not) imported_Corelib__Init__Logic__not.
@@ -1584,7 +1174,7 @@ Parameter SECF__Maps__totalD_map_iso : iso_statement (@total_map) imported_SECF_
 Definition partial_map (A : Type) := total_map (option A).
 
 (* #[export] Hint Extern 1 => progress (unfold partial_map) : typeclass_instances ur_typeclass_instances.
-Definition imported_SECF__Maps__partialD_map A := imported_SECF__Maps__totalD_map (imported_Corelib__Init__Datatypes__option A). *)
+Definition imported_SECF__Maps__partialD_map A := imported_SECF__Maps__totalD_map (imported_Corelib__Init__Datatypes__option). *)
 
 Parameter imported_SECF__Maps__partialD_map : Type -> Type.
 Parameter SECF__Maps__partialD_map_iso : iso_statement (@partial_map) imported_SECF__Maps__partialD_map.
@@ -1657,14 +1247,14 @@ Parameter Corelib__Init__Datatypes__false_iso : false ≈[ _] imported_Corelib__
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.false) Corelib__Init__Datatypes__false_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__option : Type -> Type.
-Parameter Corelib__Init__Datatypes__option_iso : iso_statement (fun A => @option A) imported_Corelib__Init__Datatypes__option.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Datatypes.option A) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Datatypes.option A) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter Corelib__Init__Datatypes__option_iso : iso_statement (@option) imported_Corelib__Init__Datatypes__option.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__Some : forall y : Type, y -> imported_Corelib__Init__Datatypes__option y.
-Parameter Corelib__Init__Datatypes__Some_iso : iso_statement (fun A => @Some A) imported_Corelib__Init__Datatypes__Some.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Datatypes.Some A) Corelib__Init__Datatypes__Some_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Datatypes.Some A) Corelib__Init__Datatypes__Some_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter Corelib__Init__Datatypes__Some_iso : iso_statement (@Some) imported_Corelib__Init__Datatypes__Some.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.Some) Corelib__Init__Datatypes__Some_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.Some) Corelib__Init__Datatypes__Some_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__true : imported_Corelib__Init__Datatypes__bool.
 Parameter Corelib__Init__Datatypes__true_iso : true ≈[ _] imported_Corelib__Init__Datatypes__true.
@@ -1683,9 +1273,9 @@ Parameter Corelib__Init__Logic__False_iso : iso_statement (@False) imported_Core
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.False) Corelib__Init__Logic__False_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__eq : forall y : Type, y -> y -> SProp.
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__not : import_of (@Corelib.Init.Logic.not).
 Parameter Corelib__Init__Logic__not_iso : iso_statement (@Corelib.Init.Logic.not) imported_Corelib__Init__Logic__not.
@@ -1882,9 +1472,9 @@ Parameter eq_iso :
               (UR.PR_Type UR.univalent))))
      (fun A => @eq A) imported_eq).
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
-  tc_hint_for (fun A => @Corelib.Init.Logic.eq A) eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+  tc_hint_for (@Corelib.Init.Logic.eq) eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
-  tc_hint_for (fun A => @Corelib.Init.Logic.eq A) eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+  tc_hint_for (@Corelib.Init.Logic.eq) eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_not : SProp -> SProp.
 Parameter not_iso :
@@ -2030,21 +1620,21 @@ Parameter true_iso : true ≈[_] imported_true.
     true_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_eq : forall y : Type, y -> y -> SProp.
-Parameter eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_eq.
+Parameter eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_eq.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
-  tc_hint_for (fun A => @Corelib.Init.Logic.eq A)
+  tc_hint_for (@Corelib.Init.Logic.eq)
     eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
-  tc_hint_for (fun A => @Corelib.Init.Logic.eq A)
+  tc_hint_for (@Corelib.Init.Logic.eq)
     eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_ex : forall y : Type, (y -> SProp) -> SProp.
-Parameter ex_iso : iso_statement (fun A => @Corelib.Init.Logic.ex A) imported_ex.
+Parameter ex_iso : iso_statement (@Corelib.Init.Logic.ex) imported_ex.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
-  tc_hint_for (fun A => @Corelib.Init.Logic.ex A)
+  tc_hint_for (@Corelib.Init.Logic.ex)
     ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) =>
-  tc_hint_for (fun A => @Corelib.Init.Logic.ex A)
+  tc_hint_for (@Corelib.Init.Logic.ex)
     ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_key : Type.
@@ -2166,9 +1756,9 @@ Parameter Corelib__Init__Logic__False_iso : iso_statement False imported_Corelib
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.False) Corelib__Init__Logic__False_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__eq : forall y : Type, y -> y -> SProp.
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 Parameter imported_Corelib__Init__Logic__eq_Prop : forall y : SProp, y -> y -> SProp.
 Parameter Corelib__Init__Logic__eq_iso_Prop : iso_statement (fun A : Prop => @eq A) imported_Corelib__Init__Logic__eq_Prop.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A : Prop => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2200,20 +1790,20 @@ Arguments Star {T} _.
 Reserved Notation "s =~ re" (at level 80).
 
 Parameter imported_LF__IndProp__regD_exp : Type -> Type.
-Parameter LF__IndProp__regD_exp_iso : iso_statement (fun A => @reg_exp A) imported_LF__IndProp__regD_exp.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @reg_exp A) LF__IndProp__regD_exp_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @reg_exp A) LF__IndProp__regD_exp_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter LF__IndProp__regD_exp_iso : iso_statement (@reg_exp) imported_LF__IndProp__regD_exp.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@reg_exp) LF__IndProp__regD_exp_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@reg_exp) LF__IndProp__regD_exp_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_LF__IndProp__Char : forall y : Type, y -> imported_LF__IndProp__regD_exp y.
-Parameter LF__IndProp__Char_iso : iso_statement (fun A => @Char A) imported_LF__IndProp__Char.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Char A) LF__IndProp__Char_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Char A) LF__IndProp__Char_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter LF__IndProp__Char_iso : iso_statement (@Char) imported_LF__IndProp__Char.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Char) LF__IndProp__Char_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Char) LF__IndProp__Char_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 
 Parameter imported_LF__Poly__list : Type -> Type.
-Parameter LF__Poly__list_iso : iso_statement (fun A => @Datatypes.list A) imported_LF__Poly__list.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Datatypes.list A) LF__Poly__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Datatypes.list A) LF__Poly__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter LF__Poly__list_iso : iso_statement (@Datatypes.list) imported_LF__Poly__list.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Datatypes.list) LF__Poly__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Datatypes.list) LF__Poly__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Local Open Scope list_scope.
 From Stdlib Require Import List.
@@ -2247,14 +1837,14 @@ Lemma char_nomatch_char :
 Proof. Admitted.
 
 Parameter imported_LF__IndProp__expD_match : forall y : Type, imported_LF__Poly__list y -> imported_LF__IndProp__regD_exp y -> SProp.
-Parameter LF__IndProp__expD_match_iso : iso_statement (fun A => @exp_match A) imported_LF__IndProp__expD_match.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @exp_match A) LF__IndProp__expD_match_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @exp_match A) LF__IndProp__expD_match_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter LF__IndProp__expD_match_iso : iso_statement (@exp_match) imported_LF__IndProp__expD_match.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@exp_match) LF__IndProp__expD_match_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@exp_match) LF__IndProp__expD_match_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_LF__Poly__cons : forall y : Type, y -> imported_LF__Poly__list y -> imported_LF__Poly__list y.
-Parameter LF__Poly__cons_iso : iso_statement (fun A => @Datatypes.cons A) imported_LF__Poly__cons.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Datatypes.cons A) LF__Poly__cons_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Datatypes.cons A) LF__Poly__cons_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter LF__Poly__cons_iso : iso_statement (@Datatypes.cons) imported_LF__Poly__cons.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Datatypes.cons) LF__Poly__cons_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Datatypes.cons) LF__Poly__cons_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Stdlib__Strings__Ascii__ascii : Type.
 Parameter Stdlib__Strings__Ascii__ascii_iso : iso_statement Ascii.ascii imported_Stdlib__Strings__Ascii__ascii.
@@ -2333,6 +1923,7 @@ Context {A B : Type}.
 Implicit Types (x : A) (f : var -> A) (g : A -> B) (n m : var).
 
 Lemma lift_compR n m f : eq ((+n) >>> ((+m) >>> f)) ((+m+n) >>> f).
+Proof. 
 Admitted.
 
 End LemmasForFun.
@@ -2510,10 +2101,10 @@ Parameter Corelib__Init__Datatypes__S_iso : iso_statement (@Corelib.Init.Datatyp
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_Corelib__Init__Logic__eq : import_of (fun A => @Corelib.Init.Logic.eq A).
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Nat__add : import_of (@Corelib.Init.Nat.add).
 Parameter Corelib__Init__Nat__add_iso : iso_statement (@Corelib.Init.Nat.add) imported_Corelib__Init__Nat__add.
@@ -2544,10 +2135,10 @@ End Interface19.
 
 Module Type Interface16 (Import args : Args).
 
-Parameter imported_Corelib__Init__Logic__eq : import_of (fun A => @Corelib.Init.Logic.eq A).
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__eqD_rect : import_of (@Corelib.Init.Logic.eq_rect).
 Parameter Corelib__Init__Logic__eqD_rect_iso : iso_statement (@Corelib.Init.Logic.eq_rect) imported_Corelib__Init__Logic__eqD_rect.
@@ -2571,16 +2162,16 @@ Parameter Cdcl__Formula__atomT_iso : iso_statement (@atomT:Type) imported_Cdcl__
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@atomT:Type) Cdcl__Formula__atomT_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@atomT:Type) Cdcl__Formula__atomT_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_Corelib__Init__Datatypes__option : import_of (fun A => @Corelib.Init.Datatypes.option A).
-Parameter Corelib__Init__Datatypes__option_iso : iso_statement (fun A => @Corelib.Init.Datatypes.option A) imported_Corelib__Init__Datatypes__option.
+Parameter imported_Corelib__Init__Datatypes__option : import_of (@Corelib.Init.Datatypes.option).
+Parameter Corelib__Init__Datatypes__option_iso : iso_statement (@Corelib.Init.Datatypes.option) imported_Corelib__Init__Datatypes__option.
 
 Parameter imported_Corelib__Init__Datatypes__option' : import_of (fun A : Prop => @Corelib.Init.Datatypes.option A).
 Parameter Corelib__Init__Datatypes__option_iso' : iso_statement (fun A : Prop => @Corelib.Init.Datatypes.option A) imported_Corelib__Init__Datatypes__option'.
 
 #[export] Hint Extern 1 (UR.UR_Type _ _) => ltac2: (
-  match! goal with [ |- UR.UR_Type ?goal_lhs _] => tc_hint_for_list true false '(fun A => @Corelib.Init.Datatypes.option A) ['Corelib__Init__Datatypes__option_iso;'Corelib__Init__Datatypes__option_iso' ] goal_lhs end) : typeclass_instances ur_typeclass_instances.
+  match! goal with [ |- UR.UR_Type ?goal_lhs _] => tc_hint_for_list true false '(@Corelib.Init.Datatypes.option) ['Corelib__Init__Datatypes__option_iso;'Corelib__Init__Datatypes__option_iso' ] goal_lhs end) : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr _ _ _) => ltac2: (
-  match! goal with [ |- UR.pr _ ?goal_lhs _] => tc_hint_for_list true false '(fun A => @Corelib.Init.Datatypes.option A) ['Corelib__Init__Datatypes__option_iso;'Corelib__Init__Datatypes__option_iso' ] goal_lhs end) : typeclass_instances ur_typeclass_instances.
+  match! goal with [ |- UR.pr _ ?goal_lhs _] => tc_hint_for_list true false '(@Corelib.Init.Datatypes.option) ['Corelib__Init__Datatypes__option_iso;'Corelib__Init__Datatypes__option_iso' ] goal_lhs end) : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__False : import_of (@Corelib.Init.Logic.False).
 Parameter Corelib__Init__Logic__False_iso : iso_statement (@Corelib.Init.Logic.False) imported_Corelib__Init__Logic__False.
@@ -2606,10 +2197,10 @@ End Interface17.
 
 Module Type Interface18 (Import args : Args).
 
-Parameter imported_Corelib__Init__Logic__eq : import_of (fun A => @Corelib.Init.Logic.eq A).
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__iff : import_of (@Corelib.Init.Logic.iff).
 Parameter Corelib__Init__Logic__iff_iso : iso_statement (@Corelib.Init.Logic.iff) imported_Corelib__Init__Logic__iff.
@@ -2688,9 +2279,9 @@ Parameter Corelib__Init__Datatypes__bool_iso : iso_statement Corelib.Init.Dataty
 #[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.bool) Corelib__Init__Datatypes__bool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__option : Type -> Type.
-Parameter Corelib__Init__Datatypes__option_iso : iso_statement (fun A => Corelib.Init.Datatypes.option A) imported_Corelib__Init__Datatypes__option.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => Corelib.Init.Datatypes.option A) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => Corelib.Init.Datatypes.option A) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter Corelib__Init__Datatypes__option_iso : iso_statement (Corelib.Init.Datatypes.option) imported_Corelib__Init__Datatypes__option.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (Corelib.Init.Datatypes.option) Corelib__Init__Datatypes__option_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__ssr__ssrbool__true : import_of (@True).
 Parameter Corelib__ssr__ssrbool__pairD_true_iso : iso_statement (@True) imported_Corelib__ssr__ssrbool__true.
@@ -2726,9 +2317,9 @@ End Interface21.
 Module Type Interface22 (Import args : Args).
 
 Parameter imported_Corelib__Init__Logic__ex : forall y : Type, (y -> SProp) -> SProp.
-Parameter Corelib__Init__Logic__ex_iso : iso_statement (fun A => @Corelib.Init.Logic.ex A) imported_Corelib__Init__Logic__ex.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.ex A) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.ex A) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter Corelib__Init__Logic__ex_iso : iso_statement (@Corelib.Init.Logic.ex) imported_Corelib__Init__Logic__ex.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 Monomorphic Definition imported_Corelib__Init__Logic__ex_Prop : forall y : SProp, (y -> SProp) -> SProp.
 Admitted.
 Monomorphic Definition Corelib__Init__Logic__ex_iso_Prop : (fun A : Prop => @Corelib.Init.Logic.ex A) ≈u imported_Corelib__Init__Logic__ex_Prop.
@@ -2799,10 +2390,10 @@ End Interface24.
 
 Module Type Interface25 (Import args : Args).
 
-Parameter imported_Corelib__Init__Logic__eq : import_of (fun A => @Corelib.Init.Logic.eq A).
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__eq_Prop : import_of (fun A : Prop => @Corelib.Init.Logic.eq A).
 Parameter Corelib__Init__Logic__eq_iso_Prop : iso_statement (fun A : Prop => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq_Prop.
@@ -2826,10 +2417,10 @@ Parameter Corelib__Init__Datatypes__S_iso : iso_statement (@Corelib.Init.Datatyp
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.S) Corelib__Init__Datatypes__S_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_Corelib__Init__Logic__eq : import_of (fun A => @Corelib.Init.Logic.eq A).
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__eq_Prop : import_of (fun A : Prop => @Corelib.Init.Logic.eq A).
 Parameter Corelib__Init__Logic__eq_iso_Prop : iso_statement (fun A : Prop => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq_Prop.
@@ -2869,10 +2460,10 @@ Module Type Interface27 (Import args : Args).
 #[projections(primitive)]
 Record product (A B : Type) := mk_prod { fst : A; snd : B }.
 
-Parameter imported_Corelib__Init__Logic__eq : import_of (fun A => @Corelib.Init.Logic.eq A).
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__product : import_of product.
 Parameter Corelib__Init__Datatypes__product_iso : iso_statement product imported_Corelib__Init__Datatypes__product.
@@ -2908,10 +2499,10 @@ Parameter Corelib__Init__Datatypes__nat_iso : iso_statement nat imported_Corelib
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_Corelib__Init__Logic__eq : import_of (fun A => @Corelib.Init.Logic.eq A).
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Nat__max : import_of Nat.max. 
 Parameter Corelib__Init__Nat__max_iso : iso_statement Nat.max imported_Corelib__Init__Nat__max.
@@ -2942,10 +2533,10 @@ Parameter Corelib__Init__Datatypes__nat_iso : iso_statement (@Corelib.Init.Datat
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.nat) Corelib__Init__Datatypes__nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_Corelib__Init__Logic__eq : import_of (fun A => @Corelib.Init.Logic.eq A).
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Numbers__BinNums__positive : import_of (@Corelib.Numbers.BinNums.positive).
 Parameter Corelib__Numbers__BinNums__positive_iso : iso_statement (@Corelib.Numbers.BinNums.positive) imported_Corelib__Numbers__BinNums__positive.
@@ -3008,10 +2599,10 @@ Ltac2 clean_hyp () := repeat (match! goal with | [ h : _ ≈[_] _ |- _ ] =>  mat
 
 Module Type Interface30 (Import args : Args).
 
-Parameter imported_Corelib__Init__Logic__eq : import_of (fun A => @Corelib.Init.Logic.eq A).
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 From Stdlib Require Import Logic.ProofIrrelevance.
 
@@ -3038,12 +2629,12 @@ From UnivalentParametricity Require Import theories.UR theories.FP.
 #[local] Set Implicit Arguments.
 #[local] Hint Constants Opaque : typeclass_instances.
 
-Parameter imported_Corelib__Init__Logic__eq : import_of (fun A => @Corelib.Init.Logic.eq A).
-Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq.
-#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_Corelib__Init__Logic__iff : import_of (fun A => @Corelib.Init.Logic.iff A).
+Parameter imported_Corelib__Init__Logic__iff : import_of (@Corelib.Init.Logic.iff).
 (* Parameter Corelib__Init__Logic__iff_iso : iso_statement (@Corelib.Init.Logic.iff) imported_Corelib__Init__Logic__iff.
  *)
 Parameter Corelib__Init__Logic__iff_iso : (@UR.pr UR.univalent _ _
@@ -3060,10 +2651,10 @@ End Interface31.
 
 Module Type Interface32 (Import args : Args).
 
-Parameter imported_Corelib__Init__Datatypes__list : import_of (fun A => @Corelib.Init.Datatypes.list A).
-Parameter Corelib__Init__Datatypes__list_iso : iso_statement (fun A => @Corelib.Init.Datatypes.list A) imported_Corelib__Init__Datatypes__list.
-#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Datatypes.list A) Corelib__Init__Datatypes__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Datatypes.list A) Corelib__Init__Datatypes__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_Corelib__Init__Datatypes__list : import_of (@Corelib.Init.Datatypes.list).
+Parameter Corelib__Init__Datatypes__list_iso : iso_statement (@Corelib.Init.Datatypes.list) imported_Corelib__Init__Datatypes__list.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.list) Corelib__Init__Datatypes__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Datatypes.list) Corelib__Init__Datatypes__list_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Datatypes__nat : import_of (@Corelib.Init.Datatypes.nat).
 Parameter Corelib__Init__Datatypes__nat_iso : iso_statement (@Corelib.Init.Datatypes.nat) imported_Corelib__Init__Datatypes__nat.
@@ -3371,8 +2962,8 @@ Parameter Corelib__Init__Logic__ex_iso : (@UR.pr _ _ _
               (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent))
            (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent)))
      (fun A => @ex A) imported_Corelib__Init__Logic__ex).
-#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.ex A) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.ex A) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__subrelation : forall y y0 : Type, (y -> y0 -> SProp) -> (y -> y0 -> SProp) -> SProp.
 Parameter Corelib__Init__Logic__subrelation_iso : (@UR.pr _ _ _
@@ -3432,9 +3023,9 @@ Parameter Corelib__Init__Datatypes__nat_iso : (@UR.pr _ _ _ (UR.PR_Type@{Type Ty
 
 Parameter imported_Corelib__Init__Logic__ex : forall y : Type, (y -> SProp) -> SProp.
 Parameter Corelib__Init__Logic__ex_iso : iso_statement
-     (fun A => @ex A) imported_Corelib__Init__Logic__ex.
-#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.ex A) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.ex A) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+     (@ex) imported_Corelib__Init__Logic__ex.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.ex) Corelib__Init__Logic__ex_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Inductive bool : Type :=
   | true : bool
@@ -3517,7 +3108,7 @@ Class NatDed (A: Type) := mkNatDed {
   prop_right: forall (P: Prop) Q, P -> derives Q (prop P);
   prop_imp_prop_left: forall (P Q: Prop), derives (imp (prop P) (prop Q)) (prop (P -> Q));
   allp_prop_left: forall {B: Type} (P: B -> Prop), derives (allp (fun b => prop (P b))) (prop (forall b, P b))
-(* not_prop_right: forall (P: A) (Q: Prop), (Q -> derives P FF) -> derives P (prop (not Q)) *)
+(* not_prop_right: forall (P:) (Q: Prop), (Q -> derives P FF) -> derives P (prop (not Q)) *)
 }.
 
 Parameter imported_Corelib__Init__Logic__eq : forall y : Type, y -> y -> SProp.
@@ -3571,9 +3162,9 @@ Parameter Corelib__Init__Logic__eq_iso : (@UR.pr _ _ _
          @UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent x y (forall _ : x, Prop) (forall _ : y, SProp) (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.univalent x y H)
            (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent x y Prop SProp (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.univalent x y H)
               (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent))))
-     (fun A => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq).
-#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Logic.eq A) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+     (fun A : Type => @Corelib.Init.Logic.eq A) imported_Corelib__Init__Logic__eq).
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 Parameter imported_Corelib__Init__Logic__eq_Prop : forall y : SProp, y -> y -> SProp.
 Parameter Corelib__Init__Logic__eq_iso_Prop : (@UR.pr _ _ _
      (@UR.URForall@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Prop SProp (fun x : Prop => forall (_ : x) (_ : x), Prop) (fun H : SProp => forall (_ : H) (_ : H), SProp)
@@ -3625,10 +3216,10 @@ Parameter Corelib__Init__Specif__exist_iso : iso_statement
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A P => @exist A P) Corelib__Init__Specif__exist_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A P => @Corelib.Init.Specif.exist A P) Corelib__Init__Specif__exist_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_Corelib__Init__Specif__proj1D_sig : import_of (fun A => @proj1_sig A). 
-Parameter Corelib__Init__Specif__proj1D_sig_iso : iso_statement (fun A => @proj1_sig A) imported_Corelib__Init__Specif__proj1D_sig.
-#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Specif.proj1_sig A) Corelib__Init__Specif__proj1D_sig_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (fun A => @Corelib.Init.Specif.proj1_sig A) Corelib__Init__Specif__proj1D_sig_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+Parameter imported_Corelib__Init__Specif__proj1D_sig : import_of (@proj1_sig). 
+Parameter Corelib__Init__Specif__proj1D_sig_iso : iso_statement (@proj1_sig) imported_Corelib__Init__Specif__proj1D_sig.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Init.Specif.proj1_sig) Corelib__Init__Specif__proj1D_sig_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Init.Specif.proj1_sig) Corelib__Init__Specif__proj1D_sig_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Specif__sigD_rect : forall (y : Type) (y0 : y -> SProp) (y1 : imported_Corelib__Init__Specif__sig y0 -> Type),
   (forall (y2 : y) (y3 : y0 y2), y1 (imported_Corelib__Init__Specif__exist y0 y2 y3)) -> forall y2 : imported_Corelib__Init__Specif__sig y0, y1 y2.
@@ -3722,6 +3313,7 @@ Parameter Corelib__Numbers__BinNums__Zpos_iso : (@UR.pr _ _ _
         (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} BinNums.Z imported_Corelib__Numbers__BinNums__Z Corelib__Numbers__BinNums__Z_iso))
      BinNums.Zpos imported_Corelib__Numbers__BinNums__Zpos).
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.Numbers.BinNums.Zpos) Corelib__Numbers__BinNums__Zpos_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.Numbers.BinNums.Zpos) Corelib__Numbers__BinNums__Zpos_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Numbers__BinNums__xH : imported_Corelib__Numbers__BinNums__positive.
@@ -4011,7 +3603,7 @@ Definition UR_vector_list_is_eq_fun A B {X:A ⋈ B}
            (v : t A n)
            (v' : t B n') :
   UR_vector ur n n' en v v'
-  -> UR_list ur (vector_to_list A A (Equiv_id A) n n idpath v) .1
+  -> UR_list ur (vector_to_list A A (Equiv_id) n n idpath v) .1
       (vector_to_list B B (Equiv_id B) n' n' idpath v') .1.
   induction 1; cbn; econstructor; auto.
 Defined.
@@ -4032,10 +3624,10 @@ Definition UR_vector_list_is_eq_inv A B {X:A ⋈ B}
            (en_inv : n' = n := inverse en)
            (v : t A n)
            (v' : t B n')
-           (canA := ur_refl A)
+           (canA := ur_refl)
            (canB := ur_refl B)
   :
-UR_list ur (vector_to_list A A (Equiv_id A) n n idpath v) .1
+UR_list ur (vector_to_list A A (Equiv_id) n n idpath v) .1
         (vector_to_list B B (Equiv_id B) n' n' idpath v') .1 ->
 UR_vector ur n n' en v v'.
 intros Hlist. clear en_inv. generalize dependent n'.
@@ -4067,7 +3659,7 @@ Definition UR_vector_list_is_eq A B {X:A ⋈ B}
            (X_inv := UR_Type_Inverse _ _ X)
            (n n':nat) (en : n = n')
            (en_inv : n' = n := inverse en)
-           (canA := ur_refl A)
+           (canA := ur_refl)
            (canB := ur_refl B)
   :
   forall (v:t A n) (v' : t B n') ,
@@ -4093,7 +3685,7 @@ Proof.
       symmetry. exact (UR_list_decompose _ _ _ Hl).
     + destruct (zeroS _ en).
     + destruct (zeroS _ en^).
-    + destruct (UR_list_decompose ur (h :: (vector_to_list A A (Equiv_id A) n n idpath v) .1)
+    + destruct (UR_list_decompose ur (h :: (vector_to_list A A (Equiv_id) n n idpath v) .1)
                                   (h0 :: (vector_to_list B B (Equiv_id B) n0 n0 idpath v') .1) Hl).
       destruct x. rewrite e. clear e Hl.
       pose (ap_S_section en). rewrite e. set (inversionS n n0 en).
@@ -4115,7 +3707,7 @@ Proof.
   eapply Equiv_inverse.
   eapply equiv_compose. eapply UR_vector_list_is_eq.
   unfold univalent_transport.
-  pose (canA := ur_refl A). pose (canB := ur_refl B).
+  pose (canA := ur_refl). pose (canB := ur_refl B).
   refine (transport_eq (fun X => (Equiv_vector_list A A n n idpath v
    ≈ Equiv_vector_list B B n' n' idpath (Equiv_Vector A B (equiv H) n n' en v')) ≃ (X = _))
                        (e_sect (vector_to_list A A _ n n _) v) _).
@@ -4124,7 +3716,7 @@ Proof.
                        (e_sect (vector_to_list A A _ n n _) v') _).
   assert (vector_to_list B B (Equiv_id B) n' n' idpath
                          (Equiv_Vector_fun A B (equiv H) n n' en v')
-          = ↑ (vector_to_list A A (Equiv_id A) n n idpath v')).
+          = ↑ (vector_to_list A A (Equiv_id) n n idpath v')).
   { clear. destruct en. apply path_sigma_uncurried.
     unshelve eexists; [idtac | apply is_hset].
     destruct v'. reflexivity. cbn. apply ap. induction v'; cbn.
@@ -4132,8 +3724,8 @@ Proof.
     - apply ap. exact IHv'.
   }
   cbn. rewrite X; clear X.
-  set (vector_to_list A A (Equiv_id A) n n idpath v).
-  set (vector_to_list A A (Equiv_id A) n n idpath v').
+  set (vector_to_list A A (Equiv_id) n n idpath v).
+  set (vector_to_list A A (Equiv_id) n n idpath v').
   clearbody s s0. clear v v'.
   eapply equiv_compose.
   apply Equiv_inverse. exact (@ur_coh _ _ _ _ (Ur_Coh (@FP_sized_list_ A B H n n' en)) s s0).
@@ -4159,7 +3751,7 @@ Instance Equiv_Vector_instance : forall x y : Type, x ⋈ y -> forall n n' (e:n=
 
 (*! FP ap !*)
 
-Instance UR_type_of_ap : UR (forall (A B : Type) (f : A -> B) (x y : A), x = y -> f x = f y)(forall (A B : Type) (f : A -> B) (x y : A), x = y -> f x = f y).
+Instance UR_type_of_ap : UR (forall (A B : Type) (f : A -> B) (x y :), x = y -> f x = f y)(forall (A B : Type) (f : A -> B) (x y :), x = y -> f x = f y).
     typeclasses eauto with typeclass_instances.
 Defined.
 
@@ -4336,13 +3928,13 @@ Defined.
 
 (* FP for canonical eq *)
 
-Definition Canonical_eq_sig A :=   {can_eq : forall (x y : A), x = y -> x = y &
+Definition Canonical_eq_sig A :=   {can_eq : forall (x y :), x = y -> x = y &
     forall x, can_eq x x idpath = idpath }.
 
 Instance issig_Canonical_eq A : Canonical_eq_sig A ≃ Canonical_eq A.
 Proof.
   unfold Canonical_eq_sig.
-  issig (Build_Canonical_eq A) (@can_eq A) (@can_idpath A).
+  issig (Build_Canonical_eq) (@can_eq) (@can_idpath).
 Defined.
 
 Instance issig_Canonical_eq_inv A : Canonical_eq A ≃ Canonical_eq_sig A :=
@@ -4362,7 +3954,7 @@ Defined.
 
 Definition Svector A := {n : nat & t A n}.
 
-Definition Snil {A} : Svector A := (O ; nil A).
+Definition Snil {A} : Svector A := (O ; nil).
 
 Definition Svcons {A} a v : Svector A := (S v.1; vcons a v.2).
 
@@ -4421,7 +4013,7 @@ Definition list_to_vector_Equiv_list (A B:Type) (e : A ≈ B) (l:list B) :
   - rewrite <- ap_inv. rewrite transport_vector. rewrite e_retr. now apply ap.
 Defined.
 
-Definition UR_list_Svector_fun (A B:Type) (e : A ≈ B) (l : list A) (l':list B) :
+Definition UR_list_Svector_fun (A B:Type) (e : A ≈ B) (l : list) (l':list B) :
   UR_list ur l l' ->
   UR_list_vect ur l
       (length l'; list_to_vector B B (Equiv_id B) (length l') (length l') idpath (l'; idpath)).
@@ -4442,7 +4034,7 @@ Proof.
   destruct e. reflexivity. cbn. destruct l'. exists (r,e). reflexivity.
 Defined.
 
-Definition UR_list_Svector_inv (A B:Type) (e : A ≈ B) (l : list A) (l':list B) :
+Definition UR_list_Svector_inv (A B:Type) (e : A ≈ B) (l : list) (l':list B) :
   UR_list_vect ur l
       (length l'; list_to_vector B B (Equiv_id B) (length l') (length l') idpath (l'; idpath))
   -> UR_list ur l l'.
@@ -4466,7 +4058,7 @@ Definition FP_list_Svector
     eapply equiv_compose. apply (ur_coh (UR_Coh := Ur_Coh (FP_List.(ur_type) _ _ e))).
     cbn. refine (transport_eq (fun X => UR_list ur a
     (list_rect A (fun _ : list A => list B) []
-       (fun (H0 : A) (_ : list A) (H2 : list B) => univalent_transport H0 :: H2) a') ≃ UR_list_vect ur a
+       (fun (H0 :) (_ : list) (H2 : list B) => univalent_transport H0 :: H2) a') ≃ UR_list_vect ur a
       (length X;
       list_to_vector A B (Equiv_inverse (Equiv_inverse (equiv e))) (length X)
                      (length X) idpath (X; idpath))) (e_sect' (Equiv_List _  _ _) a') _).
@@ -4508,7 +4100,7 @@ Defined.
 #[export] Hint Extern 0 (Svector _ ⋈ list _) => apply FP_Svector_list : typeclass_instances ur_typeclass_instances.
 
 Definition Svect_rect : forall (A : Type) (P : Svector A -> Type),
-    P Snil -> (forall (a : A) (l : Svector A), P l -> P (Svcons a l)) -> forall l : Svector A, P l.
+    P Snil -> (forall (a :) (l : Svector), P l -> P (Svcons a l)) -> forall l : Svector A, P l.
 Proof.
   intros A P Pnil Pcons [n v].  induction v as [ | a n v IH].
   - exact Pnil.
