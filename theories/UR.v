@@ -25,7 +25,7 @@ Variant parametricity_kind : Set :=
   | plain
   | univalent.
 
-Class PR@{sA sB sR;uA uB uR} (k : parametricity_kind) 
+Class PR@{sA sB sR;uA uB uR} (k : parametricity_kind)
 (A: Type@{sA;uA}) (B : Type@{sB;uB}) : Type@{max(uA,uB,uR+1)} := {
   pr : A -> B -> Type@{sR;uR}
 }.
@@ -38,11 +38,11 @@ Notation "x ≈u y" := (x ≈[univalent] y) (at level 20).
 Definition PR_Type_plain@{sA sB sR;uA uB uR j} : PR@{Type Type Type | j j j} plain Type@{sA|uA} Type@{sB|uB} :=
   Build_PR@{Type Type Type | j j j} _ _ _ (PR@{sA sB sR; uA uB uR} plain).
 
-Definition UR_Coh@{sA sB sR;uA uB uR} (A: Type@{sA;uA}) (B : Type@{sB;uB}) 
-  (e : A ≃ B) (H: PR@{sA sB sR;uA uB uR} plain A B) := 
+Definition UR_Coh@{sA sB sR;uA uB uR} (A: Type@{sA;uA}) (B : Type@{sB;uB})
+  (e : A ≃ B) (H: PR@{sA sB sR;uA uB uR} plain A B) :=
   forall (a a':A), (iff@{sR sR SProp; uR uR Set uR}(a = a') (@pr _ _ _ H a (↑ a'))).
 
-Definition UR_Irr@{sA sB sR;uA uB uR} (A :Type@{sA;uA}) (B :Type@{sB;uB}) (H: PR@{sA sB sR;uA uB uR} plain A B) := 
+Definition UR_Irr@{sA sB sR;uA uB uR} (A :Type@{sA;uA}) (B :Type@{sB;uB}) (H: PR@{sA sB sR;uA uB uR} plain A B) :=
   forall (a:A) (b:B) (e e' : a ≈p b), e = e'.
 
 Record UR_Type@{sA sB sR;uA uB uR} A B : Type@{max(uA,uB,uR+1)}:=
@@ -104,7 +104,7 @@ Ltac2 apply_PR_Type_gen () :=
 
 (* This hint is to remove let in declaration *)
 
-#[export] Hint Extern 0 (_ ≈[ _ ] _) => 
+#[export] Hint Extern 0 (_ ≈[ _ ] _) =>
   progress (cbn head zeta) : typeclass_instances ur_typeclass_instances.
 
 Definition PR_Type_plain_univ {A B : Type} (H: A ≈u B) : PR plain A B := Ur H.
@@ -288,10 +288,10 @@ Ltac2 apply_var_tac c :=
                   Control.throw (Tactic_failure (Some (failure_white_message_conflict lhs_head lhs_head' rhs_head rhs_head' pr_head pr_head')))
                 else
                   Control.zero Match_failure
-              | [ _ : UR_Type ?c ?d |- UR_Type ?c' ?d'] => 
+              | [ _ : UR_Type ?c ?d |- UR_Type ?c' ?d'] =>
                 if Constr.equal c' c && Bool.neg (Constr.equal_nocumul (Constr.type d) (Constr.type d'))
                 then
-                  Control.throw (Tactic_failure (Some (Message.concat (Message.of_string "the following variable has been used in a cumulative context: ") 
+                  Control.throw (Tactic_failure (Some (Message.concat (Message.of_string "the following variable has been used in a cumulative context: ")
                     (Message.concat (Message.of_constr (Constr.type d')) (Message.of_constr (Constr.type d))))))
                 else
                   Control.zero Match_failure
@@ -299,9 +299,9 @@ Ltac2 apply_var_tac c :=
     let local_assumption () := match! reverse goal with
               | [ h : @pr _ _ _ _ ?c _ |- _] =>
                 if Constr.equal c_head c && hyp_not_value h
-                then 
-                  let h := Control.hyp h in 
-                    refine $h 
+                then
+                  let h := Control.hyp h in
+                    refine $h
                 else
                   Control.zero Match_failure
               end
@@ -322,7 +322,7 @@ Ltac2 apply_var_tac c :=
               if Constr.is_prod type_h
               then
                 first [
-                  unshelve (refine_n_holes h' (Int.mul 3 nargs)) | 
+                  unshelve (refine_n_holes h' (Int.mul 3 nargs)) |
                   forward_apply h' c];
                 shelve_non_PR_multi ()
               else (cbn_h (); match! reverse goal with
@@ -406,11 +406,11 @@ Definition PR_inverse k {A B : Type} (ur: PR k A B) : PR k B A :=
 
 Definition alt_UR_Coh@{sA sB sR;uA uB uR j +} {A : Type@{sA;uA}}
   {B:Type@{sB;uB}} (H: A ≈u B)
-  (einv := Equiv_inverse (equiv H)) :  
+  (einv := Equiv_inverse (equiv H)) :
   forall (a:A) (b:B), iff@{sR sR SProp; uR uR Set uR} (a = ↑ b) (a ≈p b).
 Proof.
   intros a b. cbn. set (e_inv _ _). rewrite <- (e_sect _ b).
-  unshelve (refine (Ur_Coh H _ _)). 
+  unshelve (refine (Ur_Coh H _ _)).
 Defined.
 
 Definition alt_UR_Coh_inv@{sA sB sR;uA uB uR j +} {A : Type@{sA;uA}}
@@ -510,7 +510,7 @@ Proof.
   - intros ? ?. cbn.
     unfold univalent_transport.
     split; intros.
-    + unshelve (eapply (fst (Ur_Coh H0 (e_fun H a) (e_fun H a')) (ap (e_fun H) H1))). 
+    + unshelve (eapply (fst (Ur_Coh H0 (e_fun H a) (e_fun H a')) (ap (e_fun H) H1))).
     + eapply isequiv_ap. unshelve (eapply (snd (Ur_Coh H0 (e_fun H a) (e_fun H a')))); tc ().
   - intros a b. cbn in *. unshelve (eapply Ur_Irr).
 Defined.
@@ -550,6 +550,7 @@ Ltac2 postreduce (c : constr) :=
   ] in $c.
 
 Ltac2 iso_statement (k:constr) (f : constr) (g : constr) (fty : constr option) :=
+  let f := Constr.eta_long_with_names f in
   let ty := match fty with Some ty => ty | None => univparamtc_statement_type f end in
   let c := constr:(@pr $k $ty _ _ $f $g) in
   c.
@@ -567,6 +568,7 @@ Ltac2 import_of_with_sorts (k:constr) (f : constr) (sorts : constr list) (fty : 
           (Message.of_string
             "import_of should be called on a reference, not an application")))
   else
+    let f := Constr.eta_long_with_names f in
     let fty := match fty with Some ty => Some ty | None => Some (univparamtc_statement_type f) end in
     let t := '_ in
     let f2 := Fresh.in_goal @f2 in

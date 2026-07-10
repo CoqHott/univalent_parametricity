@@ -3488,7 +3488,39 @@ Ltac2 adjust_type (a : constr) (goal_lhs : constr) : constr :=
    replace_sort_in_arity a s
   else a.
 
+(* The η-long form of [key] can have more binders than the goal's application
+   when the key's stored type ends in a definitionally-unfolded function type
+   (e.g. [update] is stored with result type [string -> option A] rather than
+   [partial_map A]), so [beta_red (mkApp key goal_args)] keeps a trailing λ
+   that [Constr.equal_nounivs] cannot match against the bare application.
+   Compare up to η, expanding both sides with the binder names taken from
+   [key_app]'s type so that folding differences in [goal_lhs]'s type cannot
+   lead to different expansions. *)
+Ltac2 equal_nounivs_upto_eta (goal_lhs : constr) (key_app : constr) : bool :=
+  let is_lambda c :=
+    match Constr.Unsafe.kind_nocast c with
+    | Constr.Unsafe.Lambda _ _ => true
+    | _ => false
+    end in
+  if Constr.equal_nounivs goal_lhs key_app then true
+  else if Bool.or (is_lambda goal_lhs) (is_lambda key_app) then
+    match Control.case (fun () =>
+      let ns := Constr.prod_names (Constr.type key_app) in
+      let expand (c : constr) : constr :=
+        let c := Constr.eta_expand_names ns c [] in
+        eval cbv beta in $c in
+      Constr.equal_nounivs (expand goal_lhs) (expand key_app))
+    with
+    | Val (b, _) => b
+    | Err _ => false
+    end
+  else false.
+
 Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : constr list ) (goal_lhs : constr) :=
+  let eta := Constr.eta_long_with_names in
+  let orig_key := key in
+  let key := eta key in
+  let lems := List.map eta lems in
   let tac goal :=
      let compare_lemmas lem1 lem2 :=
         let h := type_of_refresh lem2 in
@@ -3521,8 +3553,8 @@ Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : const
              pre_tc_hint_hook () ; forward_apply selected_lemma goal_lhs
             ] in
   let (goal_head, goal_args) := Constr.decompose_app goal_lhs in
-  if Constr.is_proj goal_head && Constr.is_const key then
-    match Constr.destProj goal_head, Constr.destConstant key with
+  if Constr.is_proj goal_head && Constr.is_const orig_key then
+    match Constr.destProj goal_head, Constr.destConstant orig_key with
       | (p,_,_), (const_key, _) =>
         let const_p := Option.get (Proj.to_constant p) in
         if Constant.equal const_p const_key
@@ -3533,7 +3565,7 @@ Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : const
   match check_appvect key goal_args with
     | Val key_app =>
       let key_app := beta_red key_app in
-      if Constr.equal_nounivs goal_lhs key_app then
+      if equal_nounivs_upto_eta goal_lhs key_app then
         if fatal then
          tac (Some goal_lhs)
         else if warn then
