@@ -3583,6 +3583,17 @@ Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : const
 Ltac2 tc_hint_for_ur_plain_list (fatal : bool) (warn : bool) (key : constr) (ur_lems : constr list) (plain_lems : constr list) (goal_lhs : constr) :=
   tc_hint_for_list fatal warn key (List.append ur_lems plain_lems) goal_lhs.
 
+Ltac2 to_constr_list l := 
+  List.map (fun x => Option.get (Ltac1.to_constr x)) 
+  (Option.get (Ltac1.to_list l)).
+
+Ltac tc_hint_for_ur_plain_hlist key ur_lems goal_lhs :=
+  let tac := ltac2:(key ur_lems goal_lhs |- 
+    tc_hint_for_ur_plain_list true false 
+    (Option.get (Ltac1.to_constr key))
+    (to_constr_list ur_lems) ([]:constr list) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac key ur_lems goal_lhs.
+
 Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (goal_lhs : constr) :=
   tc_hint_for_list fatal warn key [lem] goal_lhs.
 

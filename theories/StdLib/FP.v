@@ -3483,6 +3483,41 @@ Parameter Stdlib__Reals__ClassicalDedekindReals__DRealQlimExp2_iso : iso_stateme
 
 End Interface41.
 
+Module Type Interface42 (Import args : Args).
+
+Parameter imported_Corelib__Init__Logic__eq : forall y : Type, y -> y -> SProp.
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun (A : Type) (x x0 : A) => @Corelib.Init.Logic.eq A x x0) imported_Corelib__Init__Logic__eq.
+Parameter imported_Corelib__Init__Logic__eq_Prop : forall y : SProp, y -> y -> SProp.
+Parameter Corelib__Init__Logic__eq_iso_Prop : iso_statement  (fun (A : Prop) (x x0 : A) => @Corelib.Init.Logic.eq A x x0) imported_Corelib__Init__Logic__eq_Prop.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_hlist (@Corelib.Init.Logic.eq) [(* ((fun A : Prop => @Corelib.Init.Logic.eq A)) *) Corelib__Init__Logic__eq_iso_Prop; Corelib__Init__Logic__eq_iso] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => 
+    ltac2:(
+    match! goal with [ |- (UR.pr _ ?goal_lhs _) ]
+    => tc_hint_for_ur_plain_list true false '(@Corelib.Init.Logic.eq) ['@Corelib__Init__Logic__eq_iso_Prop; '@Corelib__Init__Logic__eq_iso] [] goal_lhs end) : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__ssr__ssrunder__UnderD_rel__UnderD_rel : forall y : Type, (y -> y -> SProp) -> y -> y -> SProp.
+Parameter Corelib__ssr__ssrunder__UnderD_rel__UnderD_rel_iso : iso_statement (@ssrunder.Under_rel.Under_rel) imported_Corelib__ssr__ssrunder__UnderD_rel__UnderD_rel.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => 
+  tc_hint_for_ur_plain_hlist (@Corelib.ssr.ssrunder.Under_rel.Under_rel) [Corelib__ssr__ssrunder__UnderD_rel__UnderD_rel_iso] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => 
+  ltac2:(
+    match! goal with [ |- (UR.pr _ ?goal_lhs _) ]
+    => tc_hint_for_ur_plain_list true false '(@Corelib.ssr.ssrunder.Under_rel.Under_rel) ['@Corelib__ssr__ssrunder__UnderD_rel__UnderD_rel_iso] ['@Corelib__ssr__ssrunder__UnderD_rel__UnderD_rel_iso] goal_lhs end) : typeclass_instances ur_typeclass_instances.
+
+#[universes(polymorphic,collapse_sort_variables=no)]
+Goal {B :_ & PR univalent (forall (A : Type) (eqA : A -> A -> Prop),
+eq (ssrunder.Under_rel.Under_rel A eqA) eqA) B}.
+Proof. 
+  eexists. tc.
+Abort.
+
+
+Parameter imported_Corelib__ssr__ssrunder__UnderD_rel__UnderD_relE : import_of (@Corelib.ssr.ssrunder.Under_rel.Under_relE).
+Parameter Corelib__ssr__ssrunder__UnderD_rel__UnderD_relE_iso : iso_statement (@Corelib.ssr.ssrunder.Under_rel.Under_relE) imported_Corelib__ssr__ssrunder__UnderD_rel__UnderD_relE.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for (@Corelib.ssr.ssrunder.Under_rel.Under_relE) Corelib__ssr__ssrunder__UnderD_rel__UnderD_relE_iso [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for (@Corelib.ssr.ssrunder.Under_rel.Under_relE) Corelib__ssr__ssrunder__UnderD_rel__UnderD_relE_iso [] goal_lhs : typeclass_instances ur_typeclass_instances.
+
+End Interface42.
 
 (*
 #[export] Hint Extern 0 (Vector.t ?A ?n ≃ _) =>
