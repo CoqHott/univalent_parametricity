@@ -3,6 +3,81 @@ From Ltac2 Require Import Ltac2.
 From Ltac2 Require Import TransparentState.
 From Ltac2 Require Import Scheme.
 
+Module HList.
+  Inductive hlist@{u} :=
+  | nil
+  | const {A : Type@{u}} (hd : A) (tl : hlist)
+  | consp {A : Prop} (hd : A) (tl : hlist)
+  | conss {A : SProp} (hd : A) (tl : hlist).
+
+  Ltac2 precons (c : constr) :=
+    let a := Constr.type c in
+    let s := Constr.type a in
+    lazy_match! s with
+    | Prop => preterm:(@consp _ $c)
+    | SProp => preterm:(@conss _ $c)
+    | _ => preterm:(@const _ $c)
+    end.
+
+  Ltac2 cons (c : constr) := let cons_c := precons c in '($preterm:cons_c).
+
+  Ltac2 rec pre_of_list (l : constr list) :=
+    match l with
+    | [] => preterm:(nil)
+    | c :: l => let cons_c := precons c in let tl := pre_of_list l in preterm:($preterm:cons_c $preterm:tl)
+    end.
+  Ltac2 of_list (l : constr list) := let of_list_l := pre_of_list l in '($preterm:of_list_l).
+
+  Ltac2 rec to_list (h : constr) :=
+    lazy_match! h with
+    | nil => []
+    | const ?hd ?tl => hd :: to_list tl
+    | consp ?hd ?tl => hd :: to_list tl
+    | conss ?hd ?tl => hd :: to_list tl
+    end.
+
+  Abbreviation unsafe_cons hd tl := (ltac2:(let hd := Constr.pretype hd in let tl := Constr.pretype tl in let cons_hd := cons hd in Control.refine (fun () => '($cons_hd $tl)))) (only parsing).
+  Abbreviation cons hd tl := (match hd, tl return hlist with _, _ => unsafe_cons hd tl end) (only parsing).
+
+  Module CommonHListNotations.
+    Declare Scope hlist_scope.
+    Delimit Scope hlist_scope with hlist.
+    Bind Scope hlist_scope with hlist.
+    Infix "::" := const (at level 60, right associativity, only printing) : hlist_scope.
+    Infix "::" := conss (at level 60, right associativity, only printing) : hlist_scope.
+    Infix "::" := consp (at level 60, right associativity, only printing) : hlist_scope.
+    Notation "[ ]" := nil (format "[ ]") : hlist_scope.
+    Notation "[ x ]" := (const x nil) (only printing) : hlist_scope.
+    Notation "[ x ]" := (conss x nil) (only printing) : hlist_scope.
+    Notation "[ x ]" := (consp x nil) (only printing) : hlist_scope.
+    (* Notation "[ x ; y ; .. ; z ]" :=  (cons x (cons y .. (cons z nil) ..))
+      (format "[ '[' x ;  '/' y ;  '/' .. ;  '/' z ']' ]", only parsing) : hlist_scope. *)
+    Notation "[ x ; y ; .. ; z ]" :=  (const x (const y .. (const z nil) ..))
+      (format "[ '[' x ;  '/' y ;  '/' .. ;  '/' z ']' ]", only printing) : hlist_scope.
+    Notation "[ x ; y ; .. ; z ]" :=  (conss x (conss y .. (conss z nil) ..))
+      (format "[ '[' x ;  '/' y ;  '/' .. ;  '/' z ']' ]", only printing) : hlist_scope.
+    Notation "[ x ; y ; .. ; z ]" :=  (consp x (consp y .. (consp z nil) ..))
+      (format "[ '[' x ;  '/' y ;  '/' .. ;  '/' z ']' ]", only printing) : hlist_scope.
+  End CommonHListNotations.
+  Module SafeHListNotations.
+    Notation "hd :: tl" := (cons hd tl) (at level 60, right associativity, only parsing) : hlist_scope.
+    Notation "[ x ]" := (cons x nil) (only parsing) : hlist_scope.
+    (* Notation "[ x ; y ; .. ; z ]" :=  (cons x (cons y .. (cons z nil) ..))
+      (format "[ '[' x ;  '/' y ;  '/' .. ;  '/' z ']' ]", only parsing) : hlist_scope. *)
+    Export CommonHListNotations.
+  End SafeHListNotations.
+  Module UnsafeHListNotations.
+    Notation "hd :: tl" := (unsafe_cons hd tl) (at level 60, right associativity, only parsing) : hlist_scope.
+    Notation "[ x ]" := (unsafe_cons x nil) (only parsing) : hlist_scope.
+    (* Notation "[ x ; y ; .. ; z ]" :=  (unsafe_cons x (unsafe_cons y .. (unsafe_cons z nil) ..))
+      (format "[ '[' x ;  '/' y ;  '/' .. ;  '/' z ']' ]", only parsing) : hlist_scope. *)
+    Export CommonHListNotations.
+  End UnsafeHListNotations.
+  (* SafeHListNotations is exponentially slow, cf https://github.com/JasonGross/autoformalization/issues/102 *)
+  Module HListNotations := UnsafeHListNotations.
+End HList.
+
+
 Module Export CaseSchemeDefinitions.
   #[local] Set Universe Polymorphism.
   #[local] Set Implicit Arguments.
@@ -3587,19 +3662,13 @@ Ltac2 to_constr_list l :=
   List.map (fun x => Option.get (Ltac1.to_constr x)) 
   (Option.get (Ltac1.to_list l)).
 
-Ltac tc_hint_for_ur_plain_hlist key ur_lems goal_lhs :=
-  let tac := ltac2:(key ur_lems goal_lhs |- 
-    tc_hint_for_ur_plain_list true false 
-    (Option.get (Ltac1.to_constr key))
-    (to_constr_list ur_lems) ([]:constr list) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac key ur_lems goal_lhs.
 
 Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (goal_lhs : constr) :=
   tc_hint_for_list fatal warn key [lem] goal_lhs.
 
+
 Ltac tc_hint_for key lem goal_lhs :=
-  let tac := ltac2:(key lem goal_lhs |-
-  tc_hint_for true false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
+  let tac := ltac2:(key lem goal_lhs |- tc_hint_for true false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
   tac key lem goal_lhs.
 
 Ltac tc_hint_for_warn key lem goal_lhs :=
@@ -3609,3 +3678,40 @@ Ltac tc_hint_for_warn key lem goal_lhs :=
 Ltac tc_hint_for_nofatal key lem goal_lhs :=
   let tac := ltac2:(key lem goal_lhs |- tc_hint_for false false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
   tac key lem goal_lhs.
+
+Ltac tc_hint_for_ur_plain_hlist key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list true false (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac key ur_lems plain_lems goal_lhs.
+
+Ltac tc_hint_for_ur_plain_hlist_warn key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list false true (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac key ur_lems plain_lems goal_lhs.
+
+Ltac tc_hint_for_ur_plain_hlist_nofatal key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list false false (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac key ur_lems plain_lems goal_lhs.
+
+Ltac tc_hint_for_ur_plain_list key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list true false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac key ur_lems plain_lems goal_lhs.
+
+Ltac tc_hint_for_ur_plain_list_warn key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list false true (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac key ur_lems plain_lems goal_lhs.
+
+Ltac tc_hint_for_ur_plain_list_nofatal key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list false false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac key ur_lems plain_lems goal_lhs.
+
+
+Module Export TCHintNotations.
+
+Tactic Notation "tc_hint_for_ur_plain_list" constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
+  tc_hint_for_ur_plain_list key ur_lems plain_lems goal_lhs.
+
+Tactic Notation "tc_hint_for_ur_plain_list_warn" constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
+  tc_hint_for_ur_plain_list_warn key ur_lems plain_lems goal_lhs.
+
+Tactic Notation "tc_hint_for_ur_plain_list_nofatal" constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
+  tc_hint_for_ur_plain_list_nofatal key ur_lems plain_lems goal_lhs.
+End TCHintNotations.
