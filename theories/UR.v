@@ -197,9 +197,7 @@ Ltac2 apply_Type_gen () :=
     if (check_blacklist_PR_Type lhs) ||
        (check_blacklist_PR_Type rhs)
     then
-      first [
-          erefineb (PR_Type_univ_univ _); shelve_non_PR_multi () |
-          erefineb (PR_Type_plain_univ _); shelve_non_PR_multi ()]
+      erefineb (PR_Type_gen _ _ _ _); shelve_non_PR_multi ()
     else
       fail "not a variable"
   end.
@@ -304,6 +302,13 @@ Ltac2 apply_var_tac c :=
                     refine $h
                 else
                   Control.zero Match_failure
+              | [ h : @PR _ ?c _ |- _] =>
+                if Constr.equal c_head c && hyp_not_value h
+                then
+                  let h := Control.hyp h in
+                    refine $h
+                else
+                  Control.zero Match_failure
               end
     in first [local_assumption () |
               erefineb (PR_Type_gen _ _ _ _) ; local_assumption () |
@@ -314,8 +319,7 @@ Ltac2 apply_var_tac c :=
               intros ? ? ? |
               cbn_h () ; cbn ; error ()]
     else
-      let apply_h () := match! reverse goal with
-        | [ h : @pr _ _ _ _ ?c _ |- _] => if Constr.equal_nocumul c_head c && hyp_not_value h
+      let apply_h_goal h c := if Constr.equal_nocumul c_head c && hyp_not_value h
             then
               let h' := Control.hyp h in
               let type_h := Std.eval_cbn RedFlags.all (type h') in
@@ -335,7 +339,11 @@ Ltac2 apply_var_tac c :=
                   Control.zero Match_failure
               end)
             else Control.zero Match_failure
-      end in
+      in let apply_h () := match! reverse goal with
+          | [ h : @pr _ _ _ _ ?c _ |- _] => apply_h_goal h c
+          | [ h : @PR _ ?c _ |- _] => apply_h_goal h c
+          end 
+      in
       first [apply_h () |
              erefineb (PR_Type_univ_univ _); apply_h ()|
              erefineb (PR_Type_gen _ _ _ _); apply_h ()]
@@ -584,7 +592,7 @@ Abbreviation iso_statement f g :=
       (fun () => iso_statement 'univalent (Constr.open_pretype f) (Constr.open_pretype g) None))
   end) (only parsing).
 
-Abbreviation iso_statement_plain f g :=
+Abbreviation plain_iso_statement f g :=
   (match tt return _ with tt =>
     ltac2:(Control.refine
       (fun () => iso_statement 'plain (Constr.open_pretype f) (Constr.open_pretype g) None))
@@ -595,7 +603,7 @@ Abbreviation import_of f :=
     ltac2:(Control.refine (fun () => import_of 'univalent (Constr.open_pretype_no_tc f) None))
   end) (only parsing).
 
-Abbreviation import_of_plain f :=
+Abbreviation plain_import_of f :=
   (match tt return _ with tt =>
     ltac2:(Control.refine (fun () => import_of 'plain (Constr.open_pretype_no_tc f) None))
   end) (only parsing).

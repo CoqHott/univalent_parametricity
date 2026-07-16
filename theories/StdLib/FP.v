@@ -259,6 +259,7 @@ Qed.
 Definition FP_Sigma : @sigT ≈u @sigT.
 Proof.
   unshelve econstructor.
+  - unshelve erefine (@PRSigma _ _ _ _ _ _ _); intros; shelve_non_PR. tc. eapply H0. tc. 
   - eapply Equiv_Sigma. tc.
   - intros [? ?] [? ?]; cbn in *.
     split; intro e.
@@ -3854,6 +3855,33 @@ Parameter stdpp__decidable__uncurryD_dec_iso : iso_statement (@uncurry_dec) impo
 #[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@uncurry_dec)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
 
 End Interface44.
+
+Module Type Interface45 (Import args : Args).
+
+Definition binary (A : Type) := A -> A -> Prop.
+Class Gt (A : Type) := { gt : binary A }.
+
+Parameter imported_TLC__LibOrder__Gt : import_of Gt.
+Parameter TLC__LibOrder__Gt_iso : iso_statement (@Gt) imported_TLC__LibOrder__Gt.
+Parameter TLC__LibOrder__Gt_iso_plain : plain_iso_statement (@Gt) imported_TLC__LibOrder__Gt.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Gt) [TLC__LibOrder__Gt_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr univalent ?goal_lhs _) => tc_hint_for_ur_plain_list (@Gt) [TLC__LibOrder__Gt_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr plain ?goal_lhs _) => tc_hint_for_ur_plain_list (@Gt) [TLC__LibOrder__Gt_iso_plain] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Gt)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Definition irrefl A (R:binary A) :=
+  forall x, ~ (R x x).
+
+Class Gt_irrefl A `{Gt A} :=
+  { gt_irrefl : @irrefl A gt }.
+
+Parameter plain_imported_TLC__LibOrder__GtD_irrefl : plain_import_of (@Gt_irrefl).
+Parameter TLC__LibOrder__GtD_irrefl_iso_plain : plain_iso_statement (@Gt_irrefl) plain_imported_TLC__LibOrder__GtD_irrefl.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Gt_irrefl) [] [TLC__LibOrder__GtD_irrefl_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Gt_irrefl) [] [TLC__LibOrder__GtD_irrefl_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Gt_irrefl)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+End Interface45.
 
 (*
 #[export] Hint Extern 0 (Vector.t ?A ?n ≃ _) =>

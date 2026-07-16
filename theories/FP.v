@@ -187,6 +187,7 @@ Definition FP_forall_ur_type (A A' : Type) (eA : A ≈u A') (B : A -> Type) (B' 
   (forall x : A, B x) ≈u (forall x : A', B' x).
 Proof.
   unshelve econstructor.
+  - ltac2: (apply_forall_tac ()). tc. eapply eB. tc.  
   - intros f g. split; cbn.
     + intros efg x y e.
       destruct efg.
