@@ -3302,7 +3302,7 @@ Ltac2 rec replace_sort_in_arity (arity : constr) (s : sort) : constr :=
   | Constr.Unsafe.Prod b body =>
       let new_body := replace_sort_in_arity body s in
       Constr.Unsafe.make (Constr.Unsafe.Prod b new_body)
-  | _ =>  Control.throw (Tactic_failure (Some (Message.of_string "Not an arity")))
+  | _ => arity (* Not an arity *)
   end.
 
 Ltac2 get_ident (i: ident option) (x:ident) : ident :=
@@ -3715,3 +3715,8 @@ Tactic Notation "tc_hint_for_ur_plain_list_warn" constr(key) "[" constr_list_sep
 Tactic Notation "tc_hint_for_ur_plain_list_nofatal" constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
   tc_hint_for_ur_plain_list_nofatal key ur_lems plain_lems goal_lhs.
 End TCHintNotations.
+
+Set Universe Polymorphism. 
+Class IsoRegisteredFor@{s1 s2;u1 u2|} {A : Type@{s1;u1}} (a : A) {B : Type@{s2;u2}} (b : B) := {}.
+Hint Mode IsoRegisteredFor + + + + : typeclass_instances.
+#[global] Arguments Build_IsoRegisteredFor {_ _ _ _}.
