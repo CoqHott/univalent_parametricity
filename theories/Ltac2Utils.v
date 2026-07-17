@@ -3658,8 +3658,8 @@ Ltac2 tc_hint_for_list k (fatal : bool) (warn : bool) (key : constr) (lems : con
 Ltac2 tc_hint_for_ur_plain_list (k:constr) (fatal : bool) (warn : bool) (key : constr) (ur_lems : constr list) (plain_lems : constr list) (goal_lhs : constr) :=
   tc_hint_for_list k fatal warn key (List.append ur_lems plain_lems) goal_lhs.
 
-Ltac2 to_constr_list l := 
-  List.map (fun x => Option.get (Ltac1.to_constr x)) 
+Ltac2 to_constr_list l :=
+  List.map (fun x => Option.get (Ltac1.to_constr x))
   (Option.get (Ltac1.to_list l)).
 
 
@@ -3713,9 +3713,7 @@ Ltac2 specialize_arg_matches (key : constr) (goal_lhs : constr) : bool :=
   match check_appvect key goal_args with
     | Val key_app =>
       let key_app := beta_red key_app in
-      if equal_nounivs_upto_eta goal_lhs key_app then
-        true
-      else false
+      equal_nounivs_upto_eta goal_lhs key_app
     | _ => false
        end.
 
@@ -3728,7 +3726,7 @@ Ltac2 tc_hint_for_specialize_arg (key : constr) (lem : constr) (goal_lhs : const
 (* Ltac1 bridge, so a [Hint Extern] can call it directly (like [tc_hint_for])
    without an inline [ltac2:(match! …)].  [arg_index] is taken as [int_or_var] so
    a literal (e.g. [2]) crosses to Ltac2 as an [int]. *)
-Tactic Notation "tc_hint_for_specialize_arg" 
+Tactic Notation "tc_hint_for_specialize_arg"
     constr(key) constr(lem) constr(goal_lhs) :=
   let tac := ltac2:(key lem goal_lhs |-
     tc_hint_for_specialize_arg
@@ -3749,7 +3747,7 @@ Tactic Notation "tc_hint_for_ur_plain_list_nofatal" constr(k) constr(key) "[" co
   tc_hint_for_ur_plain_list_nofatal k key ur_lems plain_lems goal_lhs.
 End TCHintNotations.
 
-Set Universe Polymorphism. 
+Set Universe Polymorphism.
 Class IsoRegisteredFor@{s1 s2;u1 u2|} {A : Type@{s1;u1}} (a : A) {B : Type@{s2;u2}} (b : B) := {}.
 Hint Mode IsoRegisteredFor + + + + : typeclass_instances.
 #[global] Arguments Build_IsoRegisteredFor {_ _ _ _}.

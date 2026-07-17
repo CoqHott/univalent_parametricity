@@ -338,7 +338,7 @@ Ltac2 apply_var_tac c :=
       in let apply_h () := match! reverse goal with
           | [ h : @pr ?k _ _ _ ?c _ |- _] => apply_h_goal k h c
           | [ h : @PR ?k ?c _ |- _] => apply_h_goal k h c
-          end 
+          end
       in
       first [apply_h () |
              erefineb (PR_Type_univ_univ _); apply_h ()|
@@ -612,7 +612,8 @@ Ltac2 Set compute_triple := fun (t:constr) (f:ident) (g:ident) =>
 *)
 #[global]
 Ltac2 Set compute_triple := fun (k:constr) (t:constr) (f:ident) (g:ident) =>
-  unshelve refine '(let t' := _ in let t'' : $t ≈[$k] @t' := _ in _); shelve_non_PR_multi ();
+  let inst := Constr.open_pretype_no_tc preterm:(_ :> PR $k _ _) in
+  unshelve refine '(let t' := _ in let t'' : @pr $k _ _ $inst $t t' := _ in _); shelve_non_PR_multi ();
    Control.extend [ (fun _ => tc ()) ; (fun _ => unfold &t'; tc () ) ; (fun _ => Std.rename [(@t',f);(@t'',g)]) ] (fun _ => ()) [].
 
 
