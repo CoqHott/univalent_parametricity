@@ -3596,7 +3596,10 @@ Ltac2 tc_hint_for_list k (fatal : bool) (warn : bool) (key : constr) (lems : con
   let orig_key := key in
   let key := eta key in
   let lems := List.map eta lems in
+  (* general tactic to solve the goal *)
   let tac goal :=
+     (* [compare_lemmas a lem]: does the type of [lem]'s statement LHS equal [a],
+        the key type adjusted to the goal's sorts? Disambiguates sort variants. *)
      let compare_lemmas lem1 lem2 :=
         let h := type_of_refresh lem2 in
         let h := eval cbn head match in $h in
@@ -3605,29 +3608,43 @@ Ltac2 tc_hint_for_list k (fatal : bool) (warn : bool) (key : constr) (lems : con
         let a := eval cbn head match in $a in
         Constr.equal_nocumul lem1 a
      in
-     let selected_lemma := match goal with
-      | None => List.hd lems
+     (* [selected_lemmas]: all lemmas of [lems] whose LHS type fits the goal's
+        sorts (the full list when no application structure is available, i.e.
+        projection-headed goals); fatal cumulativity diagnostic (or failure)
+        when none does. *)
+     let selected_lemmas := match goal with
+      | None => lems
       | Some goal_lhs =>
         let (_, c_args) := Constr.decompose_app_list_nocast goal_lhs in
         match check_if_cumul_decompose_args key c_args with
           (c_head, c_type, a, l) =>
           let a := adjust_type a goal_lhs in
-          let lems := List.filter (compare_lemmas a) lems in
-          if List.is_empty lems
+          let selected := List.filter (compare_lemmas a) lems in
+          if List.is_empty selected
           then check_if_cumul (c_head, c_type, a, l)
-          else
-            let selected_lemma := List.hd lems in selected_lemma
+          else selected
         end
       end
       in
-        first
-            [
-             unshelve (eapply $selected_lemma); shelve_and_tc ()|
-             pre_tc_hint_hook (); unshelve (eapply $selected_lemma); shelve_and_tc () |
-             forward_apply k selected_lemma goal_lhs |
-             pre_tc_hint_hook () ; forward_apply k selected_lemma goal_lhs
-            ] in
+      (* [try_each tacL ls]: run [tacL] on each lemma with a backtracking point
+         between them, so failures fall through to the next lemma. *)
+      let rec try_each tacL ls :=
+        match ls with
+        | [] => Control.zero Match_failure
+        | l :: tl => Control.plus (fun () => tacL l) (fun _ => try_each tacL tl)
+        end
+      in
+      first
+          [
+            try_each (fun lem => unshelve (eapply $lem); shelve_and_tc ()) (selected_lemmas) |
+            pre_tc_hint_hook (); try_each (fun lem => unshelve (eapply $lem); shelve_and_tc ()) (selected_lemmas) |
+            try_each (fun lem => forward_apply k lem goal_lhs) selected_lemmas |
+            pre_tc_hint_hook () ; try_each (fun lem => forward_apply k lem goal_lhs) selected_lemmas
+          ]
+  in
   let (goal_head, goal_args) := Constr.decompose_app goal_lhs in
+  (* Goal headed by a primitive projection: applies when the key is the
+     matching compatibility constant; no arguments to select a lemma with. *)
   if Constr.is_proj goal_head && Constr.is_const orig_key then
     match Constr.destProj goal_head, Constr.destConstant orig_key with
       | (p,_,_), (const_key, _) =>
@@ -3637,18 +3654,22 @@ Ltac2 tc_hint_for_list k (fatal : bool) (warn : bool) (key : constr) (lems : con
         else Control.zero Match_failure
     end
   else
+  (* Key check: the goal must literally be the key applied to its arguments
+     (compared up to η, so partial applications are accepted too). *)
   match check_appvect key goal_args with
     | Val key_app =>
       let key_app := beta_red key_app in
       if equal_nounivs_upto_eta goal_lhs key_app then
+        (* Reporting mode: fatal lets errors escape; warn prints them and fails
+           quietly; nofatal selects on the bare head (no sort adjustment). *)
         if fatal then
-         tac (Some goal_lhs)
+          tac (Some goal_lhs)
         else if warn then
-         match Control.case_bt (fun () => tac (Some goal_lhs)) with
-         | Val_bt (v, _k) => v
-         | Err_bt err info => printf "Warning: %a\n" (fun () => Message.of_exn_pretty) err; Control.zero_bt err info
-         end
-          else
+          match Control.case_bt (fun () => tac (Some goal_lhs)) with
+          | Val_bt (v, _k) => v
+          | Err_bt err info => printf "Warning: %a\n" (fun () => Message.of_exn_pretty) err; Control.zero_bt err info
+          end
+        else
           tac (Some goal_head)
       else
         Control.zero Match_failure
@@ -3702,38 +3723,6 @@ Ltac tc_hint_for_ur_plain_list_warn k key ur_lems plain_lems goal_lhs :=
 Ltac tc_hint_for_ur_plain_list_nofatal k key ur_lems plain_lems goal_lhs :=
   let tac := ltac2:(k key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list (Option.get (Ltac1.to_constr k)) false false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
   tac k key ur_lems plain_lems goal_lhs.
-
-Ltac2 array_remove_nth (arr : constr array) (n : int) : constr array :=
-  let len := Array.length arr in
-  Array.init (Int.sub len 1)
-    (fun i => if Int.lt i n then Array.get arr i else Array.get arr (Int.add i 1)).
-
-Ltac2 specialize_arg_matches (key : constr) (goal_lhs : constr) : bool :=
-  let (_h, goal_args) := Constr.decompose_app goal_lhs in
-  match check_appvect key goal_args with
-    | Val key_app =>
-      let key_app := beta_red key_app in
-      equal_nounivs_upto_eta goal_lhs key_app
-    | _ => false
-       end.
-
-Ltac2 tc_hint_for_specialize_arg (key : constr) (lem : constr) (goal_lhs : constr) : unit :=
-  if specialize_arg_matches key goal_lhs
-  then first [ unshelve (eapply $lem); shelve_and_tc ()|
-               pre_tc_hint_hook (); unshelve (eapply $lem); shelve_and_tc () ]
-  else Control.zero Match_failure.
-
-(* Ltac1 bridge, so a [Hint Extern] can call it directly (like [tc_hint_for])
-   without an inline [ltac2:(match! …)].  [arg_index] is taken as [int_or_var] so
-   a literal (e.g. [2]) crosses to Ltac2 as an [int]. *)
-Tactic Notation "tc_hint_for_specialize_arg"
-    constr(key) constr(lem) constr(goal_lhs) :=
-  let tac := ltac2:(key lem goal_lhs |-
-    tc_hint_for_specialize_arg
-      (Option.get (Ltac1.to_constr key))
-      (Option.get (Ltac1.to_constr lem))
-      (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac key lem goal_lhs.
 
 Module Export TCHintNotations.
 

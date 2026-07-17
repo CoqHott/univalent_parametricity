@@ -3933,8 +3933,6 @@ Module Interface46.
   Parameter imported_eval_bf_isProp : plain_import_of (fun A ea f => @eval_bf A ea isProp f).
   Parameter eval_bf_iso_isProp : plain_iso_statement (fun A ea f => @eval_bf A ea isProp f) imported_eval_bf_isProp.
 
-  #[export] Hint Extern 1 (UR.pr plain ?g _) => tc_hint_for_ur_plain_list plain (@eval_bf) [eval_bf_iso;eval_bf_iso_isProp] [] g : typeclass_instances ur_typeclass_instances.
-
   (* Test new definition of [compute_triple] with evar created without unneed dependency *)
   Goal forall (A A' : Type) (AR : A ≈p A')
         (ea  : forall k:kind, A  -> rtyp k)
@@ -3952,55 +3950,133 @@ Module Interface46.
     exact eaR.
   Abort.
 
-  (* If a term of type [imported_rtyp isProp] is expected, [eval_bf] should be translated as usual *)
-  Goal forall (A A' : Type) (AR : A ≈p A')
+  (* With only the generic [eval_bf_iso] registered, [eval_bf] can be
+     translated in term position, but not in sort position. *)
+  Section EvalBfOnly.
+
+    #[local] Hint Extern 1 (UR.pr plain ?g _) => tc_hint_for_ur_plain_list plain (@eval_bf) [eval_bf_iso] [] g : typeclass_instances ur_typeclass_instances.
+
+    (* If a term of type [imported_rtyp isProp] is expected, [eval_bf] is
+       translated as usual: the generic iso suffices. *)
+    Goal forall (A A' : Type) (AR : A ≈p A')
+          (ea  : forall k, A  -> rtyp k)
+          (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
+          (eaR : ea ≈p ea')
+          (f : A) (f' : A') (fR : f ≈p f'),
+        { B : _ & (hold isProp (@eval_bf A ea isProp f)) ≈p B }.
+    Proof.
+      intros. eexists. tc.
+    Qed.
+
+    (* However, in sort position it fails: [eval_bf_iso] only relates the terms
+       at the abstract instance [rtyp_iso isProp _ _] — the imported result type
+       [imported_rtyp imported_isProp] does not compute to a sort since
+       [imported_rtyp] is abstract — while the goal needs the sort instance
+       [PR_Type plain]. *)
+    #[universes(polymorphic,collapse_sort_variables=no)]
+    Goal forall (A A' : Type) (AR : A ≈p A')
+          (ea  : forall k, A  -> rtyp k)
+          (ea' : _)
+          (eaR : ea ≈p ea')
+          (f : A) (f' : A') (fR : f ≈p f'),
+          { B : _ & (@eval_bf A ea isProp f) ≈p B }.
+    Proof.
+      intros.
+      eexists.
+      Fail tc.
+    Abort.
+
+  End EvalBfOnly.
+
+  Section EvalBfPropOnly.
+
+  #[local] Hint Extern 1 (UR.pr plain ?g _) => tc_hint_for_ur_plain_list plain (@eval_bf) [eval_bf_iso_isProp] [] g : typeclass_instances ur_typeclass_instances.
+
+    (* If a term of type [imported_rtyp isProp] is expected, [eval_bf] is
+       translated as usual: the generic iso suffices. *)
+    Goal forall (A A' : Type) (AR : A ≈p A')
         (ea  : forall k, A  -> rtyp k)
         (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
         (eaR : ea ≈p ea')
         (f : A) (f' : A') (fR : f ≈p f'),
-      { B : _ & (hold isProp (@eval_bf A ea isProp f)) ≈p B }.
-  Proof.
-    intros. eexists. tc.
-  Qed.
+        { B : _ & (hold isProp (@eval_bf A ea isProp f)) ≈p B }.
+    Proof.
+      intros. eexists. Fail tc.
+    Abort.
 
-  (* However, as a type it fail as the type of [imported_eval_bf] is [imported_rtype imported_isProp]
-     which does not compute since [imported_rtype] is abstract *)
-  #[universes(polymorphic,collapse_sort_variables=no)]
-  Goal forall (A A' : Type) (AR : A ≈p A')
+    (* And the sort-position example now succeeds via the specialized iso in the
+      hint list — no separate hint mechanism needed. *)
+    Goal forall (A A' : Type) (AR : A ≈p A')
         (ea  : forall k, A  -> rtyp k)
-        (ea' : _)
+        (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
         (eaR : ea ≈p ea')
         (f : A) (f' : A') (fR : f ≈p f'),
         { B : _ & (@eval_bf A ea isProp f) ≈p B }.
-  Proof.
-    intros.
-    eexists.
-    Fail tc.
-  Abort.
+    Proof.
+      intros. eexists. tc.
+    Qed.
 
-  #[export] Hint Extern 1 (UR.pr ?k ?g _) => tc_hint_for_specialize_arg (@eval_bf) eval_bf_iso_isProp g : typeclass_instances ur_typeclass_instances.
+  End EvalBfPropOnly.
 
-  (* The usual example still works *)
-  Goal forall (A A' : Type) (AR : A ≈p A')
-      (ea  : forall k, A  -> rtyp k)
-      (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
-      (eaR : ea ≈p ea')
-      (f : A) (f' : A') (fR : f ≈p f'),
-      { B : _ & (hold isProp (@eval_bf A ea isProp f)) ≈p B }.
-  Proof.
-    intros. eexists. tc.
-  Qed.
+  Section EvalBfAndProp.
 
-  (* It now succeds in a sort position due to new hint  *)
-  Goal forall (A A' : Type) (AR : A ≈p A')
-      (ea  : forall k, A  -> rtyp k)
-      (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
-      (eaR : ea ≈p ea')
-      (f : A) (f' : A') (fR : f ≈p f'),
-      { B : _ & (@eval_bf A ea isProp f) ≈p B }.
-  Proof.
-    intros. eexists. tc.
-  Qed.
+    #[local] Hint Extern 1 (UR.pr plain ?g _) => tc_hint_for_ur_plain_list plain (@eval_bf) [eval_bf_iso; eval_bf_iso_isProp] [] g : typeclass_instances ur_typeclass_instances.
+
+      (* If a term of type [imported_rtyp isProp] is expected, [eval_bf] is
+        translated as usual: the generic iso suffices. *)
+      Goal forall (A A' : Type) (AR : A ≈p A')
+          (ea  : forall k, A  -> rtyp k)
+          (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
+          (eaR : ea ≈p ea')
+          (f : A) (f' : A') (fR : f ≈p f'),
+          { B : _ & (hold isProp (@eval_bf A ea isProp f)) ≈p B }.
+      Proof.
+        intros. eexists. tc.
+      Qed.
+
+      (* And the sort-position example now succeeds via the specialized iso in the
+        hint list — no separate hint mechanism needed. *)
+      Goal forall (A A' : Type) (AR : A ≈p A')
+          (ea  : forall k, A  -> rtyp k)
+          (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
+          (eaR : ea ≈p ea')
+          (f : A) (f' : A') (fR : f ≈p f'),
+          { B : _ & (@eval_bf A ea isProp f) ≈p B }.
+      Proof.
+        intros. eexists. tc.
+      Qed.
+
+  End EvalBfAndProp.
+
+  Section EvalBfAndPropRev.
+
+    #[local] Hint Extern 1 (UR.pr plain ?g _) => tc_hint_for_ur_plain_list plain (@eval_bf) [eval_bf_iso_isProp; eval_bf_iso] [] g : typeclass_instances ur_typeclass_instances.
+
+      (* If a term of type [imported_rtyp isProp] is expected, [eval_bf] is
+        translated as usual: the generic iso suffices. *)
+      Goal forall (A A' : Type) (AR : A ≈p A')
+          (ea  : forall k, A  -> rtyp k)
+          (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
+          (eaR : ea ≈p ea')
+          (f : A) (f' : A') (fR : f ≈p f'),
+          { B : _ & (hold isProp (@eval_bf A ea isProp f)) ≈p B }.
+      Proof.
+        intros. eexists. tc.
+      Qed.
+
+      (* And the sort-position example now succeeds via the specialized iso in the
+        hint list — no separate hint mechanism needed. *)
+      Goal forall (A A' : Type) (AR : A ≈p A')
+          (ea  : forall k, A  -> rtyp k)
+          (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
+          (eaR : ea ≈p ea')
+          (f : A) (f' : A') (fR : f ≈p f'),
+          { B : _ & (@eval_bf A ea isProp f) ≈p B }.
+      Proof.
+        intros. eexists. tc.
+      Qed.
+
+  End EvalBfAndPropRev.
 
 End Interface46.
 
