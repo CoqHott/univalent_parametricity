@@ -3978,7 +3978,7 @@ unshelve refine (let f : {B : _ & PR plain
     Fail tc.  
   Abort.
 
-  #[export] Hint Extern 1 (UR.pr _ ?g _) => tc_hint_for_specialize_arg (fun A ea f => @eval_bf A ea isProp f) 2 isProp eval_bf_iso_isProp g : typeclass_instances ur_typeclass_instances.
+  #[export] Hint Extern 1 (UR.pr ?k ?g _) => tc_hint_for_specialize_arg (@eval_bf) eval_bf_iso_isProp g : typeclass_instances ur_typeclass_instances.
 
   (* The usual example still works *)
   Goal forall (A A' : Type) (AR : A ≈p A')

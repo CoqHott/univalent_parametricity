@@ -3708,34 +3708,34 @@ Ltac2 array_remove_nth (arr : constr array) (n : int) : constr array :=
   Array.init (Int.sub len 1)
     (fun i => if Int.lt i n then Array.get arr i else Array.get arr (Int.add i 1)).
 
-Ltac2 specialize_arg_matches (frozen_key : constr) (arg_index : int) (ctor : constr) (goal_lhs : constr) : bool :=
+Ltac2 specialize_arg_matches (key : constr) (goal_lhs : constr) : bool :=
   let (_h, goal_args) := Constr.decompose_app goal_lhs in
-  if Int.le (Array.length goal_args) arg_index then false
-  else if Bool.neg (Constr.equal_nounivs (Array.get goal_args arg_index) ctor) then false
-  else match check_appvect frozen_key (array_remove_nth goal_args arg_index) with
-       | Val key_app => equal_nounivs_upto_eta goal_lhs (beta_red key_app)
-       | _ => false
+  match check_appvect key goal_args with
+    | Val key_app =>
+      let key_app := beta_red key_app in
+      if equal_nounivs_upto_eta goal_lhs key_app then
+        true
+      else false
+    | _ => false
        end.
 
-Ltac2 tc_hint_for_specialize_arg (frozen_key : constr) (arg_index : int) (ctor : constr) (lem : constr) (goal_lhs : constr) : unit :=
-  if specialize_arg_matches frozen_key arg_index ctor goal_lhs
-  then first [ unshelve (eapply $lem); shelve_and_tc ()
-             | pre_tc_hint_hook (); unshelve (eapply $lem); shelve_and_tc () ]
+Ltac2 tc_hint_for_specialize_arg (key : constr) (lem : constr) (goal_lhs : constr) : unit :=
+  if specialize_arg_matches key goal_lhs
+  then first [ unshelve (eapply $lem); shelve_and_tc ()|
+               pre_tc_hint_hook (); unshelve (eapply $lem); shelve_and_tc () ]
   else Control.zero Match_failure.
 
 (* Ltac1 bridge, so a [Hint Extern] can call it directly (like [tc_hint_for])
    without an inline [ltac2:(match! …)].  [arg_index] is taken as [int_or_var] so
    a literal (e.g. [2]) crosses to Ltac2 as an [int]. *)
-Tactic Notation "tc_hint_for_specialize_arg"
-    constr(frozen_key) int_or_var(arg_index) constr(ctor) constr(lem) constr(goal_lhs) :=
-  let tac := ltac2:(frozen_key arg_index ctor lem goal_lhs |-
+Tactic Notation "tc_hint_for_specialize_arg" 
+    constr(key) constr(lem) constr(goal_lhs) :=
+  let tac := ltac2:(key lem goal_lhs |-
     tc_hint_for_specialize_arg
-      (Option.get (Ltac1.to_constr frozen_key))
-      (Option.get (Ltac1.to_int arg_index))
-      (Option.get (Ltac1.to_constr ctor))
+      (Option.get (Ltac1.to_constr key))
       (Option.get (Ltac1.to_constr lem))
       (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac frozen_key arg_index ctor lem goal_lhs.
+  tac key lem goal_lhs.
 
 Module Export TCHintNotations.
 
