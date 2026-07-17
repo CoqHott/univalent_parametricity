@@ -259,7 +259,7 @@ Qed.
 Definition FP_Sigma : @sigT ≈u @sigT.
 Proof.
   unshelve econstructor.
-  - unshelve erefine (@PRSigma _ _ _ _ _ _ _); intros; shelve_non_PR. tc. eapply H0. tc. 
+  - unshelve erefine (@PRSigma _ _ _ _ _ _ _); intros; shelve_non_PR. eapply H. eapply H0. tc. 
   - eapply Equiv_Sigma. tc.
   - intros [? ?] [? ?]; cbn in *.
     split; intro e.
@@ -358,6 +358,7 @@ Definition FP_Prod (x y : Type) (H : x ≈u y) (x0 y0 : Type) (H0 : x0 ≈u y0) 
   ((x * x0) ≈u (y * y0)) %type.
 Proof.
 unshelve econstructor.
+- unshelve erefine (@PRProd _ _ _ _ _ _ _); intros; shelve_non_PR. eapply H. eapply H0.
 - unshelve refine (Equiv_prod _ _ _ _ _ _); tc.
 - intros X X'. cbn.
   split; intro e.
@@ -3998,7 +3999,7 @@ unshelve refine (let f : {B : _ & PR plain
       (f : A) (f' : A') (fR : f ≈p f'),
       { B : _ & (@eval_bf A ea isProp f) ≈p B }.
   Proof.
-    intros. eexists. Set Typeclasses Debug. tc.
+    intros. eexists. tc.
   Qed.
 
 End Interface46.

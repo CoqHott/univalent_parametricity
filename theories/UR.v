@@ -107,8 +107,6 @@ Ltac2 apply_PR_Type_gen () :=
 #[export] Hint Extern 0 (_ ≈[ _ ] _) =>
   progress (cbn head zeta) : typeclass_instances ur_typeclass_instances.
 
-Definition PR_Type_plain_univ {A B : Type} (H: A ≈u B) : PR plain A B := Ur H.
-
 Definition PR_Type_univ_univ {A B : Type} (H: A ≈u B) : PR univalent A B :=
   {|pr := @pr plain _ _ (Ur H) |}.
 
@@ -312,10 +310,8 @@ Ltac2 apply_var_tac c :=
               end
     in first [local_assumption () |
               erefineb (PR_Type_gen _ _ _ _) ; local_assumption () |
-              erefineb (PR_Type_plain_univ _); local_assumption () |
               pre_tc_hint_hook_contra (); local_assumption () |
               erefineb (PR_Type_gen _ _ _ _) ; pre_tc_hint_hook_contra (); local_assumption () |
-              erefineb (PR_Type_plain_univ _); pre_tc_hint_hook_contra (); local_assumption () |
               intros ? ? ? |
               cbn_h () ; cbn ; error ()]
     else
@@ -415,7 +411,7 @@ Definition PR_inverse k {A B : Type} (ur: PR k A B) : PR k B A :=
 Definition alt_UR_Coh@{sA sB sR;uA uB uR j +} {A : Type@{sA;uA}}
   {B:Type@{sB;uB}} (H: A ≈u B)
   (einv := Equiv_inverse (equiv H)) :
-  forall (a:A) (b:B), iff@{sR sR SProp; uR uR Set uR} (a = ↑ b) (a ≈p b).
+  forall (a:A) (b:B), iff@{sR sR SProp; uR uR Set uR} (a = ↑ b) (a ≈u b).
 Proof.
   intros a b. cbn. set (e_inv _ _). rewrite <- (e_sect _ b).
   unshelve (refine (Ur_Coh H _ _)).
