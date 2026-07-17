@@ -3520,7 +3520,7 @@ Fail check_if_cumul (check_if_cumul_decompose '(@id True bool (fun x => True) I)
 Fail check_if_cumul (check_if_cumul_decompose '(@eq True I I)).
 Abort.
 
-Ltac2 mutable compute_triple (_:constr) (_:ident) (_:ident) : unit := ().
+Ltac2 mutable compute_triple (_:constr) (_:constr) (_:ident) (_:ident) : unit := ().
 
 From Ltac2 Require Import Constr.
 
@@ -3529,7 +3529,7 @@ Ltac2 merge_triple_array (a:constr array) (b : (ident * ident) array) : constr l
   let l2 := Array.to_list b in
     List.flatten (List.map2 (fun arg id => let (id1, id2) := id in [arg; Unsafe.make (Unsafe.Var id1) ;Unsafe.make (Unsafe.Var id2)]) l1 l2).
 
-Ltac2 forward_apply (lem:constr) (t:constr) :=
+Ltac2 forward_apply (k:constr) (lem:constr) (t:constr) :=
   let (_, c_args) := Constr.decompose_app_nocast t in
   let n := Array.length c_args in
   if Int.equal n 0 then
@@ -3544,7 +3544,7 @@ Ltac2 forward_apply (lem:constr) (t:constr) :=
       (id,id')
     in
     let fresh_ident := Array.init n (fun _ => mk ()) in
-    let () := Array.iter2 (fun arg id => let (id1, id2) := id in compute_triple arg id1 id2) c_args fresh_ident in
+    let () := Array.iter2 (fun arg id => let (id1, id2) := id in compute_triple k arg id1 id2) c_args fresh_ident in
     match check_appvect lem (Array.of_list (merge_triple_array c_args fresh_ident)) with
     | Val apply_lem => unshelve (refine $apply_lem)
     | _ => Control.zero Match_failure
@@ -3591,7 +3591,7 @@ Ltac2 equal_nounivs_upto_eta (goal_lhs : constr) (key_app : constr) : bool :=
     end
   else false.
 
-Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : constr list ) (goal_lhs : constr) :=
+Ltac2 tc_hint_for_list k (fatal : bool) (warn : bool) (key : constr) (lems : constr list ) (goal_lhs : constr) :=
   let eta := Constr.eta_long_with_names in
   let orig_key := key in
   let key := eta key in
@@ -3608,7 +3608,7 @@ Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : const
      let selected_lemma := match goal with
       | None => List.hd lems
       | Some goal_lhs =>
-        let (c_head, c_args) := Constr.decompose_app_list_nocast goal_lhs in
+        let (_, c_args) := Constr.decompose_app_list_nocast goal_lhs in
         match check_if_cumul_decompose_args key c_args with
           (c_head, c_type, a, l) =>
           let a := adjust_type a goal_lhs in
@@ -3624,8 +3624,8 @@ Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : const
             [
              unshelve (eapply $selected_lemma); shelve_and_tc ()|
              pre_tc_hint_hook (); unshelve (eapply $selected_lemma); shelve_and_tc () |
-             forward_apply selected_lemma goal_lhs |
-             pre_tc_hint_hook () ; forward_apply selected_lemma goal_lhs
+             forward_apply k selected_lemma goal_lhs |
+             pre_tc_hint_hook () ; forward_apply k selected_lemma goal_lhs
             ] in
   let (goal_head, goal_args) := Constr.decompose_app goal_lhs in
   if Constr.is_proj goal_head && Constr.is_const orig_key then
@@ -3655,65 +3655,98 @@ Ltac2 tc_hint_for_list (fatal : bool) (warn : bool) (key : constr) (lems : const
     | _ => Control.zero Match_failure
   end.
 
-Ltac2 tc_hint_for_ur_plain_list (fatal : bool) (warn : bool) (key : constr) (ur_lems : constr list) (plain_lems : constr list) (goal_lhs : constr) :=
-  tc_hint_for_list fatal warn key (List.append ur_lems plain_lems) goal_lhs.
+Ltac2 tc_hint_for_ur_plain_list (k:constr) (fatal : bool) (warn : bool) (key : constr) (ur_lems : constr list) (plain_lems : constr list) (goal_lhs : constr) :=
+  tc_hint_for_list k fatal warn key (List.append ur_lems plain_lems) goal_lhs.
 
 Ltac2 to_constr_list l := 
   List.map (fun x => Option.get (Ltac1.to_constr x)) 
   (Option.get (Ltac1.to_list l)).
 
 
-Ltac2 tc_hint_for (fatal : bool) (warn : bool) (key : constr) (lem : constr) (goal_lhs : constr) :=
-  tc_hint_for_list fatal warn key [lem] goal_lhs.
+Ltac2 tc_hint_for k (fatal : bool) (warn : bool) (key : constr) (lem : constr) (goal_lhs : constr) :=
+  tc_hint_for_list k fatal warn key [lem] goal_lhs.
 
 
-Ltac tc_hint_for key lem goal_lhs :=
-  let tac := ltac2:(key lem goal_lhs |- tc_hint_for true false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac key lem goal_lhs.
+Ltac tc_hint_for k key lem goal_lhs :=
+  let tac := ltac2:(k key lem goal_lhs |- tc_hint_for (Option.get (Ltac1.to_constr k)) true false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac k key lem goal_lhs.
 
-Ltac tc_hint_for_warn key lem goal_lhs :=
-  let tac := ltac2:(key lem goal_lhs |- tc_hint_for false true (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac key lem goal_lhs.
+Ltac tc_hint_for_warn k key lem goal_lhs :=
+  let tac := ltac2:(k key lem goal_lhs |- tc_hint_for (Option.get (Ltac1.to_constr k)) false true (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac k key lem goal_lhs.
 
-Ltac tc_hint_for_nofatal key lem goal_lhs :=
-  let tac := ltac2:(key lem goal_lhs |- tc_hint_for false false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac key lem goal_lhs.
+Ltac tc_hint_for_nofatal k key lem goal_lhs :=
+  let tac := ltac2:(k key lem goal_lhs |- tc_hint_for (Option.get (Ltac1.to_constr k)) false false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac k key lem goal_lhs.
 
-Ltac tc_hint_for_ur_plain_hlist key ur_lems plain_lems goal_lhs :=
-  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list true false (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac key ur_lems plain_lems goal_lhs.
+Ltac tc_hint_for_ur_plain_hlist k key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(k key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list (Option.get (Ltac1.to_constr k)) true false (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac k key ur_lems plain_lems goal_lhs.
 
-Ltac tc_hint_for_ur_plain_hlist_warn key ur_lems plain_lems goal_lhs :=
-  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list false true (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac key ur_lems plain_lems goal_lhs.
+Ltac tc_hint_for_ur_plain_hlist_warn k key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(k key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list (Option.get (Ltac1.to_constr k)) false true (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac k key ur_lems plain_lems goal_lhs.
 
-Ltac tc_hint_for_ur_plain_hlist_nofatal key ur_lems plain_lems goal_lhs :=
-  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list false false (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac key ur_lems plain_lems goal_lhs.
+Ltac tc_hint_for_ur_plain_hlist_nofatal k key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(k key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list (Option.get (Ltac1.to_constr k)) false false (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac k key ur_lems plain_lems goal_lhs.
 
-Ltac tc_hint_for_ur_plain_list key ur_lems plain_lems goal_lhs :=
-  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list true false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac key ur_lems plain_lems goal_lhs.
+Ltac tc_hint_for_ur_plain_list k key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(k key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list (Option.get (Ltac1.to_constr k)) true false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac k key ur_lems plain_lems goal_lhs.
 
-Ltac tc_hint_for_ur_plain_list_warn key ur_lems plain_lems goal_lhs :=
-  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list false true (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac key ur_lems plain_lems goal_lhs.
+Ltac tc_hint_for_ur_plain_list_warn k key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(k key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list (Option.get (Ltac1.to_constr k)) false true (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac k key ur_lems plain_lems goal_lhs.
 
-Ltac tc_hint_for_ur_plain_list_nofatal key ur_lems plain_lems goal_lhs :=
-  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list false false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac key ur_lems plain_lems goal_lhs.
+Ltac tc_hint_for_ur_plain_list_nofatal k key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(k key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list (Option.get (Ltac1.to_constr k)) false false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac k key ur_lems plain_lems goal_lhs.
 
+Ltac2 array_remove_nth (arr : constr array) (n : int) : constr array :=
+  let len := Array.length arr in
+  Array.init (Int.sub len 1)
+    (fun i => if Int.lt i n then Array.get arr i else Array.get arr (Int.add i 1)).
+
+Ltac2 specialize_arg_matches (frozen_key : constr) (arg_index : int) (ctor : constr) (goal_lhs : constr) : bool :=
+  let (_h, goal_args) := Constr.decompose_app goal_lhs in
+  if Int.le (Array.length goal_args) arg_index then false
+  else if Bool.neg (Constr.equal_nounivs (Array.get goal_args arg_index) ctor) then false
+  else match check_appvect frozen_key (array_remove_nth goal_args arg_index) with
+       | Val key_app => equal_nounivs_upto_eta goal_lhs (beta_red key_app)
+       | _ => false
+       end.
+
+Ltac2 tc_hint_for_specialize_arg (frozen_key : constr) (arg_index : int) (ctor : constr) (lem : constr) (goal_lhs : constr) : unit :=
+  if specialize_arg_matches frozen_key arg_index ctor goal_lhs
+  then first [ unshelve (eapply $lem); shelve_and_tc ()
+             | pre_tc_hint_hook (); unshelve (eapply $lem); shelve_and_tc () ]
+  else Control.zero Match_failure.
+
+(* Ltac1 bridge, so a [Hint Extern] can call it directly (like [tc_hint_for])
+   without an inline [ltac2:(match! …)].  [arg_index] is taken as [int_or_var] so
+   a literal (e.g. [2]) crosses to Ltac2 as an [int]. *)
+Tactic Notation "tc_hint_for_specialize_arg"
+    constr(frozen_key) int_or_var(arg_index) constr(ctor) constr(lem) constr(goal_lhs) :=
+  let tac := ltac2:(frozen_key arg_index ctor lem goal_lhs |-
+    tc_hint_for_specialize_arg
+      (Option.get (Ltac1.to_constr frozen_key))
+      (Option.get (Ltac1.to_int arg_index))
+      (Option.get (Ltac1.to_constr ctor))
+      (Option.get (Ltac1.to_constr lem))
+      (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac frozen_key arg_index ctor lem goal_lhs.
 
 Module Export TCHintNotations.
 
-Tactic Notation "tc_hint_for_ur_plain_list" constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
-  tc_hint_for_ur_plain_list key ur_lems plain_lems goal_lhs.
+Tactic Notation "tc_hint_for_ur_plain_list" constr(k) constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
+  tc_hint_for_ur_plain_list k key ur_lems plain_lems goal_lhs.
 
-Tactic Notation "tc_hint_for_ur_plain_list_warn" constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
-  tc_hint_for_ur_plain_list_warn key ur_lems plain_lems goal_lhs.
+Tactic Notation "tc_hint_for_ur_plain_list_warn" constr(k) constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
+  tc_hint_for_ur_plain_list_warn k key ur_lems plain_lems goal_lhs.
 
-Tactic Notation "tc_hint_for_ur_plain_list_nofatal" constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
-  tc_hint_for_ur_plain_list_nofatal key ur_lems plain_lems goal_lhs.
+Tactic Notation "tc_hint_for_ur_plain_list_nofatal" constr(k) constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
+  tc_hint_for_ur_plain_list_nofatal k key ur_lems plain_lems goal_lhs.
 End TCHintNotations.
 
 Set Universe Polymorphism. 

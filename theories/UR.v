@@ -319,7 +319,7 @@ Ltac2 apply_var_tac c :=
               intros ? ? ? |
               cbn_h () ; cbn ; error ()]
     else
-      let apply_h_goal h c := if Constr.equal_nocumul c_head c && hyp_not_value h
+      let apply_h_goal k h c := if Constr.equal_nocumul c_head c && hyp_not_value h
             then
               let h' := Control.hyp h in
               let type_h := Std.eval_cbn RedFlags.all (type h') in
@@ -327,7 +327,7 @@ Ltac2 apply_var_tac c :=
               then
                 first [
                   unshelve (refine_n_holes h' (Int.mul 3 nargs)) |
-                  forward_apply h' c];
+                  forward_apply k h' c];
                 shelve_non_PR_multi ()
               else (cbn_h (); match! reverse goal with
               | [ _ : @pr _ _ _ (@Ur _ _ ?pr_inst) ?c _ |- _] =>
@@ -340,8 +340,8 @@ Ltac2 apply_var_tac c :=
               end)
             else Control.zero Match_failure
       in let apply_h () := match! reverse goal with
-          | [ h : @pr _ _ _ _ ?c _ |- _] => apply_h_goal h c
-          | [ h : @PR _ ?c _ |- _] => apply_h_goal h c
+          | [ h : @pr ?k _ _ _ ?c _ |- _] => apply_h_goal k h c
+          | [ h : @PR ?k ?c _ |- _] => apply_h_goal k h c
           end 
       in
       first [apply_h () |
@@ -615,8 +615,8 @@ Ltac2 Set compute_triple := fun (t:constr) (f:ident) (g:ident) =>
    Control.extend [ (fun _ => tc ()) ; (fun _ => unfold &t'; tc () ) ; (fun _ => Std.rename [(@t',f);(@t'',g)]) ] (fun _ => ()) [].
 *)
 #[global]
-Ltac2 Set compute_triple := fun (t:constr) (f:ident) (g:ident) =>
-  unshelve refine '(let t' := _ in let t'' : $t ≈u @t' := _ in _); shelve_non_PR_multi ();
+Ltac2 Set compute_triple := fun (k:constr) (t:constr) (f:ident) (g:ident) =>
+  unshelve refine '(let t' := _ in let t'' : $t ≈[$k] @t' := _ in _); shelve_non_PR_multi ();
    Control.extend [ (fun _ => tc ()) ; (fun _ => unfold &t'; tc () ) ; (fun _ => Std.rename [(@t',f);(@t'',g)]) ] (fun _ => ()) [].
 
 

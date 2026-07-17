@@ -245,7 +245,7 @@ Proof.
 Defined.
 
 Ltac apply_forall :=
-  first [unshelve eapply FP_forall_ur | unshelve eapply FP_forall];
+  unshelve eapply FP_forall;
     intros; shelve_non_PR.
 
 Hint Extern 0 =>
