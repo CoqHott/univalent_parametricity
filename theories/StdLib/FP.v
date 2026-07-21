@@ -259,7 +259,7 @@ Qed.
 Definition FP_Sigma : @sigT ≈u @sigT.
 Proof.
   unshelve econstructor.
-  - unshelve erefine (@PRSigma _ _ _ _ _ _ _); intros; shelve_non_PR. eapply H. eapply H0. tc. 
+  - unshelve erefine (@PRSigma _ _ _ _ _ _ _); intros; shelve_non_PR. eapply H. eapply H0. tc.
   - eapply Equiv_Sigma. tc.
   - intros [? ?] [? ?]; cbn in *.
     split; intro e.
@@ -273,9 +273,9 @@ Proof.
       unshelve eapply (snd (Ur_Coh _ _ _)); eauto.
       unfold univalent_transport in *.
       unshelve eapply (snd (Ur_Coh _ _ _)); cbn.
-      2:{ eapply H0; eauto. } 
+      2:{ eapply H0; eauto. }
       unfold univalent_transport.
-      pose proof (snd (Ur_Coh _ _ _) e1). revert x2 e1 e2. 
+      pose proof (snd (Ur_Coh _ _ _) e1). revert x2 e1 e2.
       rewrite H1. intros x2 e1 e2.
       rewrite transport_eq_gen_refl.
       pose (Ur_Coh (H0 x3 (univalent_transport x3) e1)).
@@ -405,7 +405,7 @@ cbn; intros. unshelve econstructor.
 Defined.
 
 #[universes(collapse_sort_variables=no)]
-Definition univ_eq' : 
+Definition univ_eq' :
   (fun A : Prop => @eq A) ≈u @path.
 Proof.
 cbn; intros. unshelve econstructor.
@@ -444,7 +444,7 @@ Arguments SJMeq_refl {A x}.
 Arguments SJMeq {A} x {B} _.
 
 #[universes(collapse_sort_variables=no)]
-Inductive PR_JMeq (A_1 A_2 : Type) (A_R : A_1 -> A_2 -> Type) 
+Inductive PR_JMeq (A_1 A_2 : Type) (A_R : A_1 -> A_2 -> Type)
     (x_1 : A_1) (x_2 : A_2) (x_R : A_R x_1 x_2)
   :
    forall (B_1 B_2 : Type) (B_R : B_1 -> B_2 -> Type)
@@ -456,7 +456,7 @@ Inductive PR_JMeq (A_1 A_2 : Type) (A_R : A_1 -> A_2 -> Type)
 Instance PJMEq (A_1 A_2 : Type) (A_R : A_1 ≈p A_2)
   (x_1 : A_1) (x_2 : A_2) (x_R : x_1 ≈p x_2)
   (B_1 B_2 : Type) (B_R : B_1 ≈p B_2)
-  (y_1 : B_1) (y_2 : B_2) (y_R : y_1 ≈p y_2) : 
+  (y_1 : B_1) (y_2 : B_2) (y_R : y_1 ≈p y_2) :
   PR@{Prop SProp SProp;_ _ _} plain (JMeq x_1 y_1) (SJMeq x_2 y_2)  :=
   {| pr := fun e e' => PR_JMeq _ _ _ _ _ x_R _ _ _ _ _ y_R e e' |}.
 
@@ -469,7 +469,7 @@ Qed.
 Lemma eq_dep_JMeq (A : Type) (x : A) (B : Type) (y : B) :
   {e : A = B & e # x = y} -> JMeq x y.
 Proof.
-  intros [e e']. destruct e. cbn in *. destruct e'. 
+  intros [e e']. destruct e. cbn in *. destruct e'.
   econstructor.
 Qed.
 
@@ -482,7 +482,7 @@ Qed.
 Lemma eq_dep_SJMeq (A : Type) (x : A) (B : Type) (y : B) :
   ({e : A = B & e # x = y}:SProp) -> SJMeq x y.
 Proof.
-  intros [e e']. destruct e. cbn in *. destruct e'. 
+  intros [e e']. destruct e. cbn in *. destruct e'.
   econstructor.
 Qed.
 
@@ -644,7 +644,7 @@ Section SoftwareFoundations.
     split.
     + eapply ap.
     + eapply ap_inv_equiv. apply dec_eq.
-  - intros ? ? ?; reflexivity. 
+  - intros ? ? ?; reflexivity.
   Defined.
 
 End SoftwareFoundations.
@@ -822,7 +822,7 @@ Parameter LF__IndProp__evD_0_iso : iso_statement (ev_0) imported_LF__IndProp__ev
 End Interface'.
 
 Lemma equal_f {X Y} {f g : X -> Y} a : eq f g -> eq (f a) (g a).
-Proof. 
+Proof.
 destruct 1. reflexivity.
 Qed.
 
@@ -1722,7 +1722,7 @@ Proof.
   | [ |- and True True ] => split; apply I
   end.
 Qed.
- 
+
 Parameter imported_LF__AltAuto__matchD_ex2 : import_of (@match_ex2).
 Parameter LF__AltAuto__matchD_ex2_iso : iso_statement (@match_ex2) imported_LF__AltAuto__matchD_ex2.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@match_ex2) LF__AltAuto__matchD_ex2_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -1924,7 +1924,7 @@ Context {A B : Type}.
 Implicit Types (x : A) (f : var -> A) (g : A -> B) (n m : var).
 
 Lemma lift_compR n m f : eq ((+n) >>> ((+m) >>> f)) ((+m+n) >>> f).
-Proof. 
+Proof.
 Admitted.
 
 End LemmasForFun.
@@ -2439,7 +2439,7 @@ Parameter Corelib__Relations__RelationD_Definitions__relation_iso : iso_statemen
 #[export] Hint Extern 1 => progress (unfold Corelib.Relations.Relation_Definitions.relation) : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Classes__Morphisms__Proper : forall y : Type, (y -> y -> SProp) -> y -> SProp.
-Parameter Corelib__Classes__Morphisms__Proper_iso : iso_statement (@Corelib.Classes.Morphisms.Proper) imported_Corelib__Classes__Morphisms__Proper. 
+Parameter Corelib__Classes__Morphisms__Proper_iso : iso_statement (@Corelib.Classes.Morphisms.Proper) imported_Corelib__Classes__Morphisms__Proper.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@Corelib.Classes.Morphisms.Proper) Corelib__Classes__Morphisms__Proper_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (@Corelib.Classes.Morphisms.Proper) Corelib__Classes__Morphisms__Proper_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
@@ -2505,11 +2505,11 @@ Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) 
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_Corelib__Init__Nat__max : import_of Nat.max. 
+Parameter imported_Corelib__Init__Nat__max : import_of Nat.max.
 Parameter Corelib__Init__Nat__max_iso : iso_statement Nat.max imported_Corelib__Init__Nat__max.
-#[export] Hint Extern 10 => progress (unfold Corelib.Init.Nat.max) : typeclass_instances ur_typeclass_instances. 
+#[export] Hint Extern 10 => progress (unfold Corelib.Init.Nat.max) : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_Corelib__Init__Peano__le : import_of Peano.le. 
+Parameter imported_Corelib__Init__Peano__le : import_of Peano.le.
 Parameter Corelib__Init__Peano__le_iso : iso_statement Peano.le imported_Corelib__Init__Peano__le.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@Corelib.Init.Peano.le) Corelib__Init__Peano__le_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (@Corelib.Init.Peano.le) Corelib__Init__Peano__le_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2544,7 +2544,7 @@ Parameter Corelib__Numbers__BinNums__positive_iso : iso_statement (@Corelib.Numb
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@Corelib.Numbers.BinNums.positive) Corelib__Numbers__BinNums__positive_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (@Corelib.Numbers.BinNums.positive) Corelib__Numbers__BinNums__positive_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-From Corelib Require Import Floats.SpecFloat. 
+From Corelib Require Import Floats.SpecFloat.
 
 Parameter imported_Corelib__Floats__SpecFloat__iterD_pos : import_of (@Corelib.Floats.SpecFloat.iter_pos).
 Parameter Corelib__Floats__SpecFloat__iterD_pos_iso : iso_statement (@Corelib.Floats.SpecFloat.iter_pos) imported_Corelib__Floats__SpecFloat__iterD_pos.
@@ -2578,7 +2578,7 @@ Parameter Stdlib__PArith__BinPos__Pos__toD_pos_iter_iso : iso_statement (@Stdlib
 Lemma iter_pos_nat :
   forall A f (p : positive) (x : A),
   eq (iter_pos A f x p) (iter_nat f (Pos.to_nat p) x).
-Admitted. 
+Admitted.
 
 Parameter imported_Flocq__Core__Zaux__iterD_posD_nat : import_of (@iter_pos_nat).
 Parameter Flocq__Core__Zaux__iterD_posD_nat_iso : iso_statement (@iter_pos_nat) imported_Flocq__Core__Zaux__iterD_posD_nat.
@@ -2736,7 +2736,7 @@ End Interface35.
 (*
 Module Type Interface36 (Import args : Args).
 
-From Stdlib Require Import Formula. 
+From Stdlib Require Import Formula.
 Parameter imported_Cdcl__Formula__IntMap__ptrie : Type -> Type -> Type.
 Parameter Cdcl__Formula__IntMap__ptrie_iso : (@UR.pr _ _ _
      (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type (forall _ : Type, Type) (forall _ : Type, Type) (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
@@ -2907,7 +2907,7 @@ Parameter SimpleIO__IOD_Monad__IO__bind_iso : (@UR.pr _ _ _
             @UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent (IO x) (imported_SimpleIO__IOD_Monad__IO y) (forall _ : forall _ : x, IO x0, IO x0)
               (forall _ : forall _ : y, imported_SimpleIO__IOD_Monad__IO y0, imported_SimpleIO__IOD_Monad__IO y0)
               (@UR.PR_Type_univ_univ@{Type Type Type ; _ _ _ _} (IO x) (imported_SimpleIO__IOD_Monad__IO y) (@SimpleIO__IOD_Monad__IO_iso x y H))
-              (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent (forall _ : x, IO x0) (forall _ : y, imported_SimpleIO__IOD_Monad__IO y0) 
+              (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent (forall _ : x, IO x0) (forall _ : y, imported_SimpleIO__IOD_Monad__IO y0)
                  (IO x0) (imported_SimpleIO__IOD_Monad__IO y0)
                  (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent x y (IO x0) (imported_SimpleIO__IOD_Monad__IO y0)
                     (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.univalent x y H)
@@ -2952,7 +2952,7 @@ Parameter Corelib__Init__Logic__and_iso : (@UR.pr _ _ _
      and imported_Corelib__Init__Logic__and).
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@Corelib.Init.Logic.and) Corelib__Init__Logic__and_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (@Corelib.Init.Logic.and) Corelib__Init__Logic__and_iso goal_lhs : typeclass_instances ur_typeclass_instances.
- 
+
 Parameter imported_Corelib__Init__Logic__ex : forall y : Type, (y -> SProp) -> SProp.
 Parameter Corelib__Init__Logic__ex_iso : (@UR.pr _ _ _
      (@UR.URForall@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type (fun x : Type => forall _ : forall _ : x, Prop, Prop)
@@ -3037,7 +3037,7 @@ Parameter LF__Basics__bool_iso : (@UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@bool) LF__Basics__bool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (@bool) LF__Basics__bool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Inductive Toy : Type := 
+Inductive Toy : Type :=
   | con1 : bool -> Toy
   | con2 : nat -> Toy -> Toy.
 
@@ -3051,7 +3051,7 @@ Theorem Toy_correct : exists f g,
     (forall b : bool, P (f b)) ->
     (forall (n : nat) (t : Toy), P t -> P (g n t)) ->
     forall t : Toy, P t.
-Admitted. 
+Admitted.
 
 Parameter imported_LF__IndPrinciples__ToyD_correct : import_of (@Toy_correct).
 Parameter LF__IndPrinciples__ToyD_correct_iso : iso_statement (@Toy_correct) imported_LF__IndPrinciples__ToyD_correct.
@@ -3217,7 +3217,7 @@ Parameter Corelib__Init__Specif__exist_iso : iso_statement
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (fun A P => @exist A P) Corelib__Init__Specif__exist_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (fun A P => @Corelib.Init.Specif.exist A P) Corelib__Init__Specif__exist_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_Corelib__Init__Specif__proj1D_sig : import_of (@proj1_sig). 
+Parameter imported_Corelib__Init__Specif__proj1D_sig : import_of (@proj1_sig).
 Parameter Corelib__Init__Specif__proj1D_sig_iso : iso_statement (@proj1_sig) imported_Corelib__Init__Specif__proj1D_sig.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@Corelib.Init.Specif.proj1_sig) Corelib__Init__Specif__proj1D_sig_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (@Corelib.Init.Specif.proj1_sig) Corelib__Init__Specif__proj1D_sig_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -3491,23 +3491,23 @@ Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun (A : Type) (x x0 : A
 Parameter imported_Corelib__Init__Logic__eq_Prop : forall y : SProp, y -> y -> SProp.
 Parameter Corelib__Init__Logic__eq_iso_Prop : iso_statement  (fun (A : Prop) (x x0 : A) => @Corelib.Init.Logic.eq A x x0) imported_Corelib__Init__Logic__eq_Prop.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_hlist  univalent(@Corelib.Init.Logic.eq) [(* ((fun A : Prop => @Corelib.Init.Logic.eq A)) *) Corelib__Init__Logic__eq_iso_Prop; Corelib__Init__Logic__eq_iso] goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) => 
+#[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) =>
   tc_hint_for_ur_plain_list k (@Corelib.Init.Logic.eq) [@Corelib__Init__Logic__eq_iso_Prop; @Corelib__Init__Logic__eq_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__ssr__ssrunder__UnderD_rel__UnderD_rel : forall y : Type, (y -> y -> SProp) -> y -> y -> SProp.
 Parameter Corelib__ssr__ssrunder__UnderD_rel__UnderD_rel_iso : iso_statement (@ssrunder.Under_rel.Under_rel) imported_Corelib__ssr__ssrunder__UnderD_rel__UnderD_rel.
-#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => 
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) =>
   tc_hint_for_ur_plain_hlist univalent (@Corelib.ssr.ssrunder.Under_rel.Under_rel) [Corelib__ssr__ssrunder__UnderD_rel__UnderD_rel_iso] goal_lhs : typeclass_instances ur_typeclass_instances.
 
 #[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) =>
-  tc_hint_for_ur_plain_list k (@Corelib.ssr.ssrunder.Under_rel.Under_rel) 
-    [@Corelib__ssr__ssrunder__UnderD_rel__UnderD_rel_iso] 
+  tc_hint_for_ur_plain_list k (@Corelib.ssr.ssrunder.Under_rel.Under_rel)
+    [@Corelib__ssr__ssrunder__UnderD_rel__UnderD_rel_iso]
     [] goal_lhs: typeclass_instances ur_typeclass_instances.
 
 #[universes(polymorphic,collapse_sort_variables=no)]
 Goal {B :_ & PR univalent (forall (A : Type) (eqA : A -> A -> Prop),
 eq (ssrunder.Under_rel.Under_rel A eqA) eqA) B}.
-Proof. 
+Proof.
   eexists. tc.
 Abort.
 
@@ -3521,7 +3521,7 @@ End Interface42.
 
 Module Type Interface43 (Import args : Args).
 
-Require Import List. 
+Require Import List.
 
 Parameter imported_Corelib__Init__Datatypes__list : import_of list.
 Parameter Corelib__Init__Datatypes__list_iso : iso_statement
@@ -3933,74 +3933,150 @@ Module Interface46.
   Parameter imported_eval_bf_isProp : plain_import_of (fun A ea f => @eval_bf A ea isProp f).
   Parameter eval_bf_iso_isProp : plain_iso_statement (fun A ea f => @eval_bf A ea isProp f) imported_eval_bf_isProp.
 
-  #[export] Hint Extern 1 (UR.pr plain ?g _) => tc_hint_for_ur_plain_list plain (@eval_bf) [eval_bf_iso;eval_bf_iso_isProp] [] g : typeclass_instances ur_typeclass_instances.
-
-  (* If a term of type [imported_rtyp isProp] is expected, [eval_bf] should be translated as usual *)
+  (* Test new definition of [compute_triple] with evar created without unneed dependency *)
   Goal forall (A A' : Type) (AR : A ≈p A')
-        (ea  : forall k, A  -> rtyp k)
+        (ea  : forall k:kind, A  -> rtyp k)
         (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
-        (eaR : ea ≈p ea')
-        (f : A) (f' : A') (fR : f ≈p f'),
-      { B : _ & (hold isProp (@eval_bf A ea isProp f)) ≈p B }.
-  Proof.
-    intros. eexists. tc.
-  Qed.
-
-  #[universes(polymorphic,collapse_sort_variables=no)]
-  Goal forall (A A' : Type) (AR : A ≈p A')
-        (ea  : forall k, A  -> rtyp k)
-        (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
-        (eaR : ea ≈p ea')
-        (f : A) (f' : A') (fR : f ≈p f'),
-      { B : _ & (hold isProp (@eval_bf A ea isProp f)) ≈p B }.
+        (eaR : ea ≈p ea'),
+      ea ≈p ea'.
   Proof.
     intros.
-unshelve refine (let f : {B : _ & PR plain
-   (forall (k : kind) (_ : A), rtyp k) 
-   B} := _ in _).
-    eexists. tc.
-    (* this failure is weird *)
-    Fail unshelve refine (let t' := _ : _ in let t'' : @pr plain _ _ _ ea t' := _ in _); shelve_non_PR.
-  Abort. 
-
-  (* However, as a type it fail as the type of [imported_eval_bf] is [imported_rtype imported_isProp]
-     which does not compute since [imported_rtype] is abstract *)
-  #[universes(polymorphic,collapse_sort_variables=no)]
-  Goal forall (A A' : Type) (AR : A ≈p A')
-        (ea  : forall k, A  -> rtyp k)
-        (ea' : _)
-        (eaR : ea ≈p ea')
-        (f : A) (f' : A') (fR : f ≈p f'),
-        { B : _ & (@eval_bf A ea isProp f) ≈p B }. 
-  Proof.
-    intros. 
-    eexists. 
-    Fail tc.  
+    (* The old definition of [compute_triple] created the [PR] instance evar
+       while elaborating [t'']'s type, i.e. with [t' := ?x : ?B] already in
+       its context, so its [tc] call died on the occurs-check: *)
+    Fail ltac2:(unshelve refine '(let t' := _ in let t'' : &ea ≈[plain] @t' := _ in _); shelve_non_PR_multi ();
+                Control.extend [ (fun _ => tc ()) ; (fun _ => unfold &t'; tc ()) ; (fun _ => Std.rename [(@t', @f); (@t'', @g)]) ] (fun _ => ()) []).
+    ltac2:(compute_triple 'plain 'ea @f @g).
+    exact eaR.
   Abort.
 
-  #[export] Hint Extern 1 (UR.pr ?k ?g _) => tc_hint_for_specialize_arg (@eval_bf) eval_bf_iso_isProp g : typeclass_instances ur_typeclass_instances.
+  (* With only the generic [eval_bf_iso] registered, [eval_bf] can be
+     translated in term position, but not in sort position. *)
+  Section EvalBfOnly.
 
-  (* The usual example still works *)
-  Goal forall (A A' : Type) (AR : A ≈p A')
-      (ea  : forall k, A  -> rtyp k)
-      (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
-      (eaR : ea ≈p ea')
-      (f : A) (f' : A') (fR : f ≈p f'),
-      { B : _ & (hold isProp (@eval_bf A ea isProp f)) ≈p B }.
-  Proof.
-    intros. eexists. tc.
-  Qed.
+    #[local] Hint Extern 1 (UR.pr plain ?g _) => tc_hint_for_ur_plain_list plain (@eval_bf) [eval_bf_iso] [] g : typeclass_instances ur_typeclass_instances.
 
-  (* It now succeds in a sort position due to new hint  *)
-  Goal forall (A A' : Type) (AR : A ≈p A')
-      (ea  : forall k, A  -> rtyp k)
-      (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
-      (eaR : ea ≈p ea')
-      (f : A) (f' : A') (fR : f ≈p f'),
-      { B : _ & (@eval_bf A ea isProp f) ≈p B }.
-  Proof.
-    intros. eexists. tc.
-  Qed.
+    (* If a term of type [imported_rtyp isProp] is expected, [eval_bf] is
+       translated as usual: the generic iso suffices. *)
+    Goal forall (A A' : Type) (AR : A ≈p A')
+          (ea  : forall k, A  -> rtyp k)
+          (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
+          (eaR : ea ≈p ea')
+          (f : A) (f' : A') (fR : f ≈p f'),
+        { B : _ & (hold isProp (@eval_bf A ea isProp f)) ≈p B }.
+    Proof.
+      intros. eexists. tc.
+    Qed.
+
+    (* However, in sort position it fails: [eval_bf_iso] only relates the terms
+       at the abstract instance [rtyp_iso isProp _ _] — the imported result type
+       [imported_rtyp imported_isProp] does not compute to a sort since
+       [imported_rtyp] is abstract — while the goal needs the sort instance
+       [PR_Type plain]. *)
+    #[universes(polymorphic,collapse_sort_variables=no)]
+    Goal forall (A A' : Type) (AR : A ≈p A')
+          (ea  : forall k, A  -> rtyp k)
+          (ea' : _)
+          (eaR : ea ≈p ea')
+          (f : A) (f' : A') (fR : f ≈p f'),
+          { B : _ & (@eval_bf A ea isProp f) ≈p B }.
+    Proof.
+      intros.
+      eexists.
+      Fail tc.
+    Abort.
+
+  End EvalBfOnly.
+
+  Section EvalBfPropOnly.
+
+  #[local] Hint Extern 1 (UR.pr plain ?g _) => tc_hint_for_ur_plain_list plain (@eval_bf) [eval_bf_iso_isProp] [] g : typeclass_instances ur_typeclass_instances.
+
+    (* If a term of type [imported_rtyp isProp] is expected, [eval_bf] is
+       translated as usual: the generic iso suffices. *)
+    Goal forall (A A' : Type) (AR : A ≈p A')
+        (ea  : forall k, A  -> rtyp k)
+        (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
+        (eaR : ea ≈p ea')
+        (f : A) (f' : A') (fR : f ≈p f'),
+        { B : _ & (hold isProp (@eval_bf A ea isProp f)) ≈p B }.
+    Proof.
+      intros. eexists. Fail tc.
+    Abort.
+
+    (* And the sort-position example now succeeds via the specialized iso in the
+      hint list — no separate hint mechanism needed. *)
+    Goal forall (A A' : Type) (AR : A ≈p A')
+        (ea  : forall k, A  -> rtyp k)
+        (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
+        (eaR : ea ≈p ea')
+        (f : A) (f' : A') (fR : f ≈p f'),
+        { B : _ & (@eval_bf A ea isProp f) ≈p B }.
+    Proof.
+      intros. eexists. tc.
+    Qed.
+
+  End EvalBfPropOnly.
+
+  Section EvalBfAndProp.
+
+    #[local] Hint Extern 1 (UR.pr plain ?g _) => tc_hint_for_ur_plain_list plain (@eval_bf) [eval_bf_iso; eval_bf_iso_isProp] [] g : typeclass_instances ur_typeclass_instances.
+
+      (* If a term of type [imported_rtyp isProp] is expected, [eval_bf] is
+        translated as usual: the generic iso suffices. *)
+      Goal forall (A A' : Type) (AR : A ≈p A')
+          (ea  : forall k, A  -> rtyp k)
+          (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
+          (eaR : ea ≈p ea')
+          (f : A) (f' : A') (fR : f ≈p f'),
+          { B : _ & (hold isProp (@eval_bf A ea isProp f)) ≈p B }.
+      Proof.
+        intros. eexists. tc.
+      Qed.
+
+      (* And the sort-position example now succeeds via the specialized iso in the
+        hint list — no separate hint mechanism needed. *)
+      Goal forall (A A' : Type) (AR : A ≈p A')
+          (ea  : forall k, A  -> rtyp k)
+          (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
+          (eaR : ea ≈p ea')
+          (f : A) (f' : A') (fR : f ≈p f'),
+          { B : _ & (@eval_bf A ea isProp f) ≈p B }.
+      Proof.
+        intros. eexists. tc.
+      Qed.
+
+  End EvalBfAndProp.
+
+  Section EvalBfAndPropRev.
+
+    #[local] Hint Extern 1 (UR.pr plain ?g _) => tc_hint_for_ur_plain_list plain (@eval_bf) [eval_bf_iso_isProp; eval_bf_iso] [] g : typeclass_instances ur_typeclass_instances.
+
+      (* If a term of type [imported_rtyp isProp] is expected, [eval_bf] is
+        translated as usual: the generic iso suffices. *)
+      Goal forall (A A' : Type) (AR : A ≈p A')
+          (ea  : forall k, A  -> rtyp k)
+          (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
+          (eaR : ea ≈p ea')
+          (f : A) (f' : A') (fR : f ≈p f'),
+          { B : _ & (hold isProp (@eval_bf A ea isProp f)) ≈p B }.
+      Proof.
+        intros. eexists. tc.
+      Qed.
+
+      (* And the sort-position example now succeeds via the specialized iso in the
+        hint list — no separate hint mechanism needed. *)
+      Goal forall (A A' : Type) (AR : A ≈p A')
+          (ea  : forall k, A  -> rtyp k)
+          (ea' : forall k' : imported_kind, A' -> imported_rtyp k')
+          (eaR : ea ≈p ea')
+          (f : A) (f' : A') (fR : f ≈p f'),
+          { B : _ & (@eval_bf A ea isProp f) ≈p B }.
+      Proof.
+        intros. eexists. tc.
+      Qed.
+
+  End EvalBfAndPropRev.
 
 End Interface46.
 
