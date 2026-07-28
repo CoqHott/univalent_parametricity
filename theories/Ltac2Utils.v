@@ -3535,12 +3535,9 @@ Ltac2 clear_ident (arr : (ident * ident) array) :=
 Ltac2 mutable shelve_and_tc () := ().
 
 Ltac2 forward_apply (k:constr) (lem:constr) (t:constr) :=
-  Message.print (Message.concat (Message.of_string "entering forward_mode: ")
-      (Message.of_constr lem));
   let (_c_head, c_args) := Constr.decompose_app_nocast t in
   let n := Array.length c_args in
   if Int.equal n 0 then
-    Message.print (Message.of_string "forward_mode no args");
     unshelve (eapply $lem); shelve_and_tc ()
   else 
     let avoid := Ref.ref (Fresh.Free.of_goal ()) in
@@ -3553,10 +3550,8 @@ Ltac2 forward_apply (k:constr) (lem:constr) (t:constr) :=
     in
     let fresh_ident := Array.init n (fun _ => mk ()) in
     let () := Array.iter2 (fun arg id => let (id1, id2) := id in compute_triple k arg id1 id2) c_args fresh_ident in
-    Message.print (Message.of_string "ping"); 
     match check_appvect lem (Array.of_list (merge_triple_array c_args fresh_ident)) with
     | Val apply_lem => 
-      Message.print (Message.of_constr apply_lem); 
       unshelve (refine $apply_lem); clear_ident fresh_ident
     | _ => Control.zero Match_failure
     end.
@@ -3647,8 +3642,7 @@ Ltac2 tc_hint_for_list k (fatal : bool) (warn : bool) (key : constr) (lems : con
           [
           try_each (fun lem => unshelve (eapply $lem); shelve_and_tc ()) (selected_lemmas) |
           (*  pre_tc_hint_hook (); try_each (fun lem => unshelve (eapply $lem); shelve_and_tc ()) (selected_lemmas) | *) 
-            try_each (fun lem => Message.print (Message.concat (Message.of_string "trying lemma : ")
-      (Message.of_constr lem)); forward_apply k lem goal_lhs) selected_lemmas 
+            try_each (fun lem => forward_apply k lem goal_lhs) selected_lemmas 
             (* | pre_tc_hint_hook () ; try_each (fun lem => forward_apply k lem goal_lhs) selected_lemmas*)
           ]
   in
