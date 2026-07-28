@@ -263,6 +263,15 @@ Ltac2 refine_n_holes (c : constr) (n : int) : unit :=
     let holes := Array.init n (fun _ => open_constr:(_)) in
     Constr.Unsafe.make (Constr.Unsafe.App c holes)).
 
+Ltac2 intros_with_eta () := 
+  match! goal with [|- (fun x : _ => _) ≈[ _] ?t] =>
+    if Constr.is_evar t then
+      let t' := Constr.open_pretype_no_tc preterm:(fun (x:_) => _) in
+      ltac1:(c1 c2 |- unify c1 c2) (Ltac1.of_constr t) (Ltac1.of_constr t')
+    else ();
+    ltac1:(intros ? ? ?)
+  end.
+
 Ltac2 apply_var_tac c :=
   let (c_head, c_args) := Constr.decompose_app_nocast c in
   let cbn_h () := match! reverse goal with
@@ -312,7 +321,7 @@ Ltac2 apply_var_tac c :=
               erefineb (PR_Type_gen _ _ _ _) ; local_assumption () |
               pre_tc_hint_hook_contra (); local_assumption () |
               erefineb (PR_Type_gen _ _ _ _) ; pre_tc_hint_hook_contra (); local_assumption () |
-              intros ? ? ? |
+              intros_with_eta () |
               cbn_h () ; cbn ; error ()]
     else
       let apply_h_goal k h c := if Constr.equal_nocumul c_head c && hyp_not_value h
@@ -604,18 +613,14 @@ Abbreviation plain_import_of f :=
     ltac2:(Control.refine (fun () => import_of 'plain (Constr.open_pretype_no_tc f) None))
   end) (only parsing).
 
-(*
-#[global]
-Ltac2 Set compute_triple := fun (t:constr) (f:ident) (g:ident) =>
-  unshelve refine '(let t' : _ := _ in let t'' : $t ≈u @t' := _ in _); shelve_non_PR_multi ();
-   Control.extend [ (fun _ => tc ()) ; (fun _ => unfold &t'; tc () ) ; (fun _ => Std.rename [(@t',f);(@t'',g)]) ] (fun _ => ()) [].
-*)
 #[global]
 Ltac2 Set compute_triple := fun (k:constr) (t:constr) (f:ident) (g:ident) =>
-  let inst := Constr.open_pretype_no_tc preterm:(_ :> PR $k _ _) in
-  unshelve refine '(let t' := _ in let t'' : @pr $k _ _ $inst $t t' := _ in _); shelve_non_PR_multi ();
-   Control.extend [ (fun _ => tc ()) ; (fun _ => unfold &t'; tc () ) ; (fun _ => Std.rename [(@t',f);(@t'',g)]) ] (fun _ => ()) [].
-
+  let typ := type_of_refresh t in 
+  let typ' := Constr.open_pretype_no_tc preterm:(_) in
+  let inst := Constr.open_pretype_no_tc preterm:(_ :> PR $k $typ $typ') in
+  let t' := Constr.open_pretype_no_tc preterm:(_:>$typ') in
+  unshelve refine '(let foo' : $typ':= $t' in let bar' : @pr $k _ _ $inst $t $t' := _ in _); shelve_non_PR_multi ();
+  Control.extend [ (fun _ => tc ()) ; (fun _ => tc ()) ; (fun _ => Std.rename [(@foo',f);(@bar',g)]) ] (fun _ => ()) [].
 
 #[global]
 Ltac2 Set shelve_and_tc := fun _ => shelve_non_PR_multi (); tc ().

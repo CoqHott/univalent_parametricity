@@ -35,7 +35,7 @@ Parameter Corelib__Init__Specif__sigT_iso : (@UR.pr _ _ _
 #[export] Hint Extern 1 (UR.pr ?k ?goal_lhs _) =>
   tc_hint_for k (@sigT) Corelib__Init__Specif__sigT_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_Corelib__Init__Specif__existT : forall (y : Type) (y0 : y -> Type) (y1 : y), y0 y1 -> imported_Corelib__Init__Specif__sigT (fun H : y => y0 H).
+Parameter imported_Corelib__Init__Specif__existT : import_of (@existT).
 Parameter Corelib__Init__Specif__existT_iso : iso_statement (@existT) (@imported_Corelib__Init__Specif__existT).
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
   tc_hint_for univalent (@existT) Corelib__Init__Specif__existT_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -1220,7 +1220,7 @@ Proof.
   (* FILL IN HERE *) Admitted.
 
 Parameter imported_SECF__Maps__tD_updateD_eq : import_of t_update_eq.
-Parameter SECF__Maps__tD_updateD_eq_iso : t_update_eq ≈[ _] imported_SECF__Maps__tD_updateD_eq.
+Parameter SECF__Maps__tD_updateD_eq_iso : iso_statement t_update_eq imported_SECF__Maps__tD_updateD_eq.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@t_update_eq) SECF__Maps__tD_updateD_eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (@t_update_eq) SECF__Maps__tD_updateD_eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
@@ -1903,8 +1903,7 @@ Parameter Corelib__Init__Nat__add_iso : iso_statement Nat.add imported_Corelib__
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@Corelib.Init.Nat.add) Corelib__Init__Nat__add_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (@Corelib.Init.Nat.add) Corelib__Init__Nat__add_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep : forall (y : Type) (y0 : y -> Type) (y1 : forall y1 : y, y0 y1) (y2 : forall y2 : y, y0 y2),
-  (forall y3 : y, imported_Corelib__Init__Logic__eq (y1 y3) (y2 y3)) -> imported_Corelib__Init__Logic__eq y1 y2.
+Parameter imported_Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep : import_of (@FunctionalExtensionality.functional_extensionality_dep).
 Parameter Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep_iso : iso_statement (@FunctionalExtensionality.functional_extensionality_dep) imported_Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@Stdlib.Logic.FunctionalExtensionality.functional_extensionality_dep) Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (@Stdlib.Logic.FunctionalExtensionality.functional_extensionality_dep) Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep_iso goal_lhs : typeclass_instances ur_typeclass_instances.

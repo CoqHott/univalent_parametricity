@@ -3529,32 +3529,41 @@ Ltac2 merge_triple_array (a:constr array) (b : (ident * ident) array) : constr l
   let l2 := Array.to_list b in
     List.flatten (List.map2 (fun arg id => let (id1, id2) := id in [arg; Unsafe.make (Unsafe.Var id1) ;Unsafe.make (Unsafe.Var id2)]) l1 l2).
 
+Ltac2 clear_ident (arr : (ident * ident) array) :=
+  Array.iter (fun id => let (id1, id2) := id in clear $id1; clear $id2) arr.
+
+Ltac2 mutable shelve_and_tc () := ().
+
 Ltac2 forward_apply (k:constr) (lem:constr) (t:constr) :=
-  let (_, c_args) := Constr.decompose_app_nocast t in
+  Message.print (Message.concat (Message.of_string "entering forward_mode: ")
+      (Message.of_constr lem));
+  let (_c_head, c_args) := Constr.decompose_app_nocast t in
   let n := Array.length c_args in
   if Int.equal n 0 then
-    unshelve (refine $lem)
-  else
+    Message.print (Message.of_string "forward_mode no args");
+    unshelve (eapply $lem); shelve_and_tc ()
+  else 
     let avoid := Ref.ref (Fresh.Free.of_goal ()) in
     let mk () :=
-      let id := Fresh.fresh (Ref.get avoid) @x in
+      let id := Fresh.fresh (Ref.get avoid) @forward in
       Ref.set avoid (Fresh.Free.union (Ref.get avoid) (Fresh.Free.of_ids [id]));
-      let id' := Fresh.fresh (Ref.get avoid) @x in
+      let id' := Fresh.fresh (Ref.get avoid) @forward_r in
       Ref.set avoid (Fresh.Free.union (Ref.get avoid) (Fresh.Free.of_ids [id']));
       (id,id')
     in
     let fresh_ident := Array.init n (fun _ => mk ()) in
     let () := Array.iter2 (fun arg id => let (id1, id2) := id in compute_triple k arg id1 id2) c_args fresh_ident in
+    Message.print (Message.of_string "ping"); 
     match check_appvect lem (Array.of_list (merge_triple_array c_args fresh_ident)) with
-    | Val apply_lem => unshelve (refine $apply_lem)
+    | Val apply_lem => 
+      Message.print (Message.of_constr apply_lem); 
+      unshelve (refine $apply_lem); clear_ident fresh_ident
     | _ => Control.zero Match_failure
     end.
 
 Ltac pre_tc_hint_hook := idtac.
 
 Ltac2 mutable pre_tc_hint_hook () := ltac1:(pre_tc_hint_hook).
-
-Ltac2 mutable shelve_and_tc () := ().
 
 Ltac2 adjust_type (a : constr) (goal_lhs : constr) : constr :=
   let goal_type := type_of_refresh goal_lhs in
@@ -3636,10 +3645,11 @@ Ltac2 tc_hint_for_list k (fatal : bool) (warn : bool) (key : constr) (lems : con
       in
       first
           [
-            try_each (fun lem => unshelve (eapply $lem); shelve_and_tc ()) (selected_lemmas) |
-            pre_tc_hint_hook (); try_each (fun lem => unshelve (eapply $lem); shelve_and_tc ()) (selected_lemmas) |
-            try_each (fun lem => forward_apply k lem goal_lhs) selected_lemmas |
-            pre_tc_hint_hook () ; try_each (fun lem => forward_apply k lem goal_lhs) selected_lemmas
+          try_each (fun lem => unshelve (eapply $lem); shelve_and_tc ()) (selected_lemmas) |
+          (*  pre_tc_hint_hook (); try_each (fun lem => unshelve (eapply $lem); shelve_and_tc ()) (selected_lemmas) | *) 
+            try_each (fun lem => Message.print (Message.concat (Message.of_string "trying lemma : ")
+      (Message.of_constr lem)); forward_apply k lem goal_lhs) selected_lemmas 
+            (* | pre_tc_hint_hook () ; try_each (fun lem => forward_apply k lem goal_lhs) selected_lemmas*)
           ]
   in
   let (goal_head, goal_args) := Constr.decompose_app goal_lhs in

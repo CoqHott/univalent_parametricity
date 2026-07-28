@@ -269,7 +269,7 @@ Proof.
   Fail tc. cbn. tc.
 Defined.
 
-Hint Extern 0 ((fun x : _ => _) ≈[ _] _) => intros ? ? ? : typeclass_instances ur_typeclass_instances.
+Hint Extern 0 ((fun x : _ => _) ≈[ _] _) => ltac2: (intros_with_eta ()) : typeclass_instances ur_typeclass_instances.
 Hint Extern 0 (_ ≈[ _] (fun x : _ => _)) => intros ? ? ? : typeclass_instances ur_typeclass_instances.
 
 Goal forall k (A A':Type) (Aϵ: A ≈[k] A') (t t':Type) (tϵ : t ≈[k] t'),
