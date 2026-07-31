@@ -3642,7 +3642,7 @@ Ltac2 tc_hint_for_list k (fatal : bool) (warn : bool) (key : constr) (lems : con
           [
           try_each (fun lem => unshelve (eapply $lem); shelve_and_tc ()) (selected_lemmas) |
           (*  pre_tc_hint_hook (); try_each (fun lem => unshelve (eapply $lem); shelve_and_tc ()) (selected_lemmas) | *) 
-            try_each (fun lem => forward_apply k lem goal_lhs) selected_lemmas 
+          try_each (fun lem => forward_apply k lem goal_lhs) selected_lemmas 
             (* | pre_tc_hint_hook () ; try_each (fun lem => forward_apply k lem goal_lhs) selected_lemmas*)
           ]
   in
@@ -3680,8 +3680,8 @@ Ltac2 tc_hint_for_list k (fatal : bool) (warn : bool) (key : constr) (lems : con
     | _ => Control.zero Match_failure
   end.
 
-Ltac2 tc_hint_for_ur_plain_list (k:constr) (fatal : bool) (warn : bool) (key : constr) (ur_lems : constr list) (plain_lems : constr list) (goal_lhs : constr) :=
-  tc_hint_for_list k fatal warn key (List.append ur_lems plain_lems) goal_lhs.
+Ltac2 mutable tc_hint_for_ur_plain_list (_fatal : bool) (_warn : bool) (_key : constr) (_ur_lems : constr list) (_plain_lems : constr list) (_goal_lhs : constr) : unit :=
+  Control.zero Match_failure.
 
 Ltac2 to_constr_list l :=
   List.map (fun x => Option.get (Ltac1.to_constr x))
@@ -3704,40 +3704,40 @@ Ltac tc_hint_for_nofatal k key lem goal_lhs :=
   let tac := ltac2:(k key lem goal_lhs |- tc_hint_for (Option.get (Ltac1.to_constr k)) false false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr lem)) (Option.get (Ltac1.to_constr goal_lhs))) in
   tac k key lem goal_lhs.
 
-Ltac tc_hint_for_ur_plain_hlist k key ur_lems plain_lems goal_lhs :=
-  let tac := ltac2:(k key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list (Option.get (Ltac1.to_constr k)) true false (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac k key ur_lems plain_lems goal_lhs.
+Ltac tc_hint_for_ur_plain_hlist key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list true false (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac key ur_lems plain_lems goal_lhs.
 
-Ltac tc_hint_for_ur_plain_hlist_warn k key ur_lems plain_lems goal_lhs :=
-  let tac := ltac2:(k key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list (Option.get (Ltac1.to_constr k)) false true (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac k key ur_lems plain_lems goal_lhs.
+Ltac tc_hint_for_ur_plain_hlist_warn key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list false true (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac key ur_lems plain_lems goal_lhs.
 
-Ltac tc_hint_for_ur_plain_hlist_nofatal k key ur_lems plain_lems goal_lhs :=
-  let tac := ltac2:(k key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list (Option.get (Ltac1.to_constr k)) false false (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac k key ur_lems plain_lems goal_lhs.
+Ltac tc_hint_for_ur_plain_hlist_nofatal key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list  false false (Option.get (Ltac1.to_constr key)) (HList.to_list (Option.get (Ltac1.to_constr ur_lems))) (HList.to_list (Option.get (Ltac1.to_constr plain_lems))) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac key ur_lems plain_lems goal_lhs.
 
-Ltac tc_hint_for_ur_plain_list k key ur_lems plain_lems goal_lhs :=
-  let tac := ltac2:(k key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list (Option.get (Ltac1.to_constr k)) true false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac k key ur_lems plain_lems goal_lhs.
+Ltac tc_hint_for_ur_plain_list key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list true false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac key ur_lems plain_lems goal_lhs.
 
-Ltac tc_hint_for_ur_plain_list_warn k key ur_lems plain_lems goal_lhs :=
-  let tac := ltac2:(k key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list (Option.get (Ltac1.to_constr k)) false true (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac k key ur_lems plain_lems goal_lhs.
+Ltac tc_hint_for_ur_plain_list_warn key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list false true (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac key ur_lems plain_lems goal_lhs.
 
-Ltac tc_hint_for_ur_plain_list_nofatal k key ur_lems plain_lems goal_lhs :=
-  let tac := ltac2:(k key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list (Option.get (Ltac1.to_constr k)) false false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
-  tac k key ur_lems plain_lems goal_lhs.
+Ltac tc_hint_for_ur_plain_list_nofatal key ur_lems plain_lems goal_lhs :=
+  let tac := ltac2:(key ur_lems plain_lems goal_lhs |- tc_hint_for_ur_plain_list  false false (Option.get (Ltac1.to_constr key)) (Option.get (Ltac1.to_constr_list ur_lems)) (Option.get (Ltac1.to_constr_list plain_lems)) (Option.get (Ltac1.to_constr goal_lhs))) in
+  tac key ur_lems plain_lems goal_lhs.
 
 Module Export TCHintNotations.
 
-Tactic Notation "tc_hint_for_ur_plain_list" constr(k) constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
-  tc_hint_for_ur_plain_list k key ur_lems plain_lems goal_lhs.
+Tactic Notation "tc_hint_for_ur_plain_list" constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
+  tc_hint_for_ur_plain_list key ur_lems plain_lems goal_lhs.
 
-Tactic Notation "tc_hint_for_ur_plain_list_warn" constr(k) constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
-  tc_hint_for_ur_plain_list_warn k key ur_lems plain_lems goal_lhs.
+Tactic Notation "tc_hint_for_ur_plain_list_warn" constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
+  tc_hint_for_ur_plain_list_warn key ur_lems plain_lems goal_lhs.
 
-Tactic Notation "tc_hint_for_ur_plain_list_nofatal" constr(k) constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
-  tc_hint_for_ur_plain_list_nofatal k key ur_lems plain_lems goal_lhs.
+Tactic Notation "tc_hint_for_ur_plain_list_nofatal" constr(key) "[" constr_list_sep(ur_lems, ";") "]" "[" constr_list_sep(plain_lems, ";") "]" constr(goal_lhs) :=
+  tc_hint_for_ur_plain_list_nofatal key ur_lems plain_lems goal_lhs.
 End TCHintNotations.
 
 Set Universe Polymorphism.

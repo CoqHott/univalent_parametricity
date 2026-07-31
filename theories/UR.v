@@ -624,3 +624,26 @@ Ltac2 Set compute_triple := fun (k:constr) (t:constr) (f:ident) (g:ident) =>
 
 #[global]
 Ltac2 Set shelve_and_tc := fun _ => shelve_non_PR_multi (); tc ().
+
+Ltac2 kind_of_pr (pr_inst : constr) :=
+  let t := Constr.type pr_inst in
+  let t := eval lazy head in $t in
+  (* Apparently lazy head is not enough, cf Error: kind_of_pr: not UR.PR: (@UnivalentParametricity.theories.UR.pr _ _ _ (UnivalentParametricity.theories.UR.PR_Type@{Type α983 α984 ; IsomorphismChecker.Tests.CurrentExpectedFailure.RegressionAutoGatherBugs094UnivParamTCCorelib7f2a85033588.Interface.2089 IsomorphismChecker.Tests.CurrentExpectedFailure.RegressionAutoGatherBugs094UnivParamTCCorelib7f2a85033588.Interface.2155 IsomorphismChecker.Tests.CurrentExpectedFailure.RegressionAutoGatherBugs094UnivParamTCCorelib7f2a85033588.Interface.2156 IsomorphismChecker.Tests.CurrentExpectedFailure.RegressionAutoGatherBugs094UnivParamTCCorelib7f2a85033588.Interface.2157} UnivalentParametricity.theories.UR.plain) x y) *)
+  let t := eval hnf in $t in
+  lazy_match! t with
+  | UR.PR ?k _ _ => k
+  | _ => throw "kind_of_pr: not UR.PR: %t" t
+  end.
+
+Ltac2 get_goal_kind () :=
+  lazy_match! goal with
+  | [ |- UR.UR_Type _ _ ] => 'UR.univalent
+  | [ |- @UR.pr _ _ _ ?pr _ _ ] => kind_of_pr pr
+  | [ |- ?g ] => throw "get_goal_kind: not UR_Type nor pr: %t" g
+  end.
+
+#[export]
+Ltac2 Set tc_hint_for_ur_plain_list := fun fatal warn key ur_lems plain_lems goal_lhs =>
+  if Constr.equal (get_goal_kind ()) 'plain 
+  then tc_hint_for_list 'plain fatal warn key plain_lems goal_lhs
+  else tc_hint_for_list 'univalent fatal warn key ur_lems goal_lhs.
