@@ -444,10 +444,10 @@ Ltac2 apply_forall_tac () :=
     erefineb (@URArrow _ _ _ _ _ _ _); intros; shelve_non_PR_multi ()
     ]
   | [ |- PR _ (forall x:_, _) _] => first [
-    erefineb (@URForall _ _ _ _ _ _ _); intros; shelve_non_PR_multi ()
+    erefineb (@URForall _ _ _ (fun _ => _) (fun _ => _) _ _); intros; shelve_non_PR_multi ()
     ]
   | [ |- PR _ _ (forall x:_, _)] => first [
-    erefineb (@URForall _ _ _ _ _ _ _); intros; shelve_non_PR_multi ()
+    erefineb (@URForall _ _ _ (fun _ => _) (fun _ => _) _ _); intros; shelve_non_PR_multi ()
     ]
   end.
 
