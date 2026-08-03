@@ -1028,8 +1028,7 @@ Proof. now destruct b. Qed.
 Module Type Interface5 (Import args : Args).
 
   Parameter imported_bool : Type.
-  Parameter bool_iso :
-    @UR.pr _ _ _ (UR.PR_Type UR.univalent) bool imported_bool.
+  Parameter bool_iso : iso_statement bool imported_bool.
   #[local] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
     tc_hint_for univalent (@bool) bool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
   #[local] Hint Extern 1 (UR.pr ?k ?goal_lhs _) =>
@@ -1373,7 +1372,7 @@ Hint Extern 1 (UR_Type True _) => eapply STrue_UR : typeclass_instances ur_typec
 
 #[universes(polymorphic,collapse_sort_variables=no)]
 Goal
-{B : _& @UR.pr _ _ _ (UR.PR_Type UR.univalent) (True) B}.
+{B : _& True ≈u B}.
 Proof.
 eexists. cbn; tc.
 Show Proof.
@@ -1398,7 +1397,7 @@ Axiom eqbP : eq_axiom eqb.
 (** -- Imported-side parameters -------------------------------------------- *)
 
 Parameter imported_bool : Type.
-Parameter bool_iso : @UR.pr _ _ _ (UR.PR_Type UR.univalent) bool imported_bool.
+Parameter bool_iso : iso_statement bool imported_bool.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
   tc_hint_for univalent (@Corelib.Init.Datatypes.bool) bool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr ?k ?goal_lhs _) =>
@@ -1426,37 +1425,21 @@ Parameter true_iso : true ≈[_] imported_true.
   tc_hint_for k (@Corelib.Init.Datatypes.true) true_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_False : SProp.
-Parameter False_iso : @UR.pr _ _ _ (UR.PR_Type UR.univalent) False imported_False.
+Parameter False_iso : iso_statement False imported_False.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
   tc_hint_for univalent (@Corelib.Init.Logic.False) False_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr ?k ?goal_lhs _) =>
   tc_hint_for k (@Corelib.Init.Logic.False) False_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_eq : forall y : Type, y -> y -> SProp.
-Parameter eq_iso :
-  (@UR.pr _ _ _
-     (@UR.URForall UR.univalent Type Type
-        (fun x : Type => forall (_ : x) (_ : x), Prop)
-        (fun H : Type => forall (_ : H) (_ : H), SProp)
-        (UR.PR_Type UR.univalent)
-        (fun (x y : Type) (H : @UR.pr _ _ _ (UR.PR_Type UR.univalent) x y) =>
-         @UR.URArrow UR.univalent x y (forall _ : x, Prop)
-           (forall _ : y, SProp) (UR.PR_Type_gen UR.univalent x y H)
-           (@UR.URArrow UR.univalent x y Prop SProp
-              (UR.PR_Type_gen UR.univalent x y H)
-              (UR.PR_Type UR.univalent))))
-     (fun A => @eq A) imported_eq).
+Parameter eq_iso : iso_statement (@eq) imported_eq.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
   tc_hint_for univalent (@Corelib.Init.Logic.eq) eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr ?k ?goal_lhs _) =>
   tc_hint_for k (@Corelib.Init.Logic.eq) eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_not : SProp -> SProp.
-Parameter not_iso :
-  (@UR.pr _ _ _
-     (@UR.URArrow UR.univalent Prop SProp Prop SProp (UR.PR_Type UR.univalent)
-        (UR.PR_Type UR.univalent))
-     not imported_not).
+Parameter not_iso : iso_statement not imported_not.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
   tc_hint_for univalent (@Corelib.Init.Logic.not) not_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr ?k ?goal_lhs _) =>
@@ -1495,12 +1478,7 @@ Parameter eqb_iso : eqb ≈[_] imported_eqb.
     [imported_pred y] (not [imported_bool -> imported_bool]) so that
     the URForall PR for [eq_axiom_iso] is well-typed. *)
 Parameter imported_pred : Type -> Type.
-Parameter pred_iso :
-  (@UR.pr _ _ _
-     (@UR.URArrow UR.univalent Type Type Type Type
-        (UR.PR_Type UR.univalent)
-        (UR.PR_Type UR.univalent))
-     pred imported_pred).
+Parameter pred_iso : iso_statement pred imported_pred.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
   tc_hint_for univalent (@pred) pred_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 1 (UR.pr ?k ?goal_lhs _) =>
@@ -1564,9 +1542,7 @@ Axiom bound_value :
 (** ---- Imported counterparts (axiomatized) ---- *)
 
 Parameter imported_bool : Type.
-Parameter bool_iso :
-  (@UR.pr _ _ _ (UR.PR_Type UR.univalent)
-     bool imported_bool).
+Parameter bool_iso : iso_statement bool imported_bool.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
   tc_hint_for univalent (@Corelib.Init.Datatypes.bool)
     bool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -1575,9 +1551,7 @@ Parameter bool_iso :
     bool_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_nat : Type.
-Parameter nat_iso :
-  (@UR.pr _ _ _ (UR.PR_Type UR.univalent)
-     nat imported_nat).
+Parameter nat_iso : iso_statement nat imported_nat.
 #[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) =>
   tc_hint_for univalent (@Corelib.Init.Datatypes.nat)
     nat_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2609,8 +2583,6 @@ Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) 
 #[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 
 Parameter imported_Corelib__Init__Logic__iff : import_of (@Corelib.Init.Logic.iff).
-(* Parameter Corelib__Init__Logic__iff_iso : iso_statement (@Corelib.Init.Logic.iff) imported_Corelib__Init__Logic__iff.
- *)
 Parameter Corelib__Init__Logic__iff_iso : iso_statement (@Corelib.Init.Logic.iff) imported_Corelib__Init__Logic__iff.
 
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
@@ -2672,26 +2644,22 @@ Parameter Corelib__Init__Logic__not_iso : iso_statement (@Corelib.Init.Logic.not
 
 Parameter imported_Corelib__ssr__ssrbool__implies : import_of (fun A B => @Corelib.ssr.ssrbool.implies A B).
 Parameter Corelib__ssr__ssrbool__implies_iso : iso_statement (fun A B => @Corelib.ssr.ssrbool.implies A B) imported_Corelib__ssr__ssrbool__implies.
-#[export] Hint Extern 2 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (fun A B => @Corelib.ssr.ssrbool.implies A B) Corelib__ssr__ssrbool__implies_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 2 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (fun A B => @Corelib.ssr.ssrbool.implies A B) Corelib__ssr__ssrbool__implies_iso goal_lhs : typeclass_instances ur_typeclass_instances.
-
 Parameter imported_Corelib__ssr__ssrbool__implies_Prop_Prop : import_of ((fun P Q : Prop => Corelib.ssr.ssrbool.implies P Q)).
 Parameter Corelib__ssr__ssrbool__implies_iso_Prop_Prop : iso_statement ((fun P Q : Prop => Corelib.ssr.ssrbool.implies P Q)) imported_Corelib__ssr__ssrbool__implies_Prop_Prop.
-#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent ((fun P Q : Prop => Corelib.ssr.ssrbool.implies P Q)) Corelib__ssr__ssrbool__implies_iso_Prop_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) => tc_hint_for k ((fun P Q : Prop => Corelib.ssr.ssrbool.implies P Q)) Corelib__ssr__ssrbool__implies_iso_Prop_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
-
 Parameter imported_Corelib__ssr__ssrbool__implies_Type_Prop : import_of (fun (P : Type) (Q : Prop) => ssrbool.implies P Q).
 Parameter Corelib__ssr__ssrbool__implies_iso_Type_Prop : iso_statement (fun (P : Type) (Q : Prop) => ssrbool.implies P Q) imported_Corelib__ssr__ssrbool__implies_Type_Prop.
-#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent ((fun (P : Type) (Q : Prop) => Corelib.ssr.ssrbool.implies P Q)) Corelib__ssr__ssrbool__implies_iso_Type_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) => tc_hint_for k ((fun (P : Type) (Q : Prop) => Corelib.ssr.ssrbool.implies P Q)) Corelib__ssr__ssrbool__implies_iso_Type_Prop goal_lhs : typeclass_instances ur_typeclass_instances.
 
-(*
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (Corelib.ssr.ssrbool.implies) 
+  [Corelib__ssr__ssrbool__implies_iso; Corelib__ssr__ssrbool__implies_iso_Prop_Prop; Corelib__ssr__ssrbool__implies_iso_Type_Prop] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) => tc_hint_for_ur_plain_list (Corelib.ssr.ssrbool.implies) 
+  [Corelib__ssr__ssrbool__implies_iso; Corelib__ssr__ssrbool__implies_iso_Prop_Prop; Corelib__ssr__ssrbool__implies_iso_Type_Prop] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+
 Parameter imported_Corelib__ssr__ssrbool__impliesPn : import_of (@Corelib.ssr.ssrbool.impliesPn).
 Parameter Corelib__ssr__ssrbool__impliesPn_iso : iso_statement (@Corelib.ssr.ssrbool.impliesPn) imported_Corelib__ssr__ssrbool__impliesPn.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@Corelib.ssr.ssrbool.impliesPn) Corelib__ssr__ssrbool__impliesPn_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (@Corelib.ssr.ssrbool.impliesPn) Corelib__ssr__ssrbool__impliesPn_iso goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (IsoRegisteredFor (@Corelib.ssr.ssrbool.impliesPn)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
-*)
+
 End Interface34.
 
 Module Type Interface35 (Import args : Args).
@@ -3076,7 +3044,7 @@ Parameter imported_Corelib__Init__Logic__eq : forall y : Type, y -> y -> SProp.
 Parameter Corelib__Init__Logic__eq_iso : iso_statement (fun (A : Type) (x x0 : A) => @Corelib.Init.Logic.eq A x x0) imported_Corelib__Init__Logic__eq.
 Parameter imported_Corelib__Init__Logic__eq_Prop : forall y : SProp, y -> y -> SProp.
 Parameter Corelib__Init__Logic__eq_iso_Prop : iso_statement  (fun (A : Prop) (x x0 : A) => @Corelib.Init.Logic.eq A x x0) imported_Corelib__Init__Logic__eq_Prop.
-#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_hlist  univalent(@Corelib.Init.Logic.eq) [(* ((fun A : Prop => @Corelib.Init.Logic.eq A)) *) Corelib__Init__Logic__eq_iso_Prop; Corelib__Init__Logic__eq_iso] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_hlist  univalent(@Corelib.Init.Logic.eq) [Corelib__Init__Logic__eq_iso_Prop; Corelib__Init__Logic__eq_iso] goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr ?k ?goal_lhs _) =>
   tc_hint_for_ur_plain_list (@Corelib.Init.Logic.eq) [@Corelib__Init__Logic__eq_iso_Prop; @Corelib__Init__Logic__eq_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
 
@@ -4600,638 +4568,4 @@ Parameter Flocq__IEEE754__PrimFloat__Prim2SFD_B2Prim_iso_plain : plain_iso_state
 #[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Flocq.IEEE754.PrimFloat.Prim2SF_B2Prim)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
 
 End Interface48.
-*)
-
-(*
-#[export] Hint Extern 0 (Vector.t ?A ?n ≃ _) =>
-erefine (ur_type (Equiv_vector_list A _ n)) : typeclass_instances ur_typeclass_instances.
-
-Instance Equiv_list_vector (A B:Type) {H : ur B A} n :
-  {l : list A & length l = n} ≃ Vector.t B n | 1 := Equiv_inverse _.
-
-Definition Equiv_list_vector_ : (fun A n => {l : list A & length l = n}) ≈ Vector.t.
-  cbn. intros A B e.
-  split. tc.  intros. apply UR_Type_Inverse. apply Equiv_vector_list_.
-  apply UR_Type_Inverse. tc. symmetry. tc.
-Defined.
-
-Definition UrEq_S n n' e m m' e' X Y : UR_eq nat nat (eq nat) n n' e m m' e' X Y ->
-                                       UR_eq nat nat (eq nat) (S n) (S n') (ap S e)
-                                             (S m) (S m') (ap S e') (ap S X) (ap S Y).
-Proof.
-  destruct 1. econstructor.
-Defined.
-
-Definition IsIrr_UrEq_nat n n' e m m' e' X Y :
-  UR_eq nat nat (eq nat) n n' e m m' e' X Y.
-  destruct e, e', X. assert (Y = idpath). apply is_hset. rewrite X. econstructor.
-Defined.
-
-Definition IsHProp_UrEq_nat_B {n n' e m m' e' X Y p p' e'' X' Y'}
-           (Hm:m = p) (Hm' : m' = p')
-           (He : Hm # Hm' # e' = e'')
-           (HX : Hm # X = X')
-           (HY : Hm' # Y = Y')
-           (B : UR_eq nat nat (eq nat) n n' e p p' e'' X' Y')
-  : UR_eq nat nat (eq nat) n n' e m m' e' X Y.
-  pose (transport_eq (fun XX => UR_eq nat nat (eq nat) n n' e p p' XX _ _) He^
-        (transport_eq (fun XX => UR_eq nat nat (eq nat) n n' e p p' e'' XX _) HX^
-         (transport_eq (fun XX => UR_eq nat nat (eq nat) n n' e p p' e'' X'  XX) HY^ B))).
-  cbn in u. clearbody u. clear HX He HY B.
-  destruct Hm, Hm'.
-  exact u.
-Defined.
-
-Definition IsHProp_UrEq_nat_gen {n n' e m m' e' X Y p p' e'' X' Y'}
-           (Hm:m = p) (Hm' : m' = p')
-           (He : Hm # Hm' # e' = e'')
-           (HX : Hm # X = X')
-           (HY : Hm' # Y = Y')
-           (A : UR_eq nat nat (eq nat) n n' e m m' e' X Y)
-           (B : UR_eq nat nat (eq nat) n n' e p p' e'' X' Y')
-  : A = IsHProp_UrEq_nat_B Hm Hm' He HX HY B.
-  destruct A, B. cbn in *. revert He HX HY.
-  assert (Hm = idpath). apply is_hset. rewrite X. clear X.
-  assert (Hm' = idpath). apply is_hset. rewrite X. clear X. cbn.
-  intros.
-  assert (He = idpath). apply IsIrr_IsHprop'. intros X Y. apply is_hset. rewrite X. clear X.
-  assert (HX = idpath). apply IsIrr_IsHprop'. intros X Y. apply is_hset. rewrite X. clear X.
-  assert (HY = idpath). apply IsIrr_IsHprop'. intros X Y. apply is_hset. rewrite X. clear X.
-  reflexivity.
-Defined.
-
-Definition IsHProp_UrEq_nat n n' e m m' e' X Y (A B :
-  UR_eq nat nat (eq nat) n n' e m m' e' X Y) : A = B :=
-  IsHProp_UrEq_nat_gen idpath idpath idpath idpath idpath A B.
-
-Definition UR_sized_list_irr A B {X:A ⋈ B}
-           (n n':nat) (en : n = n')
-           (s : {l : list A & length l = n})
-           (s' : {l : list B & length l = n'})
-  :
-   (s.1 ≈ s'.1) ≃ (s ≈ s').
-Proof.
-  cbn. set (Hl := s.2). set (Hl' := s'.2). set (l := s.1) in *. set (l' := s'.1) in *.
-  clearbody Hl Hl' l l'. destruct en. clear s s'. cbn in Hl. destruct Hl.
-  unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)).
-  - intro urlist. unshelve eexists. induction urlist; try econstructor; auto.
-    apply IsIrr_UrEq_nat.
-  - apply projT1.
-  - intro urlist; destruct urlist; reflexivity.
-  - intros [urlist UR_eq_list]. apply path_sigma_uncurried.
-    unshelve eexists. cbn. destruct urlist; reflexivity.
-    cbn. apply IsHProp_UrEq_nat.
-Defined.
-
-Definition ap_S_section {n m} en : (en = ap S (inversionS n m en)).
-  apply is_hset.
-Defined.
-
-Definition ap_S_retraction {n m} (en:n=m) : (en = inversionS _ _ (ap S en)).
-  apply is_hset.
-Defined.
-
-Definition transport_UR_vector_cons A B {X:A ⋈ B} (X_inv := UR_Type_Inverse _ _ X)
-           n n' (en:n = n')
-           (a :A) a' a'' (v v': Vector.t A n) (v'':Vector.t B n') (h:a'=a) (e:v'=v)
-  (E: ur a a'') (E': UR_vector ur n n' en v v''):
-   transport_eq
-    (fun X => UR_vector ur (S n) (S n') (ap S en) X (vcons a'' v''))
-    (ap2 vcons h e)^ (UR_vector_cons ur en E E')  =
-  UR_vector_cons ur en (transport_eq (fun X => ur X _) h^ E)
-               (transport_eq (fun X => UR_vector ur _ _ en X _) e^ E').
-  destruct h, e. reflexivity.
-Defined.
-
-Definition transport_UR_vector_cons_eq (A B:Type) {X:A ⋈ B} (X_inv := UR_Type_Inverse _ _ X)
-           (n n':nat) (en en':n = n') (a:A) (a':B) (e:en' = en)
-           (v: Vector.t A n) (v':Vector.t B n')
-  (E: ur a a') (E': UR_vector ur n n' en v v'):
-   transport_eq
-    (fun X => UR_vector ur (S n) (S n') X (vcons a v) (vcons a' v'))
-    (ap (ap S) e)^ (UR_vector_cons ur en E E')  =
-   UR_vector_cons ur _ E (transport_eq (fun X => UR_vector ur _ _ X _ _) e^ E').
-  destruct e. reflexivity.
-Defined.
-
-Definition UR_vector_list_is_eq_fun A B {X:A ⋈ B}
-           (X_inv := UR_Type_Inverse _ _ X)
-           (n n':nat) (en : n = n')
-           (en_inv : n' = n := inverse en)
-           (v : t A n)
-           (v' : t B n') :
-  UR_vector ur n n' en v v'
-  -> UR_list ur (vector_to_list A A (Equiv_id) n n idpath v) .1
-      (vector_to_list B B (Equiv_id B) n' n' idpath v') .1.
-  induction 1; cbn; econstructor; auto.
-Defined.
-
-
-Definition UR_list_decompose {A B} (R:A->B->Type) l l' (e : UR_list R l l') :
-  match l,l' return UR_list R l l' -> Type
-  with [],[] => fun e => e = UR_list_nil R
-  | a::l,a'::l' => fun e => { X : (R a a') * UR_list R l l' & e = UR_list_cons R (fst X) (snd X)}
-  | _,_ => fun _ => False end e.
-Proof.
-  destruct e. reflexivity. exists (r,e). reflexivity.
-Defined.
-
-Definition UR_vector_list_is_eq_inv A B {X:A ⋈ B}
-           (X_inv := UR_Type_Inverse _ _ X)
-           (n n':nat) (en : n = n')
-           (en_inv : n' = n := inverse en)
-           (v : t A n)
-           (v' : t B n')
-           (canA := ur_refl)
-           (canB := ur_refl B)
-  :
-UR_list ur (vector_to_list A A (Equiv_id) n n idpath v) .1
-        (vector_to_list B B (Equiv_id B) n' n' idpath v') .1 ->
-UR_vector ur n n' en v v'.
-intros Hlist. clear en_inv. generalize dependent n'.
-    induction v; destruct v'; intros.
-    + assert (en = idpath). apply is_hset.
-      rewrite X0. econstructor.
-    + destruct (zeroS _ en).
-    + destruct (zeroS _ en^).
-    + cbn in Hlist.
-      pose (UR_list_decompose ur _ _ Hlist). cbn in y. destruct y as [(r,r') _].
-      refine (transport_eq (fun X => UR_vector ur (S n) (S n0) X _ _) (ap_S_section en)^ _).
-      econstructor; auto.
-Defined.
-
-
-Definition UR_vector_list_is_eq_inv_eq A B {X:A ⋈ B}
-           (X_inv := UR_Type_Inverse _ _ X)
-           (n n':nat) (en en': n = n') (e : en' = en)
-           (en_inv : n' = n := inverse en)
-           (v : t A n)
-           (v' : t B n') XX:
-  transport_eq (fun X0 : n ≈ n' => UR_vector ur n n' X0 v v') e
-  (UR_vector_list_is_eq_inv A B n n' _ v v' XX) =
-  UR_vector_list_is_eq_inv A B n n' en v v' XX.
-destruct e. reflexivity.
-Defined.
-
-Definition UR_vector_list_is_eq A B {X:A ⋈ B}
-           (X_inv := UR_Type_Inverse _ _ X)
-           (n n':nat) (en : n = n')
-           (en_inv : n' = n := inverse en)
-           (canA := ur_refl)
-           (canB := ur_refl B)
-  :
-  forall (v:t A n) (v' : t B n') ,
-    let l := ↑ v : {l : list A & length l = n} in
-    let l' := ↑ v' : {l : list B & length l = n'} in
-    (UR_vector ur n n' en v v') ≃
-    (l ≈ l').
-Proof.
-  intros. cbn. eapply equiv_compose; try apply UR_sized_list_irr.
-  cbn.
-  unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)).
-  - apply UR_vector_list_is_eq_fun.
-  - apply UR_vector_list_is_eq_inv.
-  - intro Hv. simpl. induction Hv.
-    + reflexivity.
-    + simpl. assert (ap_S_section (ap S en) = ap (ap S) (ap_S_retraction en)).
-      apply IsIrr_IsHprop'. unfold IsIrr. intros. apply is_hset.
-      rewrite X0. clear X0. eapply concat.
-      apply transport_UR_vector_cons_eq. apply ap.
-      rewrite UR_vector_list_is_eq_inv_eq. auto.
-  - intro Hl. generalize dependent n'. induction v; destruct v'; intros; simpl.
-    + assert (en = idpath). apply is_hset. rewrite X0. cbn in *.
-      symmetry. exact (UR_list_decompose _ _ _ Hl).
-    + destruct (zeroS _ en).
-    + destruct (zeroS _ en^).
-    + destruct (UR_list_decompose ur (h :: (vector_to_list A A (Equiv_id) n n idpath v) .1)
-                                  (h0 :: (vector_to_list B B (Equiv_id B) n0 n0 idpath v') .1) Hl).
-      destruct x. rewrite e. clear e Hl.
-      pose (ap_S_section en). rewrite e. set (inversionS n n0 en).
-      clearbody e0. clear e en en_inv. rename e0 into en.
-      assert (ap_S_section (ap S en) = ap (ap S) (ap_S_retraction en)).
-       apply IsIrr_IsHprop'. unfold IsIrr. intros. apply is_hset.
-       rewrite X0. eapply concat. apply ap. apply transport_UR_vector_cons_eq.
-       simpl. apply ap. simpl in IHv. specialize (IHv n0 en v' u0).
-       rewrite UR_vector_list_is_eq_inv_eq. exact IHv.
-Defined.
-
-Instance UR_vector_ A B `{UR A B} n n' en : UR (t A n) (t B n') :=
-  {| ur := UR_vector ur _ _ en |}.
-
-Definition URIsUR_vector {A B : Type} {H : ur A B}  (n n':nat) (en : n ≈ n')
-           (v v':t A n) : (v = v') ≃ (v ≈ (↑ v')).
-Proof.
-  pose (einv := Equiv_inverse (equiv H)).
-  eapply Equiv_inverse.
-  eapply equiv_compose. eapply UR_vector_list_is_eq.
-  unfold univalent_transport.
-  pose (canA := ur_refl). pose (canB := ur_refl B).
-  refine (transport_eq (fun X => (Equiv_vector_list A A n n idpath v
-   ≈ Equiv_vector_list B B n' n' idpath (Equiv_Vector A B (equiv H) n n' en v')) ≃ (X = _))
-                       (e_sect (vector_to_list A A _ n n _) v) _).
-  refine (transport_eq (fun X => (Equiv_vector_list A A n n idpath v
-   ≈ Equiv_vector_list B B n' n' idpath (Equiv_Vector A B (equiv H) n n' en v')) ≃ (_ = X))
-                       (e_sect (vector_to_list A A _ n n _) v') _).
-  assert (vector_to_list B B (Equiv_id B) n' n' idpath
-                         (Equiv_Vector_fun A B (equiv H) n n' en v')
-          = ↑ (vector_to_list A A (Equiv_id) n n idpath v')).
-  { clear. destruct en. apply path_sigma_uncurried.
-    unshelve eexists; [idtac | apply is_hset].
-    destruct v'. reflexivity. cbn. apply ap. induction v'; cbn.
-    - reflexivity.
-    - apply ap. exact IHv'.
-  }
-  cbn. rewrite X; clear X.
-  set (vector_to_list A A (Equiv_id) n n idpath v).
-  set (vector_to_list A A (Equiv_id) n n idpath v').
-  clearbody s s0. clear v v'.
-  eapply equiv_compose.
-  apply Equiv_inverse. exact (@ur_coh _ _ _ _ (Ur_Coh (@FP_sized_list_ A B H n n' en)) s s0).
-  apply (@isequiv_ap _ _ (@Equiv_list_vector A A canA n)).
-Defined.
-
-Definition FP_Vector : Vector.t ≈ Vector.t.
-  intros A B e. cbn in e. split. tc.
-  intros n n' en.
-  unshelve eexists.
-  - unshelve econstructor. refine (URIsUR_vector n n' en).
-  - apply Canonical_eq_gen.
-  - apply Canonical_eq_gen.
-Defined.
-
-Instance Equiv_Vector_instance : forall x y : Type, x ⋈ y -> forall n n' (e:n=n'), (Vector.t x n) ⋈ (Vector.t y n') :=
-  fun x y e n n' en => ur_type (FP_Vector x y e) n n' en.
-
-
-#[export] Hint Extern 0 (Vector.t _ _ ⋈ _) => apply Equiv_vector_list_; simpl : typeclass_instances ur_typeclass_instances.
-
-
-
-(*! FP ap !*)
-
-Instance UR_type_of_ap : UR (forall (A B : Type) (f : A -> B) (x y :), x = y -> f x = f y)(forall (A B : Type) (f : A -> B) (x y :), x = y -> f x = f y).
-    typeclasses eauto with typeclass_instances.
-Defined.
-
-Definition FP_ap:  @ap ≈ @ap.
-  intros A A' eA B B' eB f f' ef x x' ex y y' ey p p' ep.
-  cbn in *.
-  induction ep. apply UR_idpath.
-Defined.
-
-
-(*! FP Equiv !*)
-
-(** The record [IsEquiv] has four components, so [issig4] can prove that it is equivalent to an iterated Sigma-type. *)
-
-Instance issig_isequiv {A B : Type} (f : A -> B):
-{ e_inv : B -> A & {
-    e_sect : forall x : A, e_inv (f x) = x & {
-    e_retr : forall y : B, f (e_inv y) = y &
-    forall x : A, e_retr (f x) = ap f (e_sect x) }}} ≃ IsEquiv f.
-issig (BuildIsEquiv A B f) (@e_inv A B f) (@e_sect A B f) (@e_retr A B f) (@e_adj A B f).
-Defined.
-
-Instance issig_isequiv_inv {A B : Type} (f : A -> B):
-  IsEquiv f ≃
-{ e_inv : B -> A & {
-    e_sect : forall x : A, e_inv (f x) = x & {
-    e_retr : forall y : B, f (e_inv y) = y &
-    forall x : A, e_retr (f x) = ap f (e_sect x) }}} := Equiv_inverse _.
-
-Instance issig_equiv A B : { e_fun : A -> B &  IsEquiv e_fun }
-                               ≃ (A ≃ B).
-  issig (BuildEquiv A B) (@e_fun A B) (@e_isequiv A B).
-Defined.
-
-Instance issig_equiv' A B :  (A ≃ B) ≃ { e_fun : A -> B &  IsEquiv e_fun } :=
-  Equiv_inverse _.
-
-#[export] Hint Extern 0 (UR_eq _ _ _ _ _ _ _ _ _ _ _ ) =>
-  erefine (FP_ap _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) : typeclass_instances ur_typeclass_instances.
-
-Definition FP_IsEquiv : @IsEquiv ≈ @IsEquiv.
-Proof.
-  cbn. split ; [typeclasses eauto | ]; intros.
-  unshelve refine (UR_Type_Equiv _ _ _). cbn.
-  unshelve refine (UR_Type_Equiv' _ _ _).
-  erefine ((ur_type (@FP_Sigma _ _ _) _ _ _)); cbn ; intros .
-  typeclasses eauto with typeclass_instances.
-  split.
-  typeclasses eauto with typeclass_instances.
-  intros. erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn; intros.
-  typeclasses eauto with typeclass_instances.
-  split.
-  typeclasses eauto with typeclass_instances.
-  intros. erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn; intros.
-  typeclasses eauto with typeclass_instances.
-  split.
-  typeclasses eauto with typeclass_instances.
-  typeclasses eauto with typeclass_instances.
-Defined.
-
-#[export] Hint Extern 0 (IsEquiv _ ⋈ IsEquiv _) => refine (ur_type (FP_IsEquiv _ _ _ _ _ _) _ _ _) : typeclass_instances ur_typeclass_instances.
-
-Definition FP_Equiv : @Equiv ≈ @Equiv.
-Proof.
-  cbn;   split ; [typeclasses eauto | ]; intros.
-  unshelve refine (UR_Type_Equiv _ _ _). cbn.
-  unshelve refine (UR_Type_Equiv' _ _ _).
-  erefine (ur_type (@FP_Sigma _ _ _) _ _ _); cbn ; intros. tc.
-  split; tc.
-Defined.
-
-#[export] Hint Extern 0 (UR (_ ≃ _) (_ ≃ _)) => refine (Ur (ur_type (FP_Equiv _ _ _) _ _ _)) : typeclass_instances ur_typeclass_instances.
-
-(*! FP univalence !*)
-
-Definition Isequiv_ur_hprop A A' B B' (H : A ⋈ A')(H' : B ⋈ B') (f:A->B) (g:A'->B')
-           (e : IsEquiv f) (e' : IsEquiv g)
-           (efg:f ≈ g) : e ≈ e'.
-  intros; apply ur_hprop. apply isequiv_hprop.
-Defined.
-
-
-Definition FP_Equiv_id : @Equiv_id ≈ @Equiv_id.
-  intros A A' eA. unshelve eexists. cbn. auto.
-  apply Isequiv_ur_hprop.
-Defined.
-
-
-Definition FP_eq_to_equiv : @eq_to_equiv ≈ @eq_to_equiv.
-  intros A A' eA B B' eB f f' ef. destruct ef.
-  apply FP_Equiv_id.
-Defined.
-
-Opaque eq_to_equiv.
-
-#[export] Hint Extern 0 (eq_to_equiv _ _ ≈ eq_to_equiv _ _) => refine (FP_eq_to_equiv _ _ _ _ _ _ _ _ _) : typeclass_instances ur_typeclass_instances.
-
-
-
-Instance UR_univalence_type : UR (forall A B, IsEquiv (eq_to_equiv A B))
-     (forall A B, IsEquiv (eq_to_equiv A B)).
-unshelve erefine (@URForall _ _ _ _ _ _); cbn in *; intros .
-tc.
-unshelve erefine (@URForall _ _ _ _ _ _); cbn in *; intros .
-tc.
-unshelve refine (Ur (ur_type (FP_IsEquiv _ _ _ _ _ _) _ _ _)).
-tc. cbn; intros. refine (ur_type (FP_Equiv _ _ _) _ _ _); tc.
-apply FP_eq_to_equiv.
-Defined.
-
-(* FP univalence *)
-
-Definition FP_univalence : univalence ≈ univalence.
-  intros A A' eA B B' eB.
-  apply Isequiv_ur_hprop.
-Defined.
-
-
-
-#[export] Hint Extern 0 (URForall_Type_class ?A ?B ?F ?G) =>
-(is_ground A; is_ground B; is_ground F; is_ground G; econstructor)
-: typeclass_instances.
-
-
-(* FP for fixpoints on nats *)
-
-Definition fix_nat_1 : (fun P X0 XS => fix f (n : nat) {struct n} : P :=
-  match n with
-  | 0 => X0
-  | S n => XS n (f n)
-  end) ≈
-       (fun P X0 XS => fix f (n : nat) {struct n} : P :=
-  match n with
-  | 0 => X0
-  | S n => XS n (f n)
-  end).
-Proof.
-  cbn; intros. equiv_elim.
-Defined.
-
-Definition fix_nat_2 : (fun P X0 X1 XS => fix f (n : nat) {struct n} : P :=
-  match n with
-  | 0 => X0
-  | 1 => X1
-  | S n => XS n (f n)
-  end) ≈
-       (fun P X0 X1 XS => fix f (n : nat) {struct n} : P :=
-  match n with
-  | 0 => X0
-  | 1 => X1
-  | S n => XS n (f n)
-  end).
-Proof.
-  cbn; intros. repeat equiv_elim.
-Defined.
-
-Definition fix_nat_3 : (fun P X0 X1 X2 XS => fix f (n : nat) {struct n} : P :=
-  match n with
-  | 0 => X0
-  | 1 => X1
-  | 2 => X2
-  | S n => XS n (f n)
-  end) ≈
-       (fun P X0 X1 X2 XS => fix f (n : nat) {struct n} : P :=
-  match n with
-  | 0 => X0
-  | 1 => X1
-  | 2 => X2
-  | S n => XS n (f n)
-  end).
-Proof.
-  cbn; intros. repeat equiv_elim.
-Defined.
-
-(* FP for canonical eq *)
-
-Definition Canonical_eq_sig A :=   {can_eq : forall (x y :), x = y -> x = y &
-    forall x, can_eq x x idpath = idpath }.
-
-Instance issig_Canonical_eq A : Canonical_eq_sig A ≃ Canonical_eq A.
-Proof.
-  unfold Canonical_eq_sig.
-  issig (Build_Canonical_eq) (@can_eq) (@can_idpath).
-Defined.
-
-Instance issig_Canonical_eq_inv A : Canonical_eq A ≃ Canonical_eq_sig A :=
-  Equiv_inverse _.
-
-#[export] Hint Extern 0 => progress (unfold Canonical_eq_sig)  : typeclass_instances ur_typeclass_instances.
-
-Definition FP_Canonical_eq : Canonical_eq ≈ Canonical_eq.
-  univ_param_record.
-Defined.
-
-#[export] Hint Extern 0 (Canonical_eq _ ⋈ Canonical_eq _) => erefine (ur_type FP_Canonical_eq _ _ _); simpl
- : typeclass_instances ur_typeclass_instances.
-
-#[export] Hint Extern 0 (Canonical_eq _ ≃ Canonical_eq _) => erefine (ur_type FP_Canonical_eq _ _ _).(equiv); simpl
- : typeclass_instances ur_typeclass_instances.
-
-Definition Svector A := {n : nat & t A n}.
-
-Definition Snil {A} : Svector A := (O ; nil).
-
-Definition Svcons {A} a v : Svector A := (S v.1; vcons a v.2).
-
-Instance Equiv_Svector_list (A B:Type) {H: A ≃ B} : Svector A ≃ list B.
-Proof.
-  unshelve econstructor; [idtac | unshelve eapply isequiv_adjointify].
-  - intro v. exact (vector_to_list _ _ _ v.1 v.1 idpath v.2).1.
-  - intro l. apply Equiv_inverse in H. exact (length l; list_to_vector _ _ _ (length l) _ idpath (l;idpath)).
-  - intros [n v].
-    pose proof (e_sect' (Equiv_vector_list _ _ n n idpath) v). cbn in X.
-    cbn. eapply path_sigma_uncurried.
-    unshelve eexists.
-    + exact ((vector_to_list A B H n n idpath v) .2).
-    + cbn.
-      change ((fun X : {l : list B & length l = n} =>
-                list_to_vector B A (Equiv_inverse H) (length X.1)
-    (length X.1) idpath
-    (X.1; idpath) = transport_eq (fun n0 : nat => t A n0) (X.2)^ v)
-                (vector_to_list A B H n n idpath v)).
-      destruct (vector_to_list A B H n n idpath v).
-      destruct e. cbn. exact X.
-  - intro l. cbn.
-    exact ((e_retr' (Equiv_vector_list _ _ (length l) _  idpath) (l;idpath))..1).
-Defined.
-
-Instance Equiv_list_Svector (A B:Type) (H: A ≃ B) (H' := Equiv_inverse H)
-  : list A ≃ Svector B := Equiv_inverse _.
-
-Inductive UR_list_vect {A B} (R : A -> B -> Type) : list A -> Svector B -> Type :=
-  UR_list_vect_nil : UR_list_vect R [] Snil
-| UR_list_vect_cons : forall {a b l l'},
-    (R a b) -> (UR_list_vect R l l') ->
-    UR_list_vect R (a::l) (Svcons b l').
-
-#[export] Hint Extern 0 (UR (list ?A) (Svector ?B)) => unshelve notypeclasses refine (@UR_list_vect _ _ _): typeclass_instances.
-
-#[export] Hint Extern 0 (UR_list_vect ?R [] Snil) => exact (UR_list_vect_nil R)  : typeclass_instances ur_typeclass_instances.
-
-#[export] Hint Extern 0 (UR_list_vect ?R (_::_) (Svcons _ _)) => unshelve refine (UR_list_vect_cons R _ _) : typeclass_instances ur_typeclass_instances.
-
-Definition Equiv_list_length {A B:Type} (e : A ≈ B) (l:list B) :
-  let l' := e_inv (Equiv_List A B (equiv e)) l in
-  length l' = length l.
-Proof.
-  induction l; tc.
-Defined.
-
-Definition list_to_vector_Equiv_list (A B:Type) (e : A ≈ B) (l:list B) :
-  let l' := e_inv (Equiv_List A B (equiv e)) l in
-  (length l' ; list_to_vector A B (equiv e) (length l') (length l') idpath (l'; idpath))
-  =
-  (length l; list_to_vector B B (Equiv_id B) (length l) (length l) idpath (l; idpath)).
-  apply path_sigma_uncurried. exists (Equiv_list_length e l).
-  induction l; cbn.
-  - reflexivity.
-  - rewrite <- ap_inv. rewrite transport_vector. rewrite e_retr. now apply ap.
-Defined.
-
-Definition UR_list_Svector_fun (A B:Type) (e : A ≈ B) (l : list) (l':list B) :
-  UR_list ur l l' ->
-  UR_list_vect ur l
-      (length l'; list_to_vector B B (Equiv_id B) (length l') (length l') idpath (l'; idpath)).
-Proof.
-  induction 1; cbn; try econstructor. cbn in IHX.
-  match goal with | H : UR_list_vect _ _ ?X |- _ => set (s := X) in * end.
-  eapply (@UR_list_vect_cons _ _ _ _ _ _ s); auto.
-Defined.
-
-Definition UR_list_vect_decompose {A B} (R:A->B->Type) l v (e : UR_list_vect R l v) :
-  match v return UR_list_vect R l v -> Type
-  with (n;v) =>
-       match l in list _, v as v in t _ n return UR_list_vect R l (n;v) -> Type
-       with [],nil _ => fun e => e = UR_list_vect_nil R
-       | a::l, cons _ a' n' v => fun e => { X : (R a a') * UR_list_vect R l (n';v) & e = UR_list_vect_cons R (fst X) (snd X)}
-        | _,_ => fun _ => False end end e.
-Proof.
-  destruct e. reflexivity. cbn. destruct l'. exists (r,e). reflexivity.
-Defined.
-
-Definition UR_list_Svector_inv (A B:Type) (e : A ≈ B) (l : list) (l':list B) :
-  UR_list_vect ur l
-      (length l'; list_to_vector B B (Equiv_id B) (length l') (length l') idpath (l'; idpath))
-  -> UR_list ur l l'.
-Proof.
-  revert l'.
-  induction l;destruct l'; cbn; intro H.
-  - econstructor.
-  - inversion H.
-  - inversion H.
-  - pose (H' := UR_list_vect_decompose _ _ _ H); cbn in H'.  econstructor.
-    + exact (fst H'.1).
-    + apply IHl. exact (snd H'.1).
-Defined.
-
-Definition FP_list_Svector
-  : list ≈ Svector.
-  unshelve econstructor. tc. intros A B e.
-  unshelve refine {| equiv := Equiv_list_Svector _ _ e.(equiv) ; Ur := {| ur := @UR_list_vect A B _ |} |}.
-  - apply ur.
-  - econstructor. intros.
-    eapply equiv_compose. apply (ur_coh (UR_Coh := Ur_Coh (FP_List.(ur_type) _ _ e))).
-    cbn. refine (transport_eq (fun X => UR_list ur a
-    (list_rect A (fun _ : list A => list B) []
-       (fun (H0 :) (_ : list) (H2 : list B) => univalent_transport H0 :: H2) a') ≃ UR_list_vect ur a
-      (length X;
-      list_to_vector A B (Equiv_inverse (Equiv_inverse (equiv e))) (length X)
-                     (length X) idpath (X; idpath))) (e_sect' (Equiv_List _  _ _) a') _).
-    match goal with | |- UR_list _ _ ?X ≃ _ => set X in * end. cbn in l.
-    change (UR_list ur a l
-  ≃ UR_list_vect ur a
-      (length (e_inv (Equiv_List A B (equiv e)) l);
-      list_to_vector A B (Equiv_inverse (Equiv_inverse (equiv e)))
-        (length (e_inv (Equiv_List A B (equiv e)) l))
-        (length (e_inv (Equiv_List A B (equiv e)) l)) idpath
-        (e_inv (Equiv_List A B (equiv e)) l; idpath))).
-    rewrite Equiv_inverse_inverse. set (l' :=e_inv (Equiv_List A B (equiv e)) l).
-    unfold l'. rewrite list_to_vector_Equiv_list. clearbody l. clear l' a'.
-    cbn. unshelve refine (BuildEquiv _ _ _ (isequiv_adjointify _ _ _ _)).
-    + apply UR_list_Svector_fun; auto.
-    + apply UR_list_Svector_inv; auto.
-    + intro H. induction H.
-      * reflexivity.
-      * cbn. apply ap. exact IHUR_list.
-    + revert l; induction a; destruct l; intro H.
-      * symmetry. exact (UR_list_vect_decompose _ _ _ H).
-      * inversion H.
-      * inversion H.
-      * pose (H' := UR_list_vect_decompose _ _ _ H). cbn in H'.
-        eapply concat; try exact H'.2^. cbn. apply ap.
-        exact (IHa l (snd H'.1)).
-  - apply Canonical_eq_gen.
-Defined.
-
-#[export] Hint Extern 0 (list _ ⋈ Svector _) => apply FP_list_Svector : typeclass_instances ur_typeclass_instances.
-
-Definition FP_Svector_list
-  : Svector ≈ list.
-  econstructor. tc. intros A B e.
-  pose (UR_Type_Inverse _ _ e).
-  eapply UR_Type_Inverse. tc.
-Defined.
-
-#[export] Hint Extern 0 (Svector _ ⋈ list _) => apply FP_Svector_list : typeclass_instances ur_typeclass_instances.
-
-Definition Svect_rect : forall (A : Type) (P : Svector A -> Type),
-    P Snil -> (forall (a :) (l : Svector), P l -> P (Svcons a l)) -> forall l : Svector A, P l.
-Proof.
-  intros A P Pnil Pcons [n v].  induction v as [ | a n v IH].
-  - exact Pnil.
-  - exact (Pcons a (n;v) IH).
-Defined.
-
-Definition FP_List_vect_rect : @list_rect ≈ @Svect_rect.
-Proof.
-  cbn. intros.
-  induction H3.
-  - tc.
-  - destruct l'.  typeclasses eauto with typeclass_instances.
-Defined.
-
-
 *)
