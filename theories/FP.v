@@ -23,7 +23,7 @@ Instance Canonical_eq_Type : Canonical_eq Type := Canonical_eq_gen _.
 
 Definition FP_Type : Type ≈p Type := {| pr := UR_Type |}.
 
-Hint Extern 0 (Type ≈p _) => exact FP_Type: typeclass_instances ur_typeclass_instances.
+Hint Extern 0 (Type ≈p _) => ltac2: (apply_PR_Type_gen ()) : typeclass_instances ur_typeclass_instances.
 
 Goal Type ≈p Type.
 Proof. tc. Abort.
