@@ -2,6 +2,8 @@
 (* This file contains basic definitions of UR that are helpful for many examples  *)
 (************************************************************************)
 
+From mathcomp Require Import algebra. 
+
 Set Polymorphic Inductive Cumulativity.
 
 Set Universe Polymorphism.
@@ -70,7 +72,7 @@ Proof. intros e'; destruct e, e'; reflexivity. Defined.
 #[universes(collapse_sort_variables=no)]
 Definition sigma_map {A B P Q} (f: A -> B) (g : forall a, P a -> Q (f a)) (l : sigT P) : sigT Q :=
   match l with
-  | existT _ a l => existT _ (f a) (g a l)
+  | existT a l => existT _ (f a) (g a l)
   end.
 
 #[universes(collapse_sort_variables=no)]
@@ -3663,7 +3665,86 @@ Parameter VFA__SearchTree__treeD_rect_iso_plain : plain_iso_statement (@tree_rec
 
 End Interface47.
 
+(*
+Module Type Interface48 (Import args : Args).
 
+Parameter imported_Corelib__Init__Datatypes__list : (Type -> Type).
+Parameter Corelib__Init__Datatypes__list_iso : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type Type Type (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+        (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent))
+     (fun A : Type => list A) imported_Corelib__Init__Datatypes__list).
+Definition plain_imported_Corelib__Init__Datatypes__list : (Type -> Type) := imported_Corelib__Init__Datatypes__list.
+Parameter _inductive_imported_Corelib__Init__Datatypes__cons : (forall y : Type, y -> imported_Corelib__Init__Datatypes__list y -> imported_Corelib__Init__Datatypes__list y).
+Definition _inductive_plain_imported_Corelib__Init__Datatypes__cons : (forall y : Type, y -> plain_imported_Corelib__Init__Datatypes__list y -> plain_imported_Corelib__Init__Datatypes__list y) := _inductive_imported_Corelib__Init__Datatypes__cons.
+Parameter _inductive_imported_Corelib__Init__Datatypes__nil : (forall y : Type, imported_Corelib__Init__Datatypes__list y).
+Definition _inductive_plain_imported_Corelib__Init__Datatypes__nil : (forall y : Type, plain_imported_Corelib__Init__Datatypes__list y) := _inductive_imported_Corelib__Init__Datatypes__nil.
+Parameter Corelib__Init__Datatypes__list_iso_plain : plain_iso_statement (@Corelib.Init.Datatypes.list) plain_imported_Corelib__Init__Datatypes__list.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Datatypes.list) [Corelib__Init__Datatypes__list_iso] [Corelib__Init__Datatypes__list_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Datatypes.list) [Corelib__Init__Datatypes__list_iso] [Corelib__Init__Datatypes__list_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Init.Datatypes.list)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Corelib.Init.Datatypes.list)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+
+Inductive letter : Set :=
+  | A : letter
+  | B : letter.
+
+Definition word := Datatypes.list letter.
+
+Parameter imported_HigmanCF__Higman__letter : Type.
+Parameter HigmanCF__Higman__letter_iso : iso_statement letter imported_HigmanCF__Higman__letter.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@letter) [HigmanCF__Higman__letter_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@letter) [HigmanCF__Higman__letter_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@letter)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_HigmanCF__Higman__word : Type.
+Parameter HigmanCF__Higman__word_iso : (@UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) word imported_HigmanCF__Higman__word).
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@word)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 => progress (unfold word) : typeclass_instances ur_typeclass_instances.
+
+Inductive emb : word -> word -> Prop :=
+  | emb0 : forall ys : word, emb Datatypes.nil ys
+  | emb1 :
+      forall (xs ys : Datatypes.list letter) (y : letter),
+      emb xs ys -> emb xs (Datatypes.cons y ys)
+  | emb2 :
+      forall (xs ys : Datatypes.list letter) (x : letter),
+      emb xs ys -> emb (Datatypes.cons x xs) (Datatypes.cons x ys).
+Inductive L (v : word) : Datatypes.list word -> Prop :=
+  | L0 : forall (w : word) (ws : Datatypes.list word), emb w v -> L v (Datatypes.cons w ws)
+  | L1 : forall (w : word) (ws : Datatypes.list word), L v ws -> L v (Datatypes.cons w ws).
+
+Inductive good : Datatypes.list word -> Prop :=
+  | good0 : forall (ws : Datatypes.list word) (w : word), L w ws -> good (Datatypes.cons w ws)
+  | good1 : forall (ws : Datatypes.list word) (w : word), good ws -> good (Datatypes.cons w ws).
+
+Inductive bar : Datatypes.list word -> Set :=
+  | bar1 : forall ws : Datatypes.list word, good ws -> bar ws
+  | bar2 : forall ws : Datatypes.list word, (forall w : word, bar (Datatypes.cons w ws)) -> bar ws.
+
+Parameter imported_HigmanCF__Higman__bar : (imported_Corelib__Init__Datatypes__list imported_HigmanCF__Higman__word -> Type).
+Parameter HigmanCF__Higman__bar_iso : iso_statement
+     (@bar) imported_HigmanCF__Higman__bar.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@HigmanCF.Higman.bar) [HigmanCF__Higman__bar_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@HigmanCF.Higman.bar) [HigmanCF__Higman__bar_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@HigmanCF.Higman.bar)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_HigmanCF__Higman__good : (imported_Corelib__Init__Datatypes__list (imported_Corelib__Init__Datatypes__list imported_HigmanCF__Higman__letter) -> SProp).
+Parameter HigmanCF__Higman__good_iso : ((fun x : Datatypes.list Higman.word => Higman.good x) ≈[ _] imported_HigmanCF__Higman__good).
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@HigmanCF.Higman.good) [HigmanCF__Higman__good_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@HigmanCF.Higman.good) [HigmanCF__Higman__good_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@HigmanCF.Higman.good)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_HigmanCF__Higman__bar1 : import_of (@HigmanCF.Higman.bar1).
+Parameter HigmanCF__Higman__bar1_iso : iso_statement (@HigmanCF.Higman.bar1) imported_HigmanCF__Higman__bar1.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@HigmanCF.Higman.bar1) [HigmanCF__Higman__bar1_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@HigmanCF.Higman.bar1) [HigmanCF__Higman__bar1_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@HigmanCF.Higman.bar1)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+End Interface48.
+*)
+
+(*
 Module Export CodeBlocks.
 Scheme Corelib_Floats_SpecFloat_spec_float_case := Elimination for Corelib.Floats.SpecFloat.spec_float Sort Set.
 #[global] Hint Extern 0 ((@CaseSchemeDefinitions.CaseScheme Set Corelib.Floats.SpecFloat.spec_float Set ?S) ?scheme) => unify scheme Corelib_Floats_SpecFloat_spec_float_case; exact CaseSchemeDefinitions.Build_CaseScheme : typeclass_instances.
@@ -3672,7 +3753,303 @@ Global Transparent Corelib.Init.Logic.not.
 Global Transparent Corelib_Floats_SpecFloat_spec_float_case.
 End CodeBlocks.
 
+
+Module Type Interface48 (Import args : Args).
+
+Parameter imported_Corelib__Classes__CRelationClasses__crelation : (Type -> Type).
+Parameter Corelib__Classes__CRelationClasses__crelation_iso : iso_statement
+     (fun A : Type => CRelationClasses.crelation A) imported_Corelib__Classes__CRelationClasses__crelation.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Classes.CRelationClasses.crelation)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 => progress (unfold Corelib.Classes.CRelationClasses.crelation) : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Classes__CRelationClasses__flip : (forall y y0 y1 : Type, (y -> y0 -> y1) -> y0 -> y -> y1).
+Parameter Corelib__Classes__CRelationClasses__flip_iso : iso_statement 
+     (fun (A B C : Type) (f : forall (_ : A) (_ : B), C) (x : B) (y : A) => @CRelationClasses.flip A B C f x y) imported_Corelib__Classes__CRelationClasses__flip.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Classes.CRelationClasses.flip)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 => progress (unfold Corelib.Classes.CRelationClasses.flip) : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Classes__CRelationClasses__subrelation : (forall y : Type, (y -> y -> Type) -> (y -> y -> Type) -> Type).
+Parameter Corelib__Classes__CRelationClasses__subrelation_iso : iso_statement 
+     (fun (A : Type) (R R' : CRelationClasses.crelation A) => @CRelationClasses.subrelation A R R') imported_Corelib__Classes__CRelationClasses__subrelation.
+     
+Definition plain_imported_Corelib__Classes__CRelationClasses__subrelation : (forall y : Type, (y -> y -> Type) -> (y -> y -> Type) -> Type) := imported_Corelib__Classes__CRelationClasses__subrelation.
+Parameter Corelib__Classes__CRelationClasses__subrelation_iso_plain : iso_statement 
+     (fun (A : Type) (R R' : CRelationClasses.crelation A) => @CRelationClasses.subrelation A R R') plain_imported_Corelib__Classes__CRelationClasses__subrelation.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Classes.CRelationClasses.subrelation)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Corelib.Classes.CRelationClasses.subrelation)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 => progress (unfold Corelib.Classes.CRelationClasses.subrelation) : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__iff : (SProp -> SProp -> SProp).
+Parameter Corelib__Init__Logic__iff_iso : iso_statement 
+     (fun (A B : Prop) => Logic.iff A B) imported_Corelib__Init__Logic__iff.
+Definition plain_imported_Corelib__Init__Logic__iff : (SProp -> SProp -> SProp) := imported_Corelib__Init__Logic__iff.
+Parameter Corelib__Init__Logic__iff_iso_plain : plain_iso_statement 
+     (fun (A B : Prop) => Logic.iff A B) plain_imported_Corelib__Init__Logic__iff.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Logic.iff) [Corelib__Init__Logic__iff_iso] [Corelib__Init__Logic__iff_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Logic.iff) [Corelib__Init__Logic__iff_iso] [Corelib__Init__Logic__iff_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Init.Logic.iff)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Corelib.Init.Logic.iff)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Program__Basics__impl : (forall (_ : SProp) (_ : SProp), SProp).
+Parameter Corelib__Program__Basics__impl_iso : iso_statement
+     (fun A B : Prop => Basics.impl A B) imported_Corelib__Program__Basics__impl.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Program.Basics.impl)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 => progress (unfold Corelib.Program.Basics.impl) : typeclass_instances ur_typeclass_instances.
+
+#[universes(polymorphic,collapse_sort_variables=no)]
+Goal {B : _ & PR univalent (CRelationClasses.subrelation Logic.iff
+         (CRelationClasses.flip Basics.impl)) B }.
+      Proof. 
+      eexists. unfold CRelationClasses.subrelation.
+      ltac2: (apply_forall_tac ()). tc.
+      ltac2: (apply_forall_tac ()). tc.
+      ltac2: (apply_forall_tac ()).
+      eapply PR_Type_univ_univ.
+      exact (Corelib__Init__Logic__iff_iso H H0).
+      unfold CRelationClasses.flip, Basics.impl.
+      ltac2: (apply_forall_tac ()). 
+      eapply PR_Type_univ_univ. exact H0.
+      eapply PR_Type_univ_univ. cbn in *. tc.  exact H. 
+       
+      
+      tc. tc.  
+      
+      ltac2: (apply_forall_tac ()). tc.
+      cbn in X. 
+      tc.
+      
+        cbn.  
+
+Parameter imported_Corelib__Classes__CMorphisms__iffD_flipD_implD_subrelation : import_of (@Corelib.Classes.CMorphisms.iff_flip_impl_subrelation).
+Parameter Corelib__Classes__CMorphisms__iffD_flipD_implD_subrelation_iso : iso_statement (@Corelib.Classes.CMorphisms.iff_flip_impl_subrelation) imported_Corelib__Classes__CMorphisms__iffD_flipD_implD_subrelation.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Classes.CMorphisms.iff_flip_impl_subrelation) [Corelib__Classes__CMorphisms__iffD_flipD_implD_subrelation_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Classes.CMorphisms.iff_flip_impl_subrelation) [Corelib__Classes__CMorphisms__iffD_flipD_implD_subrelation_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Classes.CMorphisms.iff_flip_impl_subrelation)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+End Interface48 .
+*)
+
+Module Type Interface48 (Import args : Args).
+
+Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+Parameter imported_Corelib__Init__Logic__eq_Prop : import_of ((fun A : Prop => (fun (A0 : Type) (x4 x5 : A0) => Corelib.Init.Logic.eq x4 x5) A)).
+Parameter Corelib__Init__Logic__eq_iso_Prop : iso_statement ((fun A : Prop => (fun (A0 : Type) (x4 x5 : A0) => Corelib.Init.Logic.eq x4 x5) A)) imported_Corelib__Init__Logic__eq_Prop.
+Definition plain_imported_Corelib__Init__Logic__eq : (forall y : Type, y -> y -> SProp) := imported_Corelib__Init__Logic__eq.
+Parameter Corelib__Init__Logic__eq_iso_plain : plain_iso_statement (@Corelib.Init.Logic.eq) plain_imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Logic.eq) [(* ((fun A : Prop => (fun (A0 : Type) (x4 x5 : A0) => Corelib.Init.Logic.eq x4 x5) A)) *) Corelib__Init__Logic__eq_iso_Prop; Corelib__Init__Logic__eq_iso] [Corelib__Init__Logic__eq_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Logic.eq) [(* ((fun A : Prop => (fun (A0 : Type) (x4 x5 : A0) => Corelib.Init.Logic.eq x4 x5) A)) *) Corelib__Init__Logic__eq_iso_Prop; Corelib__Init__Logic__eq_iso] [Corelib__Init__Logic__eq_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Init.Logic.eq)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Corelib.Init.Logic.eq)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__False : SProp.
+Parameter Corelib__Init__Logic__False_iso : (@UR.pr _ _ _ (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent) False imported_Corelib__Init__Logic__False).
+Definition plain_imported_Corelib__Init__Logic__False : SProp := imported_Corelib__Init__Logic__False.
+Parameter Corelib__Init__Logic__False_iso_plain : plain_iso_statement (@Corelib.Init.Logic.False) plain_imported_Corelib__Init__Logic__False.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Logic.False) [Corelib__Init__Logic__False_iso] [Corelib__Init__Logic__False_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Logic.False) [Corelib__Init__Logic__False_iso] [Corelib__Init__Logic__False_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Init.Logic.False)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Corelib.Init.Logic.False)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter plain_imported_Stdlib__Logic__Hurkens__TypeNeqSmallType__paradox : plain_import_of (@Stdlib.Logic.Hurkens.TypeNeqSmallType.paradox).
+Parameter Stdlib__Logic__Hurkens__TypeNeqSmallType__paradox_iso_plain : plain_iso_statement (@Stdlib.Logic.Hurkens.TypeNeqSmallType.paradox) plain_imported_Stdlib__Logic__Hurkens__TypeNeqSmallType__paradox.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Stdlib.Logic.Hurkens.TypeNeqSmallType.paradox) [] [Stdlib__Logic__Hurkens__TypeNeqSmallType__paradox_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Stdlib.Logic.Hurkens.TypeNeqSmallType.paradox) [] [Stdlib__Logic__Hurkens__TypeNeqSmallType__paradox_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Stdlib.Logic.Hurkens.TypeNeqSmallType.paradox)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+End Interface48.
+
+
+Module Type Interface49 (Import args : Args).
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__type : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.type).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__type_iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.type) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__type.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.type) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__type_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.type) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__type_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.type)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__type : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.type).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__type_iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.type) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__type.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.type) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__type_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.type) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__type_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.type)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__sort : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.sort).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__sort_iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.sort) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__sort.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.sort) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.sort) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__GRingD_LalgebraD_D_toD_D_GRingD_Ring : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.GRing_Lalgebra__to__GRing_Ring).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__GRingD_LalgebraD_D_toD_D_GRingD_Ring_iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.GRing_Lalgebra__to__GRing_Ring) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__GRingD_LalgebraD_D_toD_D_GRingD_Ring.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.GRing_Lalgebra__to__GRing_Ring) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__GRingD_LalgebraD_D_toD_D_GRingD_Ring_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.GRing_Lalgebra__to__GRing_Ring) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__GRingD_LalgebraD_D_toD_D_GRingD_Ring_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.GRing_Lalgebra__to__GRing_Ring)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__joinD_GRingD_LalgebraD_betweenD_GRingD_LSemiModuleD_andD_GRingD_Ring : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.join_GRing_Lalgebra_between_GRing_LSemiModule_and_GRing_Ring).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__joinD_GRingD_LalgebraD_betweenD_GRingD_LSemiModuleD_andD_GRingD_Ring_iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.GRing_Lalgebra__to__GRing_Ring) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__joinD_GRingD_LalgebraD_betweenD_GRingD_LSemiModuleD_andD_GRingD_Ring.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.join_GRing_Lalgebra_between_GRing_LSemiModule_and_GRing_Ring) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__joinD_GRingD_LalgebraD_betweenD_GRingD_LSemiModuleD_andD_GRingD_Ring_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.join_GRing_Lalgebra_between_GRing_LSemiModule_and_GRing_Ring) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__joinD_GRingD_LalgebraD_betweenD_GRingD_LSemiModuleD_andD_GRingD_Ring_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.join_GRing_Lalgebra_between_GRing_LSemiModule_and_GRing_Ring)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+
+Parameter imported_Corelib__ssr__ssrbool__pred : import_of (@Corelib.ssr.ssrbool.pred).
+Parameter Corelib__ssr__ssrbool__pred_iso : iso_statement (@Corelib.ssr.ssrbool.pred) imported_Corelib__ssr__ssrbool__pred.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.ssr.ssrbool.pred) [Corelib__ssr__ssrbool__pred_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.ssr.ssrbool.pred) [Corelib__ssr__ssrbool__pred_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.ssr.ssrbool.pred)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__sort : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.sort).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__sort_iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.sort) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__sort.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.sort) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.sort) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.sort)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 10 => progress (unfold mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.sort) : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__axiomsD_ : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.axioms_).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__axiomsD__iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.axioms_) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__axiomsD_.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.axioms_) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__axiomsD__iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.axioms_) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__axiomsD__iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.axioms_)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubRing__axiomsD_ : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubRing.axioms_).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubRing__axiomsD__iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubRing.axioms_) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubRing__axiomsD_.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubRing.axioms_) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubRing__axiomsD__iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubRing.axioms_) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubRing__axiomsD__iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubRing.axioms_)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Fail Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__Exports__GRingD_SubLalgebraD_classD_D_toD_D_GRingD_SubRingD_class : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.Exports.GRing_SubLalgebra_class__to__GRing_SubRing_class).
+
+End Interface49.
+
+
+Module Type Interface50 (Import args : Args).
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__type : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.type).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__type_iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.type) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__type.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.type) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__type_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.type) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__type_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.type)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__type : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.type).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__type_iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.type) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__type.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.type) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__type_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.type) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__type_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.type)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__sort : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.sort).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__sort_iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.sort) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__sort.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.sort) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.sort) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__GRingD_LalgebraD_D_toD_D_GRingD_Ring : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.GRing_Lalgebra__to__GRing_Ring).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__GRingD_LalgebraD_D_toD_D_GRingD_Ring_iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.GRing_Lalgebra__to__GRing_Ring) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__GRingD_LalgebraD_D_toD_D_GRingD_Ring.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.GRing_Lalgebra__to__GRing_Ring) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__GRingD_LalgebraD_D_toD_D_GRingD_Ring_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.GRing_Lalgebra__to__GRing_Ring) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__GRingD_LalgebraD_D_toD_D_GRingD_Ring_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.GRing_Lalgebra__to__GRing_Ring)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+(* Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__joinD_GRingD_LalgebraD_betweenD_GRingD_LSemiModuleD_andD_GRingD_Ring : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.join_GRing_Lalgebra_between_GRing_LSemiModule_and_GRing_Ring).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__joinD_GRingD_LalgebraD_betweenD_GRingD_LSemiModuleD_andD_GRingD_Ring_iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.GRing_Lalgebra__to__GRing_Ring) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__joinD_GRingD_LalgebraD_betweenD_GRingD_LSemiModuleD_andD_GRingD_Ring. *)
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.join_GRing_Lalgebra_between_GRing_LSemiModule_and_GRing_Ring) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__GRingD_LalgebraD_D_toD_D_GRingD_Ring_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.join_GRing_Lalgebra_between_GRing_LSemiModule_and_GRing_Ring) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Lalgebra__Exports__GRingD_LalgebraD_D_toD_D_GRingD_Ring_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Lalgebra.Exports.join_GRing_Lalgebra_between_GRing_LSemiModule_and_GRing_Ring)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+
+Parameter imported_Corelib__ssr__ssrbool__pred : import_of (@Corelib.ssr.ssrbool.pred).
+Parameter Corelib__ssr__ssrbool__pred_iso : iso_statement (@Corelib.ssr.ssrbool.pred) imported_Corelib__ssr__ssrbool__pred.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.ssr.ssrbool.pred) [Corelib__ssr__ssrbool__pred_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.ssr.ssrbool.pred) [Corelib__ssr__ssrbool__pred_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.ssr.ssrbool.pred)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__sort : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.sort).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__sort_iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.sort) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__sort.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.sort) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.sort) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Ring__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.sort)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 10 => progress (unfold mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Ring.sort) : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__axiomsD_ : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.axioms_).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__axiomsD__iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.axioms_) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__axiomsD_.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.axioms_) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__axiomsD__iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.axioms_) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__axiomsD__iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.axioms_)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubRing__axiomsD_ : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubRing.axioms_).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubRing__axiomsD__iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubRing.axioms_) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubRing__axiomsD_.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubRing.axioms_) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubRing__axiomsD__iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubRing.axioms_) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubRing__axiomsD__iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubRing.axioms_)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__Exports__GRingD_SubLalgebraD_classD_D_toD_D_GRingD_SubRingD_class : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.Exports.GRing_SubLalgebra_class__to__GRing_SubRing_class).
+Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__Exports__GRingD_SubLalgebraD_classD_D_toD_D_GRingD_SubRingD_class_iso : iso_statement (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.Exports.GRing_SubLalgebra_class__to__GRing_SubRing_class) imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__Exports__GRingD_SubLalgebraD_classD_D_toD_D_GRingD_SubRingD_class.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.Exports.GRing_SubLalgebra_class__to__GRing_SubRing_class) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__Exports__GRingD_SubLalgebraD_classD_D_toD_D_GRingD_SubRingD_class_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.Exports.GRing_SubLalgebra_class__to__GRing_SubRing_class) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__SubLalgebra__Exports__GRingD_SubLalgebraD_classD_D_toD_D_GRingD_SubRingD_class_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.SubLalgebra.Exports.GRing_SubLalgebra_class__to__GRing_SubRing_class)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+End Interface50.
+
 (*
+Module Type Interface48 (Import args : Args).
+
+Parameter imported_Corelib__Init__Logic__eq : (forall y : Type, y -> y -> SProp).
+Parameter Corelib__Init__Logic__eq_iso : (@UR.pr _ _ _
+     (@UR.URForall@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type (fun H : Type => forall (_ : H) (_ : H), Prop) (fun H : Type => forall (_ : H) (_ : H), SProp)
+        (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+        (fun (x y : Type) (H : @UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) x y) =>
+         @UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent x y (forall _ : x, Prop) (forall _ : y, SProp) (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.univalent x y H)
+           (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent x y Prop SProp (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.univalent x y H)
+              (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent))))
+     (fun (A : Type) (x x0 : A) => @Corelib.Init.Logic.eq A x x0) imported_Corelib__Init__Logic__eq).
+Parameter imported_Corelib__Init__Logic__eq_Prop : import_of ((fun A : Prop => (fun (A0 : Type) (x2 x3 : A0) => @Corelib.Init.Logic.eq A0 x2 x3) A)).
+Parameter Corelib__Init__Logic__eq_iso_Prop : iso_statement ((fun A : Prop => (fun (A0 : Type) (x2 x3 : A0) => @Corelib.Init.Logic.eq A0 x2 x3) A)) imported_Corelib__Init__Logic__eq_Prop.
+Definition plain_imported_Corelib__Init__Logic__eq : (forall y : Type, y -> y -> SProp) := imported_Corelib__Init__Logic__eq.
+Parameter _inductive_imported_Corelib__Init__Logic__eqD_refl : (forall (y : Type) (y0 : y), imported_Corelib__Init__Logic__eq y0 y0).
+Definition _inductive_plain_imported_Corelib__Init__Logic__eqD_refl : (forall (y : Type) (y0 : y), plain_imported_Corelib__Init__Logic__eq y0 y0) := _inductive_imported_Corelib__Init__Logic__eqD_refl.
+Parameter Corelib__Init__Logic__eq_iso_plain : plain_iso_statement (@Corelib.Init.Logic.eq) plain_imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Logic.eq) [(* ((fun A : Prop => (fun (A0 : Type) (x2 x3 : A0) => @Corelib.Init.Logic.eq A0 x2 x3) A)) *) Corelib__Init__Logic__eq_iso_Prop; Corelib__Init__Logic__eq_iso] [Corelib__Init__Logic__eq_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Logic.eq) [(* ((fun A : Prop => (fun (A0 : Type) (x2 x3 : A0) => @Corelib.Init.Logic.eq A0 x2 x3) A)) *) Corelib__Init__Logic__eq_iso_Prop; Corelib__Init__Logic__eq_iso] [Corelib__Init__Logic__eq_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Init.Logic.eq)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Corelib.Init.Logic.eq)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Datatypes__list : (Type -> Type).
+Parameter Corelib__Init__Datatypes__list_iso : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type Type Type (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+        (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent))
+     (fun A : Type => Datatypes.list A) imported_Corelib__Init__Datatypes__list).
+Definition plain_imported_Corelib__Init__Datatypes__list : (Type -> Type) := imported_Corelib__Init__Datatypes__list.
+Parameter _inductive_imported_Corelib__Init__Datatypes__cons : (forall y : Type, y -> imported_Corelib__Init__Datatypes__list y -> imported_Corelib__Init__Datatypes__list y).
+Definition _inductive_plain_imported_Corelib__Init__Datatypes__cons : (forall y : Type, y -> plain_imported_Corelib__Init__Datatypes__list y -> plain_imported_Corelib__Init__Datatypes__list y) := _inductive_imported_Corelib__Init__Datatypes__cons.
+Parameter _inductive_imported_Corelib__Init__Datatypes__nil : (forall y : Type, imported_Corelib__Init__Datatypes__list y).
+Definition _inductive_plain_imported_Corelib__Init__Datatypes__nil : (forall y : Type, plain_imported_Corelib__Init__Datatypes__list y) := _inductive_imported_Corelib__Init__Datatypes__nil.
+Parameter Corelib__Init__Datatypes__list_iso_plain : plain_iso_statement (@Corelib.Init.Datatypes.list) plain_imported_Corelib__Init__Datatypes__list.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Datatypes.list) [Corelib__Init__Datatypes__list_iso] [Corelib__Init__Datatypes__list_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Datatypes.list) [Corelib__Init__Datatypes__list_iso] [Corelib__Init__Datatypes__list_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Init.Datatypes.list)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Corelib.Init.Datatypes.list)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+From mathcomp Require Import seq. 
+
+Parameter plain_imported_mathcomp__boot__seq__foldl : (forall y y0 : Type, (y0 -> y -> y0) -> y0 -> plain_imported_Corelib__Init__Datatypes__list y -> y0).
+Parameter mathcomp__boot__seq__foldl_iso_plain : plain_iso_statement
+     (@seq.foldl) plain_imported_mathcomp__boot__seq__foldl.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.seq.foldl) [] [mathcomp__boot__seq__foldl_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.seq.foldl) [] [mathcomp__boot__seq__foldl_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@mathcomp.boot.seq.foldl)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+
+Parameter plain_imported_mathcomp__boot__seq__foldr : (forall y y0 : Type, (y -> y0 -> y0) -> y0 -> plain_imported_Corelib__Init__Datatypes__list y -> y0).
+Parameter mathcomp__boot__seq__foldr_iso_plain : plain_iso_statement (@seq.foldr) plain_imported_mathcomp__boot__seq__foldr.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.seq.foldr) [] [mathcomp__boot__seq__foldr_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.seq.foldr) [] [mathcomp__boot__seq__foldr_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@mathcomp.boot.seq.foldr)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+
+Parameter plain_imported_pcm__core__prelude__foldrD_foldl : plain_import_of (@pcm.core.prelude.foldr_foldl).
+Parameter pcm__core__prelude__foldrD_foldl_iso_plain : plain_iso_statement (@pcm.core.prelude.foldr_foldl) plain_imported_pcm__core__prelude__foldrD_foldl.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@pcm.core.prelude.foldr_foldl) [] [pcm__core__prelude__foldrD_foldl_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@pcm.core.prelude.foldr_foldl) [] [pcm__core__prelude__foldrD_foldl_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@pcm.core.prelude.foldr_foldl)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+End Interface48.
 
 Module Type Interface48 (Import args : Args).
 
@@ -3820,30 +4197,8 @@ Parameter Corelib__Numbers__BinNums__Z_iso_plain : plain_iso_statement (@Corelib
 #[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Numbers.BinNums.Z)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Corelib.Numbers.BinNums.Z)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
 
+Require Import Flocq.IEEE754.PrimFloat Flocq.IEEE754.BinarySingleNaN.
 
-Section Binary.
-
-Variable prec emax : Z.
-
-Notation bounded := (SpecFloat.bounded prec emax).
-
-
-Inductive binary_float :=
-  | B754_zero (s : bool)
-  | B754_infinity (s : bool)
-  | B754_nan : binary_float
-  | B754_finite (s : bool) (m : positive) (e : Z) :
-    bounded m e = true -> binary_float.
-
-Definition B2SF x :=
-  match x with
-  | B754_finite s m e _ => S754_finite s m e
-  | B754_infinity s => S754_infinity s
-  | B754_zero s => S754_zero s
-  | B754_nan => S754_nan
-  end.
-
-End Binary.
 
 Parameter imported_Flocq__IEEE754__BinarySingleNaN__binaryD_float : (forall (_ : imported_Corelib__Numbers__BinNums__Z) (_ : imported_Corelib__Numbers__BinNums__Z), Type).
 Parameter Flocq__IEEE754__BinarySingleNaN__binaryD_float_iso : iso_statement (fun prec emax : BinNums.Z => binary_float prec emax) imported_Flocq__IEEE754__BinarySingleNaN__binaryD_float.
@@ -3878,9 +4233,10 @@ Parameter Corelib__Floats__FloatOps__emax_iso_plain : plain_iso_statement (Float
 #[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Floats.FloatOps.emax)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Corelib.Floats.FloatOps.emax)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
 
+
 Parameter imported_Flocq__IEEE754__PrimFloat__B2Prim : (imported_Flocq__IEEE754__BinarySingleNaN__binaryD_float (HoTT.univalent_transport@{Type Type ; _ _} FloatOps.prec) (HoTT.univalent_transport@{Type Type ; _ _} FloatOps.emax) ->
    imported_Corelib__Floats__PrimFloat__float).
-Parameter Flocq__IEEE754__PrimFloat__B2Prim_iso : plain_iso_statement (fun x : binary_float FloatOps.prec FloatOps.emax =>  PrimFloat.B2Prim x) imported_Flocq__IEEE754__PrimFloat__B2Prim.
+Parameter Flocq__IEEE754__PrimFloat__B2Prim_iso : iso_statement (fun x : binary_float FloatOps.prec FloatOps.emax =>  PrimFloat.B2Prim x) imported_Flocq__IEEE754__PrimFloat__B2Prim.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Flocq.IEEE754.PrimFloat.B2Prim) [Flocq__IEEE754__PrimFloat__B2Prim_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Flocq.IEEE754.PrimFloat.B2Prim) [Flocq__IEEE754__PrimFloat__B2Prim_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Flocq.IEEE754.PrimFloat.B2Prim)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
@@ -3912,7 +4268,7 @@ Parameter Corelib__Numbers__BinNums__xI_iso_plain : iso_statement (BinNums.xI) p
 Parameter imported_Corelib__Numbers__BinNums__xO : (imported_Corelib__Numbers__BinNums__positive -> imported_Corelib__Numbers__BinNums__positive).
 Parameter Corelib__Numbers__BinNums__xO_iso : ((fun x : BinNums.positive => BinNums.xO x) ≈[ _] imported_Corelib__Numbers__BinNums__xO).
 Definition plain_imported_Corelib__Numbers__BinNums__xO : (imported_Corelib__Numbers__BinNums__positive -> imported_Corelib__Numbers__BinNums__positive) := imported_Corelib__Numbers__BinNums__xO.
-Parameter Corelib__Numbers__BinNums__xO_iso_plain : plain_iso_statement (@Corelib.Numbers.BinNums.xO) plain_imported_Corelib__Numbers__BinNums__xO.
+Parameter Corelib__Numbers__BinNums__xO_iso_plain : iso_statement (BinNums.xO) plain_imported_Corelib__Numbers__BinNums__xO.
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Numbers.BinNums.xO) [Corelib__Numbers__BinNums__xO_iso] [Corelib__Numbers__BinNums__xO_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Numbers.BinNums.xO) [Corelib__Numbers__BinNums__xO_iso] [Corelib__Numbers__BinNums__xO_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Numbers.BinNums.xO)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
@@ -3922,8 +4278,9 @@ Parameter imported_CaseSchemeDefinitions__positiveD_caset : (forall y : imported
    (forall y0 : imported_Corelib__Numbers__BinNums__positive, y (imported_Corelib__Numbers__BinNums__xI y0)) ->
    (forall y0 : imported_Corelib__Numbers__BinNums__positive, y (imported_Corelib__Numbers__BinNums__xO y0)) ->
    y imported_Corelib__Numbers__BinNums__xH -> forall y0 : imported_Corelib__Numbers__BinNums__positive, y y0).
-Parameter CaseSchemeDefinitions__positiveD_caset_iso : iso_statement (fun y : forall _ : BinNums.positive, Type =>
-         forall (_ : forall p : BinNums.positive, y (BinNums.xI p)) (_ : forall p : BinNums.positive, y (BinNums.xO p)) (_ : y BinNums.xH) (p : BinNums.positive), y p).
+Parameter CaseSchemeDefinitions__positiveD_caset_iso : iso_statement (fun (P : forall _ : BinNums.positive, Type) (xI : forall p : BinNums.positive, P (BinNums.xI p)) (xO : forall p : BinNums.positive, P (BinNums.xO p)) (xH : P BinNums.xH) (p : BinNums.positive) =>
+      CaseSchemeDefinitions.positive_caset P xI xO xH p)
+         imported_CaseSchemeDefinitions__positiveD_caset.
         (fun H : forall _ : imported_Corelib__Numbers__BinNums__positive, Type =>
          forall (_ : forall y : imported_Corelib__Numbers__BinNums__positive, H (imported_Corelib__Numbers__BinNums__xI y))
            (_ : forall y : imported_Corelib__Numbers__BinNums__positive, H (imported_Corelib__Numbers__BinNums__xO y)) (_ : H imported_Corelib__Numbers__BinNums__xH)

@@ -61,12 +61,12 @@ Ltac2 shelve_non_PR () :=
   | [ |- _ ] => Control.shelve ()
   end.
 
-Ltac2 ur_type_of_ur_tc (ur_tc : constr) : constr * constr :=
+Ltac2 ur_type_of_ur_tc (ur_tc : constr) : (constr * constr) option :=
   let ty := Constr.type ur_tc in
   let ty := eval hnf in $ty in
   match! ty with
-  | UR_Type ?a ?b => (a, b)
-  | _ => fail "ur_type_of_ur_tc: expected %t ?a ?b, got %t" 'UR_Type ty
+  | UR_Type ?a ?b => Some (a, b)
+  | _ => None
   end.
 
 Ltac2 shelve_non_PR_multi () := Control.enter (fun _ => shelve_non_PR ()).
@@ -236,7 +236,7 @@ Ltac2 mutable rec failure_white_message (_lhs_head:constr) (_rhs_head:constr) (i
 Ltac2 mutable failure_white_message_conflict (lhs_head:constr) (lhs_head':constr) (rhs_head:constr) (rhs_head':constr) (iso_head:constr) (iso_head':constr) :=
   match (Std.is_forcibly_unfoldable_head lhs_head, Std.is_forcibly_unfoldable_head lhs_head') with
   | (true, true) | (false, false) =>
-  Message.concat (Message.of_string "one of the following two instances should be white boxed: ")
+  Message.concat (Message.of_string "the following two translations are probably for the same definition: ")
  (Message.concat (Message.of_constr iso_head)
  (Message.concat (Message.of_string " and ")
                  (Message.of_constr iso_head')))
@@ -246,10 +246,13 @@ Ltac2 mutable failure_white_message_conflict (lhs_head:constr) (lhs_head':constr
 
 Ltac2 failure_white_message_args_of_inst (ur_inst : constr) :=
   let (pr_head, _) := Constr.decompose_app_nocast ur_inst in
-  let (lhs, rhs) := Control.throw_on_error (fun () => ur_type_of_ur_tc ur_inst) in
-  let (lhs_head, _) := Constr.decompose_app_nocast lhs in
-  let (rhs_head, _) := Constr.decompose_app_nocast rhs in
-  (lhs_head, rhs_head, pr_head).
+  match ur_type_of_ur_tc ur_inst with 
+  | Some (lhs, rhs) =>
+    let (lhs_head, _) := Constr.decompose_app_nocast lhs in
+    let (rhs_head, _) := Constr.decompose_app_nocast rhs in
+    (lhs_head, rhs_head, pr_head)
+  | None => (pr_head, pr_head, pr_head)
+  end.
 
 Ltac2 print_ur () :=
   match! reverse goal with
@@ -288,6 +291,7 @@ Ltac2 apply_var_tac c :=
               | [ h : @pr _ _ _ (@Ur _ _ ?pr_inst) ?c _ |- @pr _ _ _ (@Ur _ _ ?pr_inst') ?c' _] =>
                 if Constr.equal c' c && hyp_not_value h
                 then
+                  let (pr_inst,pr_inst') := Option.get (find_non_unifying_subterms pr_inst pr_inst') in
                   let (lhs_head, rhs_head, pr_head) := failure_white_message_args_of_inst pr_inst in
                   let (lhs_head', rhs_head', pr_head') := failure_white_message_args_of_inst pr_inst' in
                   Control.throw (Tactic_failure (Some (failure_white_message_conflict lhs_head lhs_head' rhs_head rhs_head' pr_head pr_head')))
