@@ -4165,6 +4165,76 @@ Parameter VFA__Maps__tD_updateD_permute_iso_plain : plain_iso_statement (@t_upda
 
 End Interface52.
 
+Module Type Interface53 (Import args : Args).
+
+Parameter imported_Corelib__Init__Datatypes__nat : Type.
+Parameter Corelib__Init__Datatypes__nat_iso : (@UR.pr _ _ _ (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent) nat imported_Corelib__Init__Datatypes__nat).
+Definition plain_imported_Corelib__Init__Datatypes__nat : Type := imported_Corelib__Init__Datatypes__nat.
+Parameter Corelib__Init__Datatypes__nat_iso_plain : plain_iso_statement (@Corelib.Init.Datatypes.nat) plain_imported_Corelib__Init__Datatypes__nat.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Datatypes.nat) [Corelib__Init__Datatypes__nat_iso] [Corelib__Init__Datatypes__nat_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Datatypes.nat) [Corelib__Init__Datatypes__nat_iso] [Corelib__Init__Datatypes__nat_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Init.Datatypes.nat)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Corelib.Init.Datatypes.nat)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_coqutil__Datatypes__HList__polymorphicD_list__list : (Type -> Type).
+Parameter coqutil__Datatypes__HList__polymorphicD_list__list_iso : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type Type Type (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+        (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent))
+     (fun A : Type => list A) imported_coqutil__Datatypes__HList__polymorphicD_list__list).
+Definition plain_imported_coqutil__Datatypes__HList__polymorphicD_list__list : (Type -> Type) := imported_coqutil__Datatypes__HList__polymorphicD_list__list.
+Parameter coqutil__Datatypes__HList__polymorphicD_list__list_iso_plain : plain_iso_statement (@list) plain_imported_coqutil__Datatypes__HList__polymorphicD_list__list.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@list) [coqutil__Datatypes__HList__polymorphicD_list__list_iso] [coqutil__Datatypes__HList__polymorphicD_list__list_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@list) [coqutil__Datatypes__HList__polymorphicD_list__list_iso] [coqutil__Datatypes__HList__polymorphicD_list__list_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@list)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@list)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+ Section WithElement. Local Set Default Proof Using "All".
+    Context {A} (x : A).
+    Fixpoint repeat (x : A) (n : nat) {struct n} : list A :=
+      match n with
+      | 0 => nil
+      | S k => cons x (repeat x k)
+      end.
+  End WithElement.
+Parameter plain_imported_coqutil__Datatypes__HList__polymorphicD_list__repeat : plain_import_of (@repeat).
+Parameter coqutil__Datatypes__HList__polymorphicD_list__repeat_iso_plain : plain_iso_statement (@repeat) plain_imported_coqutil__Datatypes__HList__polymorphicD_list__repeat.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@repeat) [] [coqutil__Datatypes__HList__polymorphicD_list__repeat_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@repeat) [] [coqutil__Datatypes__HList__polymorphicD_list__repeat_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@repeat)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Fixpoint hlist@{i j k} (argts : list@{j} Type@{i}) : Type@{k} :=
+  match argts with
+  | nil => unit
+  | cons T argts' => T * hlist argts'
+  end.
+
+Parameter plain_imported_coqutil__Datatypes__HList__hlist : (plain_imported_coqutil__Datatypes__HList__polymorphicD_list__list Type -> Type).
+Parameter coqutil__Datatypes__HList__hlist_iso_plain : plain_iso_statement (@hlist) plain_imported_coqutil__Datatypes__HList__hlist.
+(* 
+Parameter coqutil__Datatypes__HList__hlist_iso_plain : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.plain (list Type) (plain_imported_coqutil__Datatypes__HList__polymorphicD_list__list Type) Type Type
+        (UR.PR_Type_gen@{Type Type Type ; _ _ _ _} UR.plain (list Type) (plain_imported_coqutil__Datatypes__HList__polymorphicD_list__list Type)
+           (@coqutil__Datatypes__HList__polymorphicD_list__list_iso_plain Type Type FP.FP_Type@{Type Type Type ; _ _ _ _ _ _ _}))
+        (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.plain))
+     (fun argts : list Type => hlist argts) plain_imported_coqutil__Datatypes__HList__hlist).     *)
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@hlist) [] [coqutil__Datatypes__HList__hlist_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@hlist) [] [coqutil__Datatypes__HList__hlist_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@hlist)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Fixpoint foralls {argts : list Type} : forall (P : hlist argts -> Prop), Prop :=
+    match argts with
+    | nil => fun P => P tt
+    | cons T argts' => fun P => forall x:T, foralls (fun xs' => P (x, xs'))
+    end.
+
+Parameter plain_imported_coqutil__Datatypes__HList__tuple__foralls : plain_import_of (@foralls).
+Parameter coqutil__Datatypes__HList__tuple__foralls_iso_plain : plain_iso_statement (@foralls) plain_imported_coqutil__Datatypes__HList__tuple__foralls.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@foralls) [] [coqutil__Datatypes__HList__tuple__foralls_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@foralls) [] [coqutil__Datatypes__HList__tuple__foralls_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@foralls)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+End Interface53.
+
 (*
 
 Module Type Interface53 (Import args : Args).
