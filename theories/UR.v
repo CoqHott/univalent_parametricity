@@ -301,7 +301,7 @@ Ltac2 apply_var_tac c :=
                 if Constr.equal c' c && Bool.neg (Constr.equal_nocumul (Constr.type d) (Constr.type d'))
                 then
                   Control.throw (Tactic_failure (Some (Message.concat (Message.of_string "the following variable has been used in a cumulative context: ")
-                    (Message.concat (Message.of_constr (Constr.type d')) (Message.of_constr (Constr.type d))))))
+                    (Message.concat (Message.concat (Message.of_constr d') (Message.of_constr (Constr.type d'))) (Message.concat (Message.of_constr d) (Message.of_constr (Constr.type d)))))))
                 else
                   Control.zero Match_failure
               end in

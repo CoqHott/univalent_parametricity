@@ -196,10 +196,10 @@ Proof.
       pose proof (fst (ur_coh (f _) (f _)) idpath).
       unfold univalent_transport in X.
       pose proof (H := alt_UR_Coh eA x y).
-      destruct H as [_ H].
-      specialize (H e).
-      cbn in H.
-      generalize e; clear e. rewrite H. intro e. 
+      pose (H2 := snd H).
+      specialize (H2 e).
+      cbn in H2.
+      generalize e; clear e. rewrite H2. intro e. 
       rewrite (Ur_Irr _ _ eA _ _ e (ur_refl (UR_Type_Inverse A A' eA) y)).
       exact X.
     + intros e. apply funext. intros x.

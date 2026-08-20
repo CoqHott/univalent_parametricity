@@ -4235,6 +4235,34 @@ Parameter coqutil__Datatypes__HList__tuple__foralls_iso_plain : plain_iso_statem
 
 End Interface53.
 
+Module Type Interface54 (Import args : Args).
+
+Parameter imported_elpi__apps__derive__derive__param2__paramD_db : import_of (@elpi.apps.derive.derive.param2.param_db).
+Parameter elpi__apps__derive__derive__param2__paramD_db_iso : iso_statement (@elpi.apps.derive.derive.param2.param_db) imported_elpi__apps__derive__derive__param2__paramD_db.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@elpi.apps.derive.derive.param2.param_db) [elpi__apps__derive__derive__param2__paramD_db_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@elpi.apps.derive.derive.param2.param_db) [elpi__apps__derive__derive__param2__paramD_db_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@elpi.apps.derive.derive.param2.param_db)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Corelib__Init__Logic__and : import_of (@Corelib.Init.Logic.and).
+Parameter Corelib__Init__Logic__and_iso : iso_statement (@Corelib.Init.Logic.and) imported_Corelib__Init__Logic__and.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Logic.and) [Corelib__Init__Logic__and_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Logic.and) [Corelib__Init__Logic__and_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Init.Logic.and)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__arithmeticD_tactic__Internals__andD_R : import_of (@mathcomp.algebra.arithmetic_tactic.Internals.and_R).
+Parameter mathcomp__algebra__arithmeticD_tactic__Internals__andD_R_iso : iso_statement (@mathcomp.algebra.arithmetic_tactic.Internals.and_R) imported_mathcomp__algebra__arithmeticD_tactic__Internals__andD_R.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.arithmetic_tactic.Internals.and_R) [mathcomp__algebra__arithmeticD_tactic__Internals__andD_R_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.arithmetic_tactic.Internals.and_R) [mathcomp__algebra__arithmeticD_tactic__Internals__andD_R_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.arithmetic_tactic.Internals.and_R)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__algebra__arithmeticD_tactic__Internals__paramD_andD_R : import_of (@mathcomp.algebra.arithmetic_tactic.Internals.param_and_R).
+Parameter mathcomp__algebra__arithmeticD_tactic__Internals__paramD_andD_R_iso : iso_statement (@mathcomp.algebra.arithmetic_tactic.Internals.param_and_R) imported_mathcomp__algebra__arithmeticD_tactic__Internals__paramD_andD_R.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.arithmetic_tactic.Internals.param_and_R) [mathcomp__algebra__arithmeticD_tactic__Internals__paramD_andD_R_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.arithmetic_tactic.Internals.param_and_R) [mathcomp__algebra__arithmeticD_tactic__Internals__paramD_andD_R_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.arithmetic_tactic.Internals.param_and_R)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+End Interface54.
+
 (*
 
 Module Type Interface53 (Import args : Args).
