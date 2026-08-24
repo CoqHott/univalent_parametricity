@@ -1,0 +1,32 @@
+opam-version: "2.0"
+name: "coq-univalent-parametricity-mathcomp"
+version: "dev"
+synopsis: "Univalent Parametricity with MathComp examples"
+description: """
+Companion code of the article "The Marriage of Univalence and
+Parametricity" (arXiv:1909.05027), including examples that depend on
+Mathematical Components.
+"""
+maintainer: "Nicolas Tabareau"
+authors: [
+  "Nicolas Tabareau"
+  "Éric Tanter"
+  "Matthieu Sozeau"
+]
+license: "MIT"
+homepage: "https://github.com/CoqHott/univalent_parametricity"
+bug-reports: "https://github.com/CoqHott/univalent_parametricity/issues"
+dev-repo: "git+https://github.com/CoqHott/univalent_parametricity.git"
+depends: [
+  "coq" {>= "9.3~" | = "dev"}
+  "coq-mathcomp-algebra"
+]
+conflicts: [
+  "coq-univalent-parametricity"
+]
+build: [
+  [make "-j%{jobs}%" "mathcomp"]
+]
+install: [
+  [make "install-mathcomp"]
+]

@@ -12,18 +12,29 @@ concurrency:
 
 jobs:
   build:
+    name: build (${{ matrix.opam_file }}, ${{ matrix.coq_version }}, ${{ matrix.ocaml_version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        coq_version:
-          - 'dev'
-        ocaml_version:
-          - 'default'
+        include:
+          - opam_file: 'coq-univalent-parametricity.opam'
+            coq_version: 'dev'
+            ocaml_version: 'default'
+            before_install: ''
+          - opam_file: 'coq-univalent-parametricity-mathcomp.opam'
+            coq_version: 'dev'
+            ocaml_version: 'default'
+            # Keep the dev packages aligned with the Rocq dev image.  Their
+            # current heads target newer Rocq APIs than this image contains.
+            before_install: |
+              opam pin add -n -y rocq-micromega-plugin.dev git+https://github.com/rocq-community/micromega-plugin.git#24e0f1a100fc5ad113046f5ee67ff7e44f5af069
+              opam pin add -n -y rocq-elpi.dev git+https://github.com/LPCIC/coq-elpi.git#2d3ef60cd5144e327ecd3f54dc2dca38d5f8582e
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
       - uses: rocq-prover/docker-opam-action@v1
         with:
-          opam_file: 'coq-univalent-parametricity.opam'
+          opam_file: ${{ matrix.opam_file }}
           coq_version: ${{ matrix.coq_version }}
           ocaml_version: ${{ matrix.ocaml_version }}
+          before_install: ${{ matrix.before_install }}
