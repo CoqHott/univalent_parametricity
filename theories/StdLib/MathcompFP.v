@@ -148,10 +148,8 @@ Parameter mathcomp__algebra__arithmeticD_tactic__Internals__andD_R_iso : iso_sta
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.arithmetic_tactic.Internals.and_R) [mathcomp__algebra__arithmeticD_tactic__Internals__andD_R_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.arithmetic_tactic.Internals.and_R)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
 
-Parameter imported_mathcomp__algebra__arithmeticD_tactic__Internals__paramD_andD_R : import_of (@mathcomp.algebra.arithmetic_tactic.Internals.param_and_R).
-Parameter mathcomp__algebra__arithmeticD_tactic__Internals__paramD_andD_R_iso : iso_statement (@mathcomp.algebra.arithmetic_tactic.Internals.param_and_R) imported_mathcomp__algebra__arithmeticD_tactic__Internals__paramD_andD_R.
-#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.arithmetic_tactic.Internals.param_and_R) [mathcomp__algebra__arithmeticD_tactic__Internals__paramD_andD_R_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.arithmetic_tactic.Internals.param_and_R) [mathcomp__algebra__arithmeticD_tactic__Internals__paramD_andD_R_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
-#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.arithmetic_tactic.Internals.param_and_R)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+(* [param_and_R] is generated over an anonymous [Prop -> Prop -> Prop]
+   relation, which the importer does not yet support. *)
+Fail Parameter imported_mathcomp__algebra__arithmeticD_tactic__Internals__paramD_andD_R : import_of (@mathcomp.algebra.arithmetic_tactic.Internals.param_and_R).
 
 End Interface54.
