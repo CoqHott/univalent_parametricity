@@ -4108,6 +4108,30 @@ Parameter coqutil__Datatypes__HList__tuple__foralls_iso_plain : plain_iso_statem
 
 End Interface53.
 
+Module Type Interface54 (Import args : Args).
+
+Parameter imported_Corelib__Init__Logic__eq : forall y : Type, y -> y -> SProp.
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (@Corelib.Init.Logic.eq) Corelib__Init__Logic__eq_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Lemma impl_cong: forall (P P' Q Q': Prop),
+    P <-> P' ->
+    Q <-> Q' ->
+    (P -> Q) <-> (P' -> Q').
+Admitted.
+
+Parameter imported_Corelib__Init__Logic__iff : SProp -> SProp -> SProp.
+Parameter Corelib__Init__Logic__iff_iso : iso_statement (@Corelib.Init.Logic.iff) imported_Corelib__Init__Logic__iff.
+#[export] Hint Extern 1 (UR.UR_Type ?goal_lhs _) => tc_hint_for univalent (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 (UR.pr ?k ?goal_lhs _) => tc_hint_for k (@Corelib.Init.Logic.iff) Corelib__Init__Logic__iff_iso goal_lhs : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_bedrock2__bottomD_upD_simpl__implD_cong : import_of (@impl_cong).
+Parameter bedrock2__bottomD_upD_simpl__implD_cong_iso : iso_statement (@impl_cong) imported_bedrock2__bottomD_upD_simpl__implD_cong.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@impl_cong) [bedrock2__bottomD_upD_simpl__implD_cong_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@impl_cong) [bedrock2__bottomD_upD_simpl__implD_cong_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+
+End Interface54.
 
 (*
 
