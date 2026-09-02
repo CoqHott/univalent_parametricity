@@ -4133,6 +4133,52 @@ Parameter bedrock2__bottomD_upD_simpl__implD_cong_iso : iso_statement (@impl_con
 
 End Interface54.
 
+Module Type Interface55 (Import args : Args).
+
+Parameter imported_Corelib__Init__Logic__eq : import_of (@Corelib.Init.Logic.eq).
+Parameter Corelib__Init__Logic__eq_iso : iso_statement (@Corelib.Init.Logic.eq) imported_Corelib__Init__Logic__eq.
+Parameter imported_Corelib__Init__Logic__eq_Prop : import_of ((fun A : Prop => (fun (A0 : Type) (x4 x5 : A0) => Logic.eq x4 x5) A)).
+Parameter Corelib__Init__Logic__eq_iso_Prop : iso_statement ((fun A : Prop => (fun (A0 : Type) (x4 x5 : A0) => Logic.eq x4 x5) A)) imported_Corelib__Init__Logic__eq_Prop.
+Definition plain_imported_Corelib__Init__Logic__eq : (forall y : Type, y -> y -> SProp) := imported_Corelib__Init__Logic__eq.
+Parameter _inductive_imported_Corelib__Init__Logic__eqD_refl : (forall (y : Type) (y0 : y), imported_Corelib__Init__Logic__eq y0 y0).
+Definition _inductive_plain_imported_Corelib__Init__Logic__eqD_refl : (forall (y : Type) (y0 : y), plain_imported_Corelib__Init__Logic__eq y0 y0) := _inductive_imported_Corelib__Init__Logic__eqD_refl.
+Parameter Corelib__Init__Logic__eq_iso_plain : plain_iso_statement (@Corelib.Init.Logic.eq) plain_imported_Corelib__Init__Logic__eq.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Logic.eq) [(* ((fun A : Prop => (fun (A0 : Type) (x4 x5 : A0) => Logic.eq x4 x5) A)) *) Corelib__Init__Logic__eq_iso_Prop; Corelib__Init__Logic__eq_iso] [Corelib__Init__Logic__eq_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.Init.Logic.eq) [(* ((fun A : Prop => (fun (A0 : Type) (x4 x5 : A0) => Logic.eq x4 x5) A)) *) Corelib__Init__Logic__eq_iso_Prop; Corelib__Init__Logic__eq_iso] [Corelib__Init__Logic__eq_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.Init.Logic.eq)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Corelib.Init.Logic.eq)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep : import_of (@Stdlib.Logic.FunctionalExtensionality.functional_extensionality_dep).
+Parameter Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep_iso : iso_statement (@Stdlib.Logic.FunctionalExtensionality.functional_extensionality_dep) imported_Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep.
+Definition plain_imported_Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep : (forall (y : Type) (y0 : y -> Type) (y1 : forall y1 : y, y0 y1) (y2 : forall y2 : y, y0 y2),
+   (forall y3 : y, imported_Corelib__Init__Logic__eq (y1 y3) (y2 y3)) -> imported_Corelib__Init__Logic__eq y1 y2) := imported_Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep.
+Parameter Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep_iso_plain : plain_iso_statement (@Stdlib.Logic.FunctionalExtensionality.functional_extensionality_dep) plain_imported_Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Stdlib.Logic.FunctionalExtensionality.functional_extensionality_dep) [Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep_iso] [Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Stdlib.Logic.FunctionalExtensionality.functional_extensionality_dep) [Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep_iso] [Stdlib__Logic__FunctionalExtensionality__functionalD_extensionalityD_dep_iso_plain] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Stdlib.Logic.FunctionalExtensionality.functional_extensionality_dep)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.plain (@Stdlib.Logic.FunctionalExtensionality.functional_extensionality_dep)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Stdlib__Logic__HLevelsBase__IsHProp : (Type -> SProp).
+Parameter Stdlib__Logic__HLevelsBase__IsHProp_iso : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Type Type Prop SProp (UR.PR_Type@{Type Type Type ; _ _ _ _} UR.univalent)
+        (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent))
+     (fun P : Type => HLevelsBase.IsHProp P) imported_Stdlib__Logic__HLevelsBase__IsHProp).
+Parameter imported_Stdlib__Logic__HLevelsBase__IsHProp_Prop : (SProp -> SProp).
+Parameter Stdlib__Logic__HLevelsBase__IsHProp_iso_Prop : (@UR.pr _ _ _
+     (@UR.URArrow@{Type Type Type Type Type Type ; _ _ _ _ _ _ _ _ _} UR.univalent Prop SProp Prop SProp (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent)
+        (UR.PR_Type@{Prop SProp SProp ; _ _ _ _} UR.univalent))
+     (fun P : Prop => HLevelsBase.IsHProp P) imported_Stdlib__Logic__HLevelsBase__IsHProp_Prop).
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Stdlib.Logic.HLevelsBase.IsHProp)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 1 => progress (unfold Stdlib.Logic.HLevelsBase.IsHProp) : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_Stdlib__Logic__HLevels__forallD_hprop : import_of (@Stdlib.Logic.HLevels.forall_hprop).
+Parameter Stdlib__Logic__HLevels__forallD_hprop_iso : iso_statement (@Stdlib.Logic.HLevels.forall_hprop) imported_Stdlib__Logic__HLevels__forallD_hprop.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Stdlib.Logic.HLevels.forall_hprop) [Stdlib__Logic__HLevels__forallD_hprop_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Stdlib.Logic.HLevels.forall_hprop) [Stdlib__Logic__HLevels__forallD_hprop_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Stdlib.Logic.HLevels.forall_hprop)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+End Interface55.
+
 (*
 
 Module Type Interface53 (Import args : Args).
