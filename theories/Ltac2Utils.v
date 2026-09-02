@@ -3553,7 +3553,7 @@ Ltac2 forward_apply (k:constr) (lem:constr) (t:constr) :=
     match check_appvect lem (Array.of_list (merge_triple_array c_args fresh_ident)) with
     | Val apply_lem => 
       unshelve (refine $apply_lem); clear_ident fresh_ident
-    | _ => Control.zero Match_failure
+    | Err exn => Control.throw (Tactic_failure (Some (Message.of_exn exn)))
     end.
 
 Ltac pre_tc_hint_hook := idtac.

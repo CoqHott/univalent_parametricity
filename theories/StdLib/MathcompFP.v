@@ -195,13 +195,71 @@ Parameter mathcomp__boot__nmodule__Algebra__BaseAddMagma__sort_iso : iso_stateme
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.BaseAddMagma.sort) [mathcomp__boot__nmodule__Algebra__BaseAddMagma__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.boot.nmodule.Algebra.BaseAddMagma.sort)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
 
-(*Parameter imported_mathcomp__boot__nmodule__Algebra__BaseAddUMagma__sort : import_of (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.sort).*)
+Parameter imported_mathcomp__boot__nmodule__Algebra__BaseAddUMagma__sort : import_of (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.sort).
+Parameter mathcomp__boot__nmodule__Algebra__BaseAddUMagma__sort_iso : iso_statement (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.sort) imported_mathcomp__boot__nmodule__Algebra__BaseAddUMagma__sort.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.sort) [mathcomp__boot__nmodule__Algebra__BaseAddUMagma__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.sort) [mathcomp__boot__nmodule__Algebra__BaseAddUMagma__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.sort)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__boot__nmodule__Algebra__Additive__sort : import_of (@mathcomp.boot.nmodule.Algebra.Additive.sort).
+Parameter mathcomp__boot__nmodule__Algebra__Additive__sort_iso : iso_statement (@mathcomp.boot.nmodule.Algebra.Additive.sort) imported_mathcomp__boot__nmodule__Algebra__Additive__sort.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.Additive.sort) [mathcomp__boot__nmodule__Algebra__Additive__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.Additive.sort) [mathcomp__boot__nmodule__Algebra__Additive__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.boot.nmodule.Algebra.Additive.sort)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__boot__nmodule__Algebra__add : import_of (@mathcomp.boot.nmodule.Algebra.add).
+Parameter mathcomp__boot__nmodule__Algebra__add_iso : iso_statement (@mathcomp.boot.nmodule.Algebra.add) imported_mathcomp__boot__nmodule__Algebra__add.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.add) [mathcomp__boot__nmodule__Algebra__add_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.add) [mathcomp__boot__nmodule__Algebra__add_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.boot.nmodule.Algebra.add)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Fail Parameter imported_mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Theory__raddfD : import_of (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Theory.raddfD).
+
+End Interface55.
+
+Module Type Interface56 (Import args : Args).
+
+Parameter imported_Corelib__ssr__ssrfun__morphismD_2 : import_of (@Corelib.ssr.ssrfun.morphism_2).
+Parameter Corelib__ssr__ssrfun__morphismD_2_iso : iso_statement (@Corelib.ssr.ssrfun.morphism_2) imported_Corelib__ssr__ssrfun__morphismD_2.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.ssr.ssrfun.morphism_2) [Corelib__ssr__ssrfun__morphismD_2_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@Corelib.ssr.ssrfun.morphism_2) [Corelib__ssr__ssrfun__morphismD_2_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@Corelib.ssr.ssrfun.morphism_2)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__boot__nmodule__Algebra__BaseAddUMagma__type : import_of (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.type).
+Parameter mathcomp__boot__nmodule__Algebra__BaseAddUMagma__type_iso : iso_statement (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.type) imported_mathcomp__boot__nmodule__Algebra__BaseAddUMagma__type.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.type) [mathcomp__boot__nmodule__Algebra__BaseAddUMagma__type_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.type) [mathcomp__boot__nmodule__Algebra__BaseAddUMagma__type_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.type)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__boot__nmodule__Algebra__Additive__type : import_of (@mathcomp.boot.nmodule.Algebra.Additive.type).
+Parameter mathcomp__boot__nmodule__Algebra__Additive__type_iso : iso_statement (@mathcomp.boot.nmodule.Algebra.Additive.type) imported_mathcomp__boot__nmodule__Algebra__Additive__type.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.Additive.type) [mathcomp__boot__nmodule__Algebra__Additive__type_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.Additive.type) [mathcomp__boot__nmodule__Algebra__Additive__type_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.boot.nmodule.Algebra.Additive.type)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__boot__nmodule__Algebra__BaseAddMagma__type : import_of (@mathcomp.boot.nmodule.Algebra.BaseAddMagma.type).
+Parameter mathcomp__boot__nmodule__Algebra__BaseAddMagma__type_iso : iso_statement (@mathcomp.boot.nmodule.Algebra.BaseAddMagma.type) imported_mathcomp__boot__nmodule__Algebra__BaseAddMagma__type.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.BaseAddMagma.type) [mathcomp__boot__nmodule__Algebra__BaseAddMagma__type_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.BaseAddMagma.type) [mathcomp__boot__nmodule__Algebra__BaseAddMagma__type_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.boot.nmodule.Algebra.BaseAddMagma.type)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__boot__nmodule__Algebra__BaseAddUMagma__Exports__AlgebraD_BaseAddUMagmaD_D_toD_D_AlgebraD_BaseAddMagma : import_of (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.Exports.Algebra_BaseAddUMagma__to__Algebra_BaseAddMagma).
+Parameter mathcomp__boot__nmodule__Algebra__BaseAddUMagma__Exports__AlgebraD_BaseAddUMagmaD_D_toD_D_AlgebraD_BaseAddMagma_iso : iso_statement (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.Exports.Algebra_BaseAddUMagma__to__Algebra_BaseAddMagma) imported_mathcomp__boot__nmodule__Algebra__BaseAddUMagma__Exports__AlgebraD_BaseAddUMagmaD_D_toD_D_AlgebraD_BaseAddMagma.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.Exports.Algebra_BaseAddUMagma__to__Algebra_BaseAddMagma) [mathcomp__boot__nmodule__Algebra__BaseAddUMagma__Exports__AlgebraD_BaseAddUMagmaD_D_toD_D_AlgebraD_BaseAddMagma_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.Exports.Algebra_BaseAddUMagma__to__Algebra_BaseAddMagma) [mathcomp__boot__nmodule__Algebra__BaseAddUMagma__Exports__AlgebraD_BaseAddUMagmaD_D_toD_D_AlgebraD_BaseAddMagma_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.Exports.Algebra_BaseAddUMagma__to__Algebra_BaseAddMagma)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
+Parameter imported_mathcomp__boot__nmodule__Algebra__BaseAddMagma__sort : import_of (@mathcomp.boot.nmodule.Algebra.BaseAddMagma.sort).
+Parameter mathcomp__boot__nmodule__Algebra__BaseAddMagma__sort_iso : iso_statement (@mathcomp.boot.nmodule.Algebra.BaseAddMagma.sort) imported_mathcomp__boot__nmodule__Algebra__BaseAddMagma__sort.
+#[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.BaseAddMagma.sort) [mathcomp__boot__nmodule__Algebra__BaseAddMagma__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.BaseAddMagma.sort) [mathcomp__boot__nmodule__Algebra__BaseAddMagma__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
+#[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.boot.nmodule.Algebra.BaseAddMagma.sort)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
+
 Definition mathcomp__boot__nmodule__Algebra__BaseAddUMagma__sort_iso : iso_statement (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.sort) 
   (fun x => imported_mathcomp__boot__nmodule__Algebra__BaseAddMagma__sort (imported_mathcomp__boot__nmodule__Algebra__BaseAddUMagma__Exports__AlgebraD_BaseAddUMagmaD_D_toD_D_AlgebraD_BaseAddMagma x)).
 Proof. intros ? ? ?. change (Algebra.BaseAddUMagma.sort x) with 
 ((Algebra.BaseAddMagma.sort (Algebra_BaseAddUMagma__to__Algebra_BaseAddMagma x))). tc.
 Defined.
-(*Parameter mathcomp__boot__nmodule__Algebra__BaseAddUMagma__sort_iso : iso_statement (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.sort) imported_mathcomp__boot__nmodule__Algebra__BaseAddUMagma__sort.*)
 #[export] Hint Extern 0 (UR.UR_Type ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.sort) [mathcomp__boot__nmodule__Algebra__BaseAddUMagma__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.sort) [mathcomp__boot__nmodule__Algebra__BaseAddUMagma__sort_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.boot.nmodule.Algebra.BaseAddUMagma.sort)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
@@ -224,4 +282,4 @@ Parameter mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras
 #[export] Hint Extern 0 (UR.pr _ ?goal_lhs _) => tc_hint_for_ur_plain_list (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Theory.raddfD) [mathcomp__algebra__algebraicD_hierarchy__ringsD_modulesD_andD_algebras__GRing__Theory__raddfD_iso] [] goal_lhs : typeclass_instances ur_typeclass_instances.
 #[export] Hint Extern 0 (IsoRegisteredFor UR.univalent (@mathcomp.algebra.algebraic_hierarchy.rings_modules_and_algebras.GRing.Theory.raddfD)) => exact Build_IsoRegisteredFor : typeclass_instances ur_typeclass_instances.
 
-End Interface55.
+End Interface56.
